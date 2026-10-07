@@ -115,51 +115,51 @@ export default function ClaimRankModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-y-auto">
-      <div className="relative w-full max-w-2xl rounded-2xl border border-zinc-700/80 bg-zinc-900 shadow-2xl shadow-black/80 p-6 sm:p-8">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-canvas/80 backdrop-blur-md overflow-y-auto">
+      <div className="relative w-full max-w-2xl rounded-2xl border border-borderMuted bg-surface shadow-2xl shadow-black/80 p-6 sm:p-8">
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute right-5 top-5 rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-800 hover:text-white transition"
+          className="absolute right-5 top-5 rounded-lg p-1.5 text-textMuted hover:bg-surfaceElevated hover:text-textMain transition"
         >
           <X className="h-5 w-5" />
         </button>
 
         {submitted ? (
           <div className="py-12 text-center space-y-4">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400 ring-2 ring-emerald-500/30 animate-bounce">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emeraldAccent/15 text-emeraldAccent ring-2 ring-emeraldAccent/30 animate-bounce">
               <CheckCircle className="h-10 w-10" />
             </div>
-            <h3 className="text-2xl font-black text-white">Outbid Successful!</h3>
-            <p className="text-sm text-zinc-400 max-w-md mx-auto">
-              Your transaction has settled on the financial protocol. <strong className="text-amber-400">{name}</strong> is now claiming <strong className="text-white">Rank #{targetRank}</strong>!
+            <h3 className="text-2xl font-heading font-bold text-textMain">Outbid Successful!</h3>
+            <p className="text-sm text-textMuted max-w-md mx-auto">
+              Your transaction has settled on the financial protocol. <strong className="text-limeAccent font-heading">{name}</strong> is now claiming <strong className="text-textMain font-mono">Rank #{targetRank}</strong>!
             </p>
           </div>
         ) : (
           <div>
             {/* Header */}
             <div className="flex items-center gap-3 mb-6">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500 to-amber-700 text-zinc-950 font-black shadow-md shadow-amber-500/30">
-                <Coins className="h-6 w-6 fill-zinc-950" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-limeAccent text-[#0B0F10] font-heading font-bold shadow-md shadow-limeAccent/20">
+                <Coins className="h-6 w-6 fill-[#0B0F10]" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white">
+                  <h2 className="text-xl sm:text-2xl font-heading font-bold tracking-tight text-textMain">
                     Claim Rank #{targetRank}
                   </h2>
-                  <span className="rounded bg-amber-500/10 px-2 py-0.5 text-xs font-bold text-amber-400 border border-amber-500/20">
+                  <span className="rounded bg-surfaceElevated px-2 py-0.5 text-xs font-mono font-bold text-limeAccent border border-borderMuted">
                     {board === 'all-time' ? 'All-Time Board' : 'Today Board'}
                   </span>
                 </div>
-                <p className="text-xs sm:text-sm text-zinc-400">
+                <p className="text-xs sm:text-sm text-textMuted">
                   Pure financial bidding. No algorithms, no waitlists. Highest spend wins.
                 </p>
               </div>
             </div>
 
             {/* Target Rank Picker pills */}
-            <div className="mb-6 bg-zinc-950/60 p-3 rounded-xl border border-zinc-800">
-              <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-2">
+            <div className="mb-6 bg-canvas/70 p-3 rounded-xl border border-borderMuted">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-textMuted mb-2">
                 Select Target Rank to Claim:
               </label>
               <div className="flex flex-wrap items-center gap-2">
@@ -171,17 +171,17 @@ export default function ClaimRankModal({
                       setTargetRank(rk);
                       setCustomBid('');
                     }}
-                    className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
+                    className={`rounded-lg px-3 py-1.5 text-xs font-heading font-bold transition ${
                       targetRank === rk
-                        ? 'bg-amber-400 text-zinc-950 shadow-md shadow-amber-400/20 scale-105'
-                        : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
+                        ? 'bg-limeAccent text-[#0B0F10] shadow-md shadow-limeAccent/20 scale-105'
+                        : 'bg-surfaceElevated text-textMuted hover:text-textMain hover:bg-surface border border-borderMuted/40'
                     }`}
                   >
                     #{rk} {rk === 1 ? '👑' : ''}
                   </button>
                 ))}
                 <div className="flex items-center gap-1.5 ml-auto">
-                  <span className="text-xs text-zinc-500">Custom #</span>
+                  <span className="text-xs text-textMuted">Custom #</span>
                   <input
                     type="number"
                     min={1}
@@ -192,23 +192,23 @@ export default function ClaimRankModal({
                       setTargetRank(Math.max(1, val));
                       setCustomBid('');
                     }}
-                    className="w-16 rounded bg-zinc-800 px-2 py-1 text-xs text-white border border-zinc-700 text-center font-bold focus:border-amber-400 outline-none"
+                    className="w-16 rounded bg-surfaceElevated px-2 py-1 text-xs text-textMain border border-borderMuted text-center font-mono font-bold focus:border-limeAccent outline-none"
                   />
                 </div>
               </div>
 
               {/* Status of spot */}
               {currentHolder && (
-                <div className="mt-3 flex items-center justify-between border-t border-zinc-800/80 pt-2 text-xs text-zinc-400">
+                <div className="mt-3 flex items-center justify-between border-t border-borderMuted/80 pt-2 text-xs text-textMuted">
                   <span>
                     Current #{targetRank} Holder:{' '}
-                    <strong className="text-zinc-200">
+                    <strong className="text-textMain">
                       {currentHolder.logo} {currentHolder.name}
                     </strong>
                   </span>
                   <span>
                     Their Total Spend:{' '}
-                    <strong className="font-mono text-zinc-200">
+                    <strong className="font-mono text-limeAccent">
                       ${(board === 'all-time' ? currentHolder.allTimeSpend : currentHolder.todaySpend).toLocaleString()}
                     </strong>
                   </span>
@@ -219,8 +219,8 @@ export default function ClaimRankModal({
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Product URL input */}
               <div>
-                <label className="block text-xs font-bold text-zinc-300 uppercase tracking-wider mb-1.5">
-                  Product Website URL <span className="text-amber-400">*</span>
+                <label className="block text-xs font-bold text-textMain uppercase tracking-wider mb-1.5 font-heading">
+                  Product Website URL <span className="text-limeAccent">*</span>
                 </label>
                 <input
                   type="text"
@@ -228,35 +228,35 @@ export default function ClaimRankModal({
                   placeholder="https://yourproduct.com"
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
-                  className="w-full rounded-xl bg-zinc-950 border border-zinc-800 px-3.5 py-2.5 text-sm text-white placeholder-zinc-500 focus:border-amber-400 focus:ring-1 focus:ring-amber-400 outline-none font-mono"
+                  className="w-full rounded-xl bg-surfaceElevated border border-borderMuted px-3.5 py-2.5 text-sm text-textMain placeholder-textMuted/50 focus:border-limeAccent focus:ring-1 focus:ring-limeAccent outline-none font-mono"
                 />
               </div>
 
               {/* Existing Product Recognition Notice (Rule 2: Bump mechanic) */}
               {existingProduct ? (
-                <div className="rounded-xl bg-gradient-to-r from-emerald-950/40 to-zinc-900 border border-emerald-500/30 p-3.5 flex items-start gap-3">
-                  <div className="rounded-lg bg-emerald-500/20 p-2 text-emerald-400 mt-0.5">
+                <div className="rounded-xl bg-surfaceElevated border border-emeraldAccent/30 p-3.5 flex items-start gap-3">
+                  <div className="rounded-lg bg-emeraldAccent/15 p-2 text-emeraldAccent mt-0.5">
                     <Sparkles className="h-4 w-4" />
                   </div>
                   <div className="text-xs">
-                    <div className="font-bold text-emerald-400">
+                    <div className="font-bold text-emeraldAccent font-heading">
                       Existing Product Recognized: {existingProduct.name}
                     </div>
-                    <div className="text-zinc-300 mt-0.5">
+                    <div className="text-textMuted mt-0.5">
                       You already contributed{' '}
-                      <strong className="font-mono text-emerald-300">
+                      <strong className="font-mono text-emeraldAccent">
                         ${bidCalculation.existingSpend.toLocaleString()}
                       </strong>{' '}
                       on this board. Under the bump rule, you only pay the{' '}
-                      <span className="font-bold text-white underline">difference</span> to claim Rank #{targetRank}!
+                      <span className="font-bold text-textMain underline">difference</span> to claim Rank #{targetRank}!
                     </div>
                   </div>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-bold text-zinc-300 uppercase tracking-wider mb-1.5">
-                      Product Name <span className="text-amber-400">*</span>
+                    <label className="block text-xs font-bold text-textMain uppercase tracking-wider mb-1.5 font-heading">
+                      Product Name <span className="text-limeAccent">*</span>
                     </label>
                     <input
                       type="text"
@@ -264,65 +264,72 @@ export default function ClaimRankModal({
                       placeholder="e.g. Acme Studio"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      className="w-full rounded-xl bg-zinc-950 border border-zinc-800 px-3.5 py-2.5 text-sm text-white placeholder-zinc-500 focus:border-amber-400 outline-none"
+                      className="w-full rounded-xl bg-surfaceElevated border border-borderMuted px-3.5 py-2.5 text-sm text-textMain placeholder-textMuted/50 focus:border-limeAccent outline-none"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-zinc-300 uppercase tracking-wider mb-1.5">
+                    <label className="block text-xs font-bold text-textMain uppercase tracking-wider mb-1.5 font-heading">
                       Category
                     </label>
                     <select
                       value={category}
                       onChange={(e) => setCategory(e.target.value as any)}
-                      className="w-full rounded-xl bg-zinc-950 border border-zinc-800 px-3.5 py-2.5 text-sm text-white focus:border-amber-400 outline-none"
+                      className="w-full rounded-xl bg-surfaceElevated border border-borderMuted px-3.5 py-2.5 text-sm text-textMain focus:border-limeAccent outline-none"
                     >
                       <option value="AI & ML">AI & ML</option>
                       <option value="DevTools">DevTools</option>
                       <option value="SaaS">SaaS</option>
                       <option value="Web3">Web3</option>
+                      <option value="Crypto">Crypto</option>
+                      <option value="Fintech">Fintech</option>
                       <option value="Design">Design</option>
                       <option value="Productivity">Productivity</option>
+                      <option value="Gaming">Gaming</option>
+                      <option value="Marketing">Marketing</option>
+                      <option value="E-commerce">E-commerce</option>
+                      <option value="Mobile">Mobile</option>
+                      <option value="Others">Others</option>
                     </select>
                   </div>
 
                   <div className="sm:col-span-2">
-                    <label className="block text-xs font-bold text-zinc-300 uppercase tracking-wider mb-1.5">
+                    <label className="block text-xs font-bold text-textMain uppercase tracking-wider mb-1.5 font-heading">
                       Tagline (Catchy pitch)
                     </label>
                     <input
                       type="text"
-                      placeholder="e.g. Next-generation AI code companion for fast teams"
+                      placeholder="e.g. Next-generation AI companion for fast teams"
                       value={tagline}
                       onChange={(e) => setTagline(e.target.value)}
-                      className="w-full rounded-xl bg-zinc-950 border border-zinc-800 px-3.5 py-2.5 text-sm text-white placeholder-zinc-500 focus:border-amber-400 outline-none"
+                      className="w-full rounded-xl bg-surfaceElevated border border-borderMuted px-3.5 py-2.5 text-sm text-textMain placeholder-textMuted/50 focus:border-limeAccent outline-none"
                     />
                   </div>
                 </div>
               )}
 
               {/* Financial Calculation Breakdown Card */}
-              <div className="rounded-xl bg-zinc-950 border border-zinc-800/80 p-4 space-y-2.5">
-                <div className="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center justify-between">
+              <div className="rounded-xl bg-surfaceElevated border border-borderMuted p-4 space-y-2.5">
+                <div className="text-xs font-bold uppercase tracking-wider text-limeAccent font-heading flex items-center justify-between">
                   <span>Transparent Capital Calculation</span>
                   {isTargetingNumberOne && (
-                    <span className="flex items-center gap-1 text-[11px] text-amber-300 font-normal">
-                      <Flame className="h-3 w-3 fill-amber-400" />
+                    <span className="flex items-center gap-1 text-[11px] text-limeAccent font-mono">
+                      <Flame className="h-3 w-3 fill-limeAccent" />
                       Must outbid #1 by +$5 minimum
                     </span>
                   )}
                 </div>
 
-                <div className="text-xs space-y-1.5 text-zinc-300 pt-1">
+                <div className="text-xs space-y-1.5 text-textMuted pt-1">
                   <div className="flex justify-between">
-                    <span className="text-zinc-400">Total Spend Required for Rank #{targetRank}:</span>
-                    <span className="font-mono font-semibold text-white">
+                    <span className="text-textMuted">Total Spend Required for Rank #{targetRank}:</span>
+                    <span className="font-mono font-semibold text-textMain">
                       ${bidCalculation.targetSpendRequired.toLocaleString()}
                     </span>
                   </div>
 
                   {existingProduct && (
-                    <div className="flex justify-between text-emerald-400">
+                    <div className="flex justify-between text-emeraldAccent">
                       <span>Existing Lifetime Credit (Bump Rule):</span>
                       <span className="font-mono font-semibold">
                         -${bidCalculation.existingSpend.toLocaleString()}
@@ -330,25 +337,25 @@ export default function ClaimRankModal({
                     </div>
                   )}
 
-                  <div className="border-t border-zinc-800 pt-2 flex items-center justify-between text-sm">
-                    <span className="font-bold text-white">
+                  <div className="border-t border-borderMuted pt-2 flex items-center justify-between text-sm">
+                    <span className="font-bold text-textMain font-heading">
                       Net Payable to Claim Spot:
                     </span>
                     <div className="flex items-center gap-1.5">
-                      <span className="text-zinc-500 font-mono text-xs">$</span>
+                      <span className="text-textMuted font-mono text-xs">$</span>
                       <input
                         type="number"
                         min={minNetPayable}
                         value={customBid === '' ? minNetPayable : customBid}
                         onChange={(e) => setCustomBid(e.target.value)}
-                        className="w-28 rounded-lg bg-zinc-900 border border-amber-500/50 px-2 py-1 text-right font-mono font-black text-amber-400 focus:ring-1 focus:ring-amber-400 outline-none text-base"
+                        className="w-28 rounded-lg bg-surface border border-limeAccent/60 px-2 py-1 text-right font-mono font-bold text-limeAccent focus:ring-1 focus:ring-limeAccent outline-none text-base"
                       />
                     </div>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 text-[11px] text-zinc-500 pt-1">
-                  <ShieldCheck className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+                <div className="flex items-center gap-2 text-[11px] text-textMuted pt-1">
+                  <ShieldCheck className="h-3.5 w-3.5 text-emeraldAccent shrink-0" />
                   <span>
                     Tie-breaker rule: If two bids match, the older listing retains rank.
                   </span>
@@ -359,14 +366,14 @@ export default function ClaimRankModal({
               <div className="pt-2">
                 <button
                   type="submit"
-                  className="w-full rounded-xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 py-3.5 px-4 text-center text-sm font-black text-zinc-950 shadow-lg shadow-amber-500/25 transition-all hover:scale-[1.01] hover:brightness-110 active:scale-98 flex items-center justify-center gap-2"
+                  className="w-full rounded-xl bg-limeAccent py-3.5 px-4 text-center text-sm font-heading font-bold text-[#0B0F10] shadow-lg shadow-limeAccent/20 transition-all hover:brightness-110 active:scale-[0.98] flex items-center justify-center gap-2"
                 >
-                  <Sparkles className="h-4 w-4 text-zinc-950" />
+                  <Sparkles className="h-4 w-4 text-[#0B0F10]" />
                   <span>
                     Authorize Outbid & Claim Rank #{targetRank} ($
                     {(customBid ? parseFloat(customBid) : minNetPayable).toLocaleString()})
                   </span>
-                  <ArrowRight className="h-4 w-4 text-zinc-950" />
+                  <ArrowRight className="h-4 w-4 text-[#0B0F10]" />
                 </button>
               </div>
             </form>

@@ -4,7 +4,7 @@ export interface ProductEntry {
   tagline: string;
   url: string;
   logo: string;
-  category: 'AI & ML' | 'DevTools' | 'SaaS' | 'Web3' | 'Design' | 'Productivity';
+  category: 'AI & ML' | 'DevTools' | 'SaaS' | 'Web3' | 'Design' | 'Productivity' | 'Fintech' | 'Crypto' | 'Gaming' | 'Marketing' | 'E-commerce' | 'Mobile' | 'Others';
   allTimeSpend: number;
   todaySpend: number;
   createdAt: number;
@@ -33,18 +33,33 @@ export interface BidActivity {
 // ==========================================
 
 export type UserRole = 'brand' | 'creator';
-export type SocialPlatform = 'tiktok' | 'instagram' | 'youtube_shorts';
+export type SocialPlatform = 'x' | 'instagram' | 'youtube_shorts';
 
 export interface UserProfile {
   id: string;
+  email?: string;
   name: string;
   handle: string;
   role: UserRole;
   avatar: string;
+  bio?: string;
+  isLoggedIn?: boolean;
+  isProfileSetup?: boolean;
+  primaryPlatform?: SocialPlatform;
+  socialLinks?: {
+    x?: string;
+    instagram?: string;
+    youtube?: string;
+  };
+  payoutMethod?: {
+    type: 'stripe' | 'paypal' | 'crypto';
+    accountIdentifier: string;
+  };
   wallet_balance: number;
   stripe_connect_id?: string;
   total_earned?: number;
   total_views_generated?: number;
+  joinedCampaignIds?: string[];
 }
 
 export interface CampaignGuidelines {
@@ -72,7 +87,7 @@ export interface Campaign {
   max_payout_per_clip: number; // cap e.g. $300
   min_views_threshold: number; // e.g. 3000 views before payout unlocks
   platforms: SocialPlatform[];
-  category: 'SaaS' | 'AI & ML' | 'DevTools' | 'Crypto' | 'E-commerce' | 'Gaming' | 'Productivity' | 'Design';
+  category: 'SaaS' | 'AI & ML' | 'DevTools' | 'Crypto' | 'Web3' | 'E-commerce' | 'Gaming' | 'Productivity' | 'Design' | 'Fintech' | 'Marketing' | 'Mobile' | 'Others';
   status: 'active' | 'paused' | 'budget_exhausted' | 'archived';
   created_at: number;
   participants_count: number;

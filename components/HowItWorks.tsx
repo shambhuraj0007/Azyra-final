@@ -41,16 +41,16 @@ export default function HowItWorks() {
   ];
 
   return (
-    <section id="how-it-works" className="py-12 border-t border-zinc-800/80">
+    <section id="how-it-works" className="py-12 border-t border-borderMuted">
       <div className="text-center max-w-2xl mx-auto mb-10">
-        <div className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-3 py-1 text-xs font-bold text-amber-400 border border-amber-500/20 mb-3">
-          <Zap className="h-3.5 w-3.5" />
+        <div className="inline-flex items-center gap-1.5 rounded-full bg-surfaceElevated px-3 py-1 text-xs font-mono font-bold text-limeAccent border border-borderMuted mb-3">
+          <Zap className="h-3.5 w-3.5 text-limeAccent" />
           <span>The Protocol Rules</span>
         </div>
-        <h2 className="text-3xl font-black text-white tracking-tight sm:text-4xl">
+        <h2 className="text-3xl font-heading font-bold text-textMain tracking-tight sm:text-4xl">
           How the Leaderboard Operates
         </h2>
-        <p className="mt-2 text-sm text-zinc-400">
+        <p className="mt-2 text-sm text-textMuted">
           Built on radical transparency for Azyra. Pure financial bidding, zero editorial curation, zero gatekeepers.
         </p>
       </div>
@@ -61,30 +61,30 @@ export default function HowItWorks() {
           return (
             <div
               key={item.step}
-              className="relative rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 backdrop-blur-sm transition-all hover:border-zinc-700 hover:bg-zinc-900/90"
+              className="relative rounded-xl border border-borderMuted bg-surface p-6 backdrop-blur-sm transition-all hover:border-limeAccent/40 hover:bg-surfaceElevated/70"
             >
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-800 text-amber-400 font-bold border border-zinc-700">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-surfaceElevated text-limeAccent font-bold border border-borderMuted">
                     <Icon className="h-5 w-5" />
                   </div>
                   <div>
-                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-500">
+                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-textMuted">
                       Rule {item.step}
                     </span>
-                    <h3 className="text-base font-bold text-white">
+                    <h3 className="text-base font-heading font-bold text-textMain">
                       {item.title}
                     </h3>
                   </div>
                 </div>
               </div>
 
-              <p className="text-xs text-zinc-300 leading-relaxed">
+              <p className="text-xs text-textMuted leading-relaxed">
                 {item.description}
               </p>
 
-              <div className="mt-4 rounded-xl bg-zinc-950/80 p-3 border border-zinc-800/80 text-[11px] font-mono text-amber-300/90 flex items-center gap-2">
-                <span className="text-zinc-500 font-sans font-semibold">Example:</span>
+              <div className="mt-4 rounded-lg bg-canvas p-3 border border-borderMuted text-[11px] font-mono text-limeAccent flex items-center gap-2">
+                <span className="text-textMuted font-sans font-medium">Example:</span>
                 <span>{item.example}</span>
               </div>
             </div>

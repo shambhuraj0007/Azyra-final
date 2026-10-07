@@ -1,16 +1,24 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Space_Grotesk, Plus_Jakarta_Sans, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { CampaignProvider } from "../lib/CampaignContext";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const spaceGrotesk = Space_Grotesk({
+  variable: "--font-space-grotesk",
   subsets: ["latin"],
+  weight: ["600", "700"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const plusJakartaSans = Plus_Jakarta_Sans({
+  variable: "--font-plus-jakarta",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-jetbrains-mono",
+  subsets: ["latin"],
+  weight: ["400", "600"],
 });
 
 export const metadata: Metadata = {
@@ -29,6 +37,8 @@ export const metadata: Metadata = {
   manifest: "/site.webmanifest",
 };
 
+import { NextAuthProvider } from "../components/NextAuthProvider";
+
 export default function RootLayout({
   children,
 }: {
@@ -37,7 +47,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${spaceGrotesk.variable} ${plusJakartaSans.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
       <head>
         <link rel="icon" href="/favicon.ico" sizes="any" />
@@ -45,8 +55,10 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <link rel="manifest" href="/site.webmanifest" />
       </head>
-      <body className="min-h-full flex flex-col bg-[#08090d] text-zinc-100">
-        <CampaignProvider>{children}</CampaignProvider>
+      <body className="min-h-full flex flex-col bg-canvas text-textMain font-sans selection:bg-limeAccent selection:text-[#0B0F10]">
+        <NextAuthProvider>
+          <CampaignProvider>{children}</CampaignProvider>
+        </NextAuthProvider>
       </body>
     </html>
   );

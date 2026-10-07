@@ -9,17 +9,23 @@ import { calculateClipPayout, parseSocialUrl } from './campaignUtils';
 
 const BASE_TIME = 1740000000000;
 
-export const INITIAL_CREATOR: UserProfile = {
-  id: 'creator-alex',
-  name: 'Alex Rivera',
-  handle: '@alex_edits',
+export const GUEST_USER: UserProfile = {
+  id: '',
+  email: '',
+  name: '',
+  handle: '',
   role: 'creator',
   avatar: '🎬',
-  wallet_balance: 384.50,
-  total_earned: 1420.00,
-  total_views_generated: 980000,
-  stripe_connect_id: 'acct_1Nzk98WhopConnect',
+  bio: '',
+  isLoggedIn: false,
+  isProfileSetup: false,
+  wallet_balance: 0,
+  total_earned: 0,
+  total_views_generated: 0,
+  joinedCampaignIds: [],
 };
+
+export const INITIAL_CREATOR: UserProfile = GUEST_USER;
 
 export const INITIAL_BRAND: UserProfile = {
   id: 'brand-cursor',
@@ -39,7 +45,7 @@ export const INITIAL_MARKETPLACE_CAMPAIGNS: Campaign[] = [
     brand_url: 'https://cursor.com',
     brand_leaderboard_rank: 1,
     title: 'Cursor Composer & 10x Developer Speedruns',
-    description: 'Create engaging short-form TikToks, Reels, or Shorts showcasing crazy coding speedruns, refactoring legacy code in 5 seconds, or building full apps using Cursor AI agent.',
+    description: 'Create engaging short-form clips on X, Reels, or Shorts showcasing crazy coding speedruns, refactoring legacy code in 5 seconds, or building full apps using Cursor AI agent.',
     asset_drive_link: 'https://drive.google.com/drive/folders/1CursorRawFootageDemos2025',
     guidelines: {
       allowed_hashtags: ['#CursorAI', '#CodingSpeedrun', '#DevTok', '#BuildInPublic', '#AITools'],
@@ -58,7 +64,7 @@ export const INITIAL_MARKETPLACE_CAMPAIGNS: Campaign[] = [
     cpm_rate: 1.50, // $1.50 per 1k views
     max_payout_per_clip: 350,
     min_views_threshold: 2500,
-    platforms: ['tiktok', 'instagram', 'youtube_shorts'],
+    platforms: ['x', 'instagram', 'youtube_shorts'],
     category: 'DevTools',
     status: 'active',
     created_at: BASE_TIME - 1000 * 60 * 60 * 24 * 10,
@@ -92,7 +98,7 @@ export const INITIAL_MARKETPLACE_CAMPAIGNS: Campaign[] = [
     cpm_rate: 1.25,
     max_payout_per_clip: 250,
     min_views_threshold: 3000,
-    platforms: ['tiktok', 'instagram', 'youtube_shorts'],
+    platforms: ['x', 'instagram', 'youtube_shorts'],
     category: 'AI & ML',
     status: 'active',
     created_at: BASE_TIME - 1000 * 60 * 60 * 24 * 7,
@@ -119,14 +125,14 @@ export const INITIAL_MARKETPLACE_CAMPAIGNS: Campaign[] = [
         'Show the cursor auto-zoom feature in action',
         'Mention "No keyframing required"',
       ],
-      notes: 'Aesthetic visuals convert highest on Instagram Reels.',
+      notes: 'Aesthetic visuals convert highest on X and Instagram Reels.',
     },
     total_budget: 5000,
     remaining_budget: 1820,
     cpm_rate: 1.80, // High CPM
     max_payout_per_clip: 400,
     min_views_threshold: 2000,
-    platforms: ['instagram', 'tiktok', 'youtube_shorts'],
+    platforms: ['instagram', 'x', 'youtube_shorts'],
     category: 'Design',
     status: 'active',
     created_at: BASE_TIME - 1000 * 60 * 60 * 24 * 5,
@@ -159,7 +165,7 @@ export const INITIAL_MARKETPLACE_CAMPAIGNS: Campaign[] = [
     cpm_rate: 1.40,
     max_payout_per_clip: 300,
     min_views_threshold: 4000,
-    platforms: ['youtube_shorts', 'tiktok'],
+    platforms: ['youtube_shorts', 'x'],
     category: 'DevTools',
     status: 'active',
     created_at: BASE_TIME - 1000 * 60 * 60 * 24 * 3,
@@ -192,7 +198,7 @@ export const INITIAL_MARKETPLACE_CAMPAIGNS: Campaign[] = [
     cpm_rate: 1.10,
     max_payout_per_clip: 200,
     min_views_threshold: 2000,
-    platforms: ['tiktok', 'instagram', 'youtube_shorts'],
+    platforms: ['x', 'instagram', 'youtube_shorts'],
     category: 'DevTools',
     status: 'active',
     created_at: BASE_TIME - 1000 * 60 * 60 * 24 * 12,
@@ -209,9 +215,9 @@ export const INITIAL_SUBMISSIONS: ClipSubmission[] = [
     campaign_title: 'Cursor Composer & 10x Developer Speedruns',
     creator_id: 'creator-alex',
     creator_name: 'Alex Rivera (@alex_edits)',
-    video_url: 'https://www.tiktok.com/@alex_edits/video/733918204918237',
-    platform: 'tiktok',
-    video_external_id: '733918204918237',
+    video_url: 'https://x.com/alex_edits/status/1733918204918237',
+    platform: 'x',
+    video_external_id: '1733918204918237',
     initial_view_count: 120,
     current_view_count: 148500,
     earned_amount: 222.75, // (148.5 - 0.12) * $1.50
@@ -260,14 +266,14 @@ export const INITIAL_PARTICIPANTS: CampaignParticipant[] = [
   {
     id: 'part-01',
     campaign_id: 'camp-cursor-01',
-    creator_id: 'creator-alex',
+    creator_id: 'creator-demo-sample',
     joined_at: BASE_TIME - 1000 * 60 * 60 * 72,
     status: 'approved',
   },
   {
     id: 'part-02',
     campaign_id: 'camp-screenstudio-03',
-    creator_id: 'creator-alex',
+    creator_id: 'creator-demo-sample',
     joined_at: BASE_TIME - 1000 * 60 * 60 * 36,
     status: 'approved',
   }

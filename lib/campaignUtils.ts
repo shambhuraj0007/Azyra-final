@@ -9,7 +9,7 @@ export interface ParseResult {
 }
 
 /**
- * Validates and parses video URLs across TikTok, Instagram Reels, and YouTube Shorts using regex
+ * Validates and parses video URLs across X (Twitter), Instagram Reels, and YouTube Shorts using regex
  */
 export function parseSocialUrl(rawUrl: string): ParseResult {
   if (!rawUrl || typeof rawUrl !== 'string') {
@@ -18,16 +18,16 @@ export function parseSocialUrl(rawUrl: string): ParseResult {
 
   const url = rawUrl.trim();
 
-  // 1. TikTok Patterns
-  // https://www.tiktok.com/@creator/video/733928172918237
-  // https://vm.tiktok.com/ZM8xABC/
-  const tiktokRegex = /(?:tiktok\.com\/@[\w.-]+\/video\/(\d+)|vm\.tiktok\.com\/([A-Za-z0-9_-]+))/i;
-  const tiktokMatch = url.match(tiktokRegex);
-  if (tiktokMatch) {
-    const id = tiktokMatch[1] || tiktokMatch[2];
+  // 1. X (formerly Twitter) Patterns
+  // https://x.com/creator/status/183928172918237
+  // https://twitter.com/creator/status/183928172918237
+  const xRegex = /(?:(?:x|twitter)\.com\/[A-Za-z0-9_]+\/status\/(\d+))/i;
+  const xMatch = url.match(xRegex);
+  if (xMatch) {
+    const id = xMatch[1];
     return {
       isValid: true,
-      platform: 'tiktok',
+      platform: 'x',
       externalId: id,
       normalizedUrl: url,
     };
@@ -61,9 +61,9 @@ export function parseSocialUrl(rawUrl: string): ParseResult {
     };
   }
 
-  // Fallback for general valid web urls that might be shorts
-  if (url.includes('tiktok.com')) {
-    return { isValid: true, platform: 'tiktok', externalId: `tt-${Date.now()}`, normalizedUrl: url };
+  // Fallback for general valid web urls that might be shorts / posts
+  if (url.includes('x.com') || url.includes('twitter.com')) {
+    return { isValid: true, platform: 'x', externalId: `x-${Date.now()}`, normalizedUrl: url };
   }
   if (url.includes('instagram.com')) {
     return { isValid: true, platform: 'instagram', externalId: `ig-${Date.now()}`, normalizedUrl: url };
@@ -74,7 +74,7 @@ export function parseSocialUrl(rawUrl: string): ParseResult {
 
   return {
     isValid: false,
-    error: 'Unsupported link. Must be a valid TikTok, Instagram Reel, or YouTube Short URL.',
+    error: 'Unsupported link. Must be a valid X (Twitter), Instagram Reel, or YouTube Short URL.',
   };
 }
 
@@ -137,11 +137,11 @@ export function formatPlatform(platform: SocialPlatform): {
   badgeBg: string;
 } {
   switch (platform) {
-    case 'tiktok':
-      return { label: 'TikTok', color: 'text-pink-400', badgeBg: 'bg-pink-500/10 border-pink-500/20 text-pink-300' };
+    case 'x':
+      return { label: 'X (Twitter)', color: 'text-textMain', badgeBg: 'bg-surfaceElevated border-borderMuted text-textMain' };
     case 'instagram':
-      return { label: 'Instagram Reels', color: 'text-purple-400', badgeBg: 'bg-purple-500/10 border-purple-500/20 text-purple-300' };
+      return { label: 'Instagram Reels', color: 'text-textMain', badgeBg: 'bg-surfaceElevated border-borderMuted text-textMain' };
     case 'youtube_shorts':
-      return { label: 'YouTube Shorts', color: 'text-red-400', badgeBg: 'bg-red-500/10 border-red-500/20 text-red-300' };
+      return { label: 'YouTube Shorts', color: 'text-textMain', badgeBg: 'bg-surfaceElevated border-borderMuted text-textMain' };
   }
 }
