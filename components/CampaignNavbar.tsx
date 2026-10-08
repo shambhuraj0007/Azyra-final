@@ -2,13 +2,13 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { 
-  Trophy, 
-  Megaphone, 
-  Wallet, 
-  Building2, 
-  PlusCircle, 
-  User 
+import {
+  Trophy,
+  Megaphone,
+  Wallet,
+  Building2,
+  PlusCircle,
+  User
 } from 'lucide-react';
 import { useCampaigns } from '../lib/CampaignContext';
 import AzyraLogo from './AzyraLogo';
@@ -49,22 +49,20 @@ export default function CampaignNavbar({
             </span>
             <button
               onClick={() => switchRole('creator')}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-bold transition ${
-                currentUser.role === 'creator'
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-bold transition ${currentUser.role === 'creator'
                   ? 'bg-emeraldAccent text-[#0B0F10] shadow-sm'
                   : 'text-textMuted hover:text-textMain'
-              }`}
+                }`}
             >
               <User className="h-3 w-3" />
               <span>Creator / Clipper</span>
             </button>
             <button
               onClick={() => switchRole('brand')}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-bold transition ${
-                currentUser.role === 'brand'
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-bold transition ${currentUser.role === 'brand'
                   ? 'bg-limeAccent text-[#0B0F10] shadow-sm'
                   : 'text-textMuted hover:text-textMain'
-              }`}
+                }`}
             >
               <Building2 className="h-3 w-3" />
               <span>Brand Sponsor</span>
@@ -86,11 +84,10 @@ export default function CampaignNavbar({
           <nav className="hidden md:flex items-center gap-1.5 text-sm font-heading font-medium">
             <Link
               href="/campaigns"
-              className={`flex items-center gap-2 rounded-xl px-3.5 py-2 transition-colors ${
-                pathname === '/campaigns'
+              className={`flex items-center gap-2 rounded-xl px-3.5 py-2 transition-colors ${pathname === '/campaigns'
                   ? 'bg-surfaceElevated text-limeAccent font-bold border border-borderMuted shadow-sm'
                   : 'text-textMuted hover:bg-surfaceElevated hover:text-textMain'
-              }`}
+                }`}
             >
               <Megaphone className="h-4 w-4 text-emeraldAccent" />
               Campaign Marketplace
@@ -98,11 +95,10 @@ export default function CampaignNavbar({
 
             <Link
               href="/profile"
-              className={`flex items-center gap-2 rounded-xl px-3.5 py-2 transition-colors relative ${
-                pathname === '/profile'
+              className={`flex items-center gap-2 rounded-xl px-3.5 py-2 transition-colors relative ${pathname === '/profile'
                   ? 'bg-surfaceElevated text-limeAccent font-bold border border-borderMuted shadow-sm'
                   : 'text-textMuted hover:bg-surfaceElevated hover:text-textMain'
-              }`}
+                }`}
             >
               <User className="h-4 w-4" />
               <span>Profile</span>
@@ -113,11 +109,10 @@ export default function CampaignNavbar({
 
             <Link
               href="/"
-              className={`flex items-center gap-2 rounded-xl px-3.5 py-2 transition-colors ${
-                pathname === '/'
+              className={`flex items-center gap-2 rounded-xl px-3.5 py-2 transition-colors ${pathname === '/'
                   ? 'bg-surfaceElevated text-limeAccent font-bold border border-borderMuted shadow-sm'
                   : 'text-textMuted hover:bg-surfaceElevated hover:text-textMain'
-              }`}
+                }`}
             >
               <Trophy className="h-4 w-4 text-limeAccent" />
               Azyra Leaderboard

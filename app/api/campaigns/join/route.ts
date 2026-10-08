@@ -68,8 +68,9 @@ export async function POST(request: NextRequest) {
 
     // Update user's joinedCampaignIds
     if (user) {
-      if (!user.joinedCampaignIds.includes(campaignId)) {
-        user.joinedCampaignIds.push(campaignId);
+      const currentJoined: string[] = user.joinedCampaignIds || [];
+      if (!currentJoined.includes(campaignId)) {
+        user.joinedCampaignIds = [...currentJoined, campaignId];
         await user.save();
       }
     }

@@ -1,7 +1,10 @@
-import NextAuth from "next-auth"
-import GoogleProvider from "next-auth/providers/google"
-import { connectToDatabase } from "./lib/mongodb"
-import User from "./models/User"
+import NextAuth from "next-auth";
+import GoogleProvider from "next-auth/providers/google";
+import CredentialsProvider from "next-auth/providers/credentials";
+import bcrypt from "bcryptjs";
+import { connectToDatabase } from "./lib/mongodb";
+import User from "./models/User";
+import { cookies } from "next/headers";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
@@ -9,49 +12,132 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       clientId: process.env.GOOGLE_CLIENT_ID || '',
       clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
     }),
+    CredentialsProvider({
+      name: "Credentials",
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
+      },
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) {
+          throw new Error("Email and password are required.");
+        }
+
+        await connectToDatabase();
+        const normalizedEmail = (credentials.email as string).toLowerCase().trim();
+
+        // Retrieve user including password fields
+        const user = await User.findOne({ email: normalizedEmail }).select("+password +passwordHash +passwordSalt");
+
+        if (!user) {
+          throw new Error("No account found with this email address.");
+        }
+
+        let isValid = false;
+        if (user.password) {
+          isValid = await bcrypt.compare(credentials.password as string, user.password);
+        } else if (user.passwordHash && user.passwordSalt) {
+          const { verifyPassword } = await import("./lib/auth");
+          isValid = verifyPassword(credentials.password as string, user.passwordHash, user.passwordSalt);
+        }
+
+        if (!isValid) {
+          throw new Error("Invalid password.");
+        }
+
+        return {
+          id: user._id.toString(),
+          email: user.email,
+          name: user.name || "",
+          image: user.image || "",
+          role: user.role || "creator",
+          isProfileSetup: Boolean(user.isProfileSetup),
+          creatorStatus: user.creatorStatus || "none",
+          handle: user.handle || "",
+        };
+      },
+    }),
   ],
   callbacks: {
-    async signIn({ user, account, profile }) {
+    async signIn({ user, account }) {
       if (account?.provider === 'google') {
         await connectToDatabase();
-        
-        await User.updateOne(
-          { googleId: user.id },
-          {
-            $setOnInsert: {
-              googleId: user.id,
-              email: user.email,
-              name: user.name,
-              image: user.image,
-              role: "brand",
-              creatorStatus: "none",
-              publicProfileEnabled: false,
-              handle: null,
-              createdAt: new Date()
-            },
-            $set: { updatedAt: new Date() }
-          },
-          { upsert: true }
-        );
+
+        let desiredRole: 'creator' | 'brand' = 'creator';
+        try {
+          const cookieStore = await cookies();
+          const roleCookie = cookieStore.get('auth_role')?.value;
+          if (roleCookie === 'brand' || roleCookie === 'creator') {
+            desiredRole = roleCookie;
+          }
+        } catch {
+          // ignore if cookies are inaccessible in this context
+        }
+
+        const normalizedEmail = user.email?.toLowerCase();
+        let dbUser = await User.findOne({
+          $or: [
+            { googleId: user.id },
+            ...(normalizedEmail ? [{ email: normalizedEmail }] : []),
+          ],
+        });
+
+        if (!dbUser) {
+          await User.create({
+            googleId: user.id,
+            email: normalizedEmail,
+            name: user.name || '',
+            image: user.image || '',
+            role: desiredRole,
+            isProfileSetup: false,
+            creatorStatus: 'none',
+            wallet_balance: 0,
+            total_earned: 0,
+            total_views_generated: 0,
+            joinedCampaignIds: [],
+          });
+        } else {
+          const updateData: any = { updatedAt: new Date() };
+          if (!dbUser.googleId && user.id) {
+            updateData.googleId = user.id;
+          }
+          if (!dbUser.image && user.image) {
+            updateData.image = user.image;
+          }
+          if (!dbUser.name && user.name) {
+            updateData.name = user.name;
+          }
+          await User.updateOne({ _id: dbUser._id }, { $set: updateData });
+        }
         return true;
       }
+
+      if (account?.provider === 'credentials') {
+        return true;
+      }
+
       return false;
     },
     async jwt({ token, user, account }) {
-      if (account && user) {
-        await connectToDatabase();
-        const dbUser = await User.findOne({ googleId: user.id });
+      await connectToDatabase();
+
+      if (user) {
+        token.dbId = (user as any).id || (user as any)._id?.toString() || token.sub;
+        token.role = (user as any).role || "creator";
+        token.isProfileSetup = Boolean((user as any).isProfileSetup);
+        token.creatorStatus = (user as any).creatorStatus || "none";
+        token.handle = (user as any).handle || "";
+      } else if (token.dbId || token.email) {
+        const dbUser = token.dbId
+          ? await User.findById(token.dbId)
+          : await User.findOne({ email: token.email?.toLowerCase() });
+
         if (dbUser) {
-          token.role = dbUser.role;
-          token.creatorStatus = dbUser.creatorStatus;
           token.dbId = dbUser._id.toString();
-        }
-      } else if (token.dbId) {
-        await connectToDatabase();
-        const dbUser = await User.findById(token.dbId);
-        if (dbUser) {
           token.role = dbUser.role;
           token.creatorStatus = dbUser.creatorStatus;
+          token.isProfileSetup = Boolean(dbUser.isProfileSetup);
+          token.handle = dbUser.handle || "";
         }
       }
       return token;
@@ -60,10 +146,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (token && session.user) {
         session.user.role = token.role as string;
         session.user.creatorStatus = token.creatorStatus as string;
-        session.user.id = token.dbId as string;
+        session.user.isProfileSetup = Boolean(token.isProfileSetup);
+        session.user.handle = (token.handle as string) || "";
+        session.user.id = (token.dbId as string) || token.sub;
       }
       return session;
-    }
+    },
   },
   session: {
     strategy: "jwt",

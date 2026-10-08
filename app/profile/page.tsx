@@ -2,24 +2,24 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { 
-  User, 
-  Settings, 
-  CheckCircle2, 
-  AlertCircle, 
-  DollarSign, 
-  Video, 
-  Layers, 
-  Share2, 
-  CreditCard, 
-  ExternalLink, 
-  ArrowRight, 
-  ShieldCheck, 
-  Sparkles, 
-  LogOut, 
-  Save, 
-  Clock, 
-  Eye, 
+import {
+  User,
+  Settings,
+  CheckCircle2,
+  AlertCircle,
+  DollarSign,
+  Video,
+  Layers,
+  Share2,
+  CreditCard,
+  ExternalLink,
+  ArrowRight,
+  ShieldCheck,
+  Sparkles,
+  LogOut,
+  Save,
+  Clock,
+  Eye,
   AtSign,
   TrendingUp,
   RefreshCw
@@ -31,16 +31,16 @@ import { SocialPlatform } from '../../lib/types';
 import { formatPlatform } from '../../lib/campaignUtils';
 
 export default function ProfilePage() {
-  const { 
-    currentUser, 
-    switchRole, 
-    campaigns, 
-    submissions, 
-    isJoined, 
-    saveProfile, 
-    login, 
-    logout, 
-    openSetupModal 
+  const {
+    currentUser,
+    switchRole,
+    campaigns,
+    submissions,
+    isJoined,
+    saveProfile,
+    login,
+    logout,
+    openSetupModal
   } = useCampaigns();
 
   const [activeTab, setActiveTab] = useState<'details' | 'campaigns' | 'clips' | 'wallet'>('details');
@@ -112,7 +112,7 @@ export default function ProfilePage() {
       <Navbar />
 
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 py-8 space-y-8">
-        
+
         {/* PROMPT BANNER: If not logged in or profile setup pending */}
         {!currentUser?.isLoggedIn ? (
           <div className="rounded-2xl bg-amber-950/40 border border-amber-500/40 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -285,11 +285,10 @@ export default function ProfilePage() {
         <div className="flex border-b border-borderMuted gap-2">
           <button
             onClick={() => setActiveTab('details')}
-            className={`flex items-center gap-2 pb-3 px-3 text-xs sm:text-sm font-heading font-bold border-b-2 transition ${
-              activeTab === 'details'
+            className={`flex items-center gap-2 pb-3 px-3 text-xs sm:text-sm font-heading font-bold border-b-2 transition ${activeTab === 'details'
                 ? 'border-limeAccent text-limeAccent'
                 : 'border-transparent text-textMuted hover:text-textMain'
-            }`}
+              }`}
           >
             <Settings className="h-4 w-4" />
             <span>Profile & Social Settings</span>
@@ -297,11 +296,10 @@ export default function ProfilePage() {
 
           <button
             onClick={() => setActiveTab('campaigns')}
-            className={`flex items-center gap-2 pb-3 px-3 text-xs sm:text-sm font-heading font-bold border-b-2 transition ${
-              activeTab === 'campaigns'
+            className={`flex items-center gap-2 pb-3 px-3 text-xs sm:text-sm font-heading font-bold border-b-2 transition ${activeTab === 'campaigns'
                 ? 'border-limeAccent text-limeAccent'
                 : 'border-transparent text-textMuted hover:text-textMain'
-            }`}
+              }`}
           >
             <Layers className="h-4 w-4" />
             <span>My Joined Campaigns ({joinedCampaignsList.length})</span>
@@ -309,11 +307,10 @@ export default function ProfilePage() {
 
           <button
             onClick={() => setActiveTab('clips')}
-            className={`flex items-center gap-2 pb-3 px-3 text-xs sm:text-sm font-heading font-bold border-b-2 transition ${
-              activeTab === 'clips'
+            className={`flex items-center gap-2 pb-3 px-3 text-xs sm:text-sm font-heading font-bold border-b-2 transition ${activeTab === 'clips'
                 ? 'border-limeAccent text-limeAccent'
                 : 'border-transparent text-textMuted hover:text-textMain'
-            }`}
+              }`}
           >
             <Video className="h-4 w-4" />
             <span>Submitted Clips ({userSubmissions.length})</span>
@@ -334,11 +331,10 @@ export default function ProfilePage() {
 
             {feedbackMsg && (
               <div
-                className={`rounded-xl p-3.5 text-xs flex items-center gap-2 border ${
-                  feedbackMsg.type === 'success'
+                className={`rounded-xl p-3.5 text-xs flex items-center gap-2 border ${feedbackMsg.type === 'success'
                     ? 'bg-surfaceElevated border-emeraldAccent/40 text-emeraldAccent'
                     : 'bg-red-950/60 border-red-500/40 text-red-200'
-                }`}
+                  }`}
               >
                 {feedbackMsg.type === 'success' ? (
                   <CheckCircle2 className="h-4 w-4 text-emeraldAccent shrink-0" />
@@ -422,11 +418,10 @@ export default function ProfilePage() {
                       key={p.id}
                       type="button"
                       onClick={() => setPrimaryPlatform(p.id as any)}
-                      className={`rounded-xl px-3 py-2 text-xs font-heading font-bold border transition ${
-                        primaryPlatform === p.id
+                      className={`rounded-xl px-3 py-2 text-xs font-heading font-bold border transition ${primaryPlatform === p.id
                           ? 'bg-limeAccent text-[#0B0F10] border-limeAccent'
                           : 'bg-surfaceElevated border-borderMuted text-textMuted hover:text-textMain'
-                      }`}
+                        }`}
                     >
                       {p.label}
                     </button>
@@ -491,11 +486,10 @@ export default function ProfilePage() {
                       key={m.id}
                       type="button"
                       onClick={() => setPayoutType(m.id as any)}
-                      className={`rounded-xl px-3 py-2 text-xs font-heading font-bold border transition ${
-                        payoutType === m.id
+                      className={`rounded-xl px-3 py-2 text-xs font-heading font-bold border transition ${payoutType === m.id
                           ? 'bg-surfaceElevated border-limeAccent text-limeAccent'
                           : 'bg-surfaceElevated/50 border-borderMuted text-textMuted hover:text-textMain'
-                      }`}
+                        }`}
                     >
                       {m.label}
                     </button>
@@ -509,8 +503,8 @@ export default function ProfilePage() {
                       payoutType === 'stripe'
                         ? 'Stripe account ID (e.g. acct_1Nzk98WhopConnect)'
                         : payoutType === 'paypal'
-                        ? 'paypal-recipient@example.com'
-                        : 'Solana or Ethereum wallet address'
+                          ? 'paypal-recipient@example.com'
+                          : 'Solana or Ethereum wallet address'
                     }
                     value={payoutIdentifier}
                     onChange={(e) => setPayoutIdentifier(e.target.value)}
@@ -723,11 +717,10 @@ export default function ProfilePage() {
                           </td>
                           <td className="py-3 px-3 text-right">
                             <span
-                              className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
-                                sub.verification_status === 'active' || sub.verification_status === 'paid'
+                              className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${sub.verification_status === 'active' || sub.verification_status === 'paid'
                                   ? 'bg-emerald-950/60 text-emeraldAccent border border-emerald-500/30'
                                   : 'bg-surfaceElevated text-textMuted border border-borderMuted'
-                              }`}
+                                }`}
                             >
                               {sub.verification_status}
                             </span>

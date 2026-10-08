@@ -28,11 +28,10 @@ export default function Navbar({ onOpenBidModal, totalVolume, totalProducts }: N
           <nav className="hidden md:flex items-center gap-1.5 text-sm font-medium">
             <Link
               href="/"
-              className={`flex items-center gap-2 rounded-xl px-3.5 py-2 font-heading transition-colors ${
-                pathname === '/'
+              className={`flex items-center gap-2 rounded-xl px-3.5 py-2 font-heading transition-colors ${pathname === '/'
                   ? 'bg-surfaceElevated text-limeAccent font-bold border border-borderMuted shadow-sm'
                   : 'text-textMuted hover:bg-surfaceElevated hover:text-textMain'
-              }`}
+                }`}
             >
               <Trophy className="h-4 w-4" />
               Leaderboard
@@ -40,11 +39,10 @@ export default function Navbar({ onOpenBidModal, totalVolume, totalProducts }: N
 
             <Link
               href="/campaigns"
-              className={`flex items-center gap-2 rounded-xl px-3.5 py-2 font-heading transition-colors ${
-                pathname.startsWith('/campaigns')
+              className={`flex items-center gap-2 rounded-xl px-3.5 py-2 font-heading transition-colors ${pathname.startsWith('/campaigns')
                   ? 'bg-surfaceElevated text-limeAccent font-bold border border-borderMuted shadow-sm'
                   : 'text-textMuted hover:bg-surfaceElevated hover:text-textMain'
-              }`}
+                }`}
             >
               <Megaphone className="h-4 w-4 text-emeraldAccent" />
               Creator Campaigns
@@ -55,11 +53,10 @@ export default function Navbar({ onOpenBidModal, totalVolume, totalProducts }: N
 
             <Link
               href="/profile"
-              className={`flex items-center gap-2 rounded-xl px-3.5 py-2 font-heading transition-colors relative ${
-                pathname === '/profile'
+              className={`flex items-center gap-2 rounded-xl px-3.5 py-2 font-heading transition-colors relative ${pathname === '/profile'
                   ? 'bg-surfaceElevated text-limeAccent font-bold border border-borderMuted shadow-sm'
                   : 'text-textMuted hover:bg-surfaceElevated hover:text-textMain'
-              }`}
+                }`}
             >
               <User className="h-4 w-4 text-textMain" />
               Profile

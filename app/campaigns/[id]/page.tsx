@@ -3,27 +3,27 @@
 import { useState, useMemo, use, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { 
-  Megaphone, 
-  Sparkles, 
-  Trophy, 
-  FolderDown, 
-  CheckCircle2, 
-  ExternalLink, 
-  ArrowLeft, 
-  Clock, 
-  Send, 
-  Video, 
-  AlertCircle, 
-  Copy, 
-  Check, 
-  Eye, 
-  DollarSign, 
-  TrendingUp, 
-  RefreshCw, 
-  ShieldCheck, 
-  PauseCircle, 
-  PlayCircle, 
+import {
+  Megaphone,
+  Sparkles,
+  Trophy,
+  FolderDown,
+  CheckCircle2,
+  ExternalLink,
+  ArrowLeft,
+  Clock,
+  Send,
+  Video,
+  AlertCircle,
+  Copy,
+  Check,
+  Eye,
+  DollarSign,
+  TrendingUp,
+  RefreshCw,
+  ShieldCheck,
+  PauseCircle,
+  PlayCircle,
   Archive,
   BarChart3,
   Flame,
@@ -46,16 +46,16 @@ function CampaignWorkspaceContent({ params }: PageProps) {
   const campaignId = resolvedParams.id;
   const router = useRouter();
 
-  const { 
-    currentUser, 
-    campaigns, 
-    submissions, 
-    isJoined, 
-    joinCampaign, 
+  const {
+    currentUser,
+    campaigns,
+    submissions,
+    isJoined,
+    joinCampaign,
     openSetupModal,
-    submitClip, 
+    submitClip,
     simulateViewGrowth,
-    toggleCampaignStatus 
+    toggleCampaignStatus
   } = useCampaigns();
 
   const [copiedTag, setCopiedTag] = useState<string | null>(null);
@@ -153,11 +153,10 @@ function CampaignWorkspaceContent({ params }: PageProps) {
 
           <div className="flex items-center gap-2">
             <span
-              className={`rounded-full px-3 py-1 text-xs font-mono font-bold uppercase tracking-wider border ${
-                campaign.status === 'active'
+              className={`rounded-full px-3 py-1 text-xs font-mono font-bold uppercase tracking-wider border ${campaign.status === 'active'
                   ? 'bg-emeraldAccent/15 text-emeraldAccent border-emeraldAccent/30'
                   : 'bg-limeAccent/15 text-limeAccent border-limeAccent/30'
-              }`}
+                }`}
             >
               Status: {campaign.status.replace('_', ' ')}
             </span>

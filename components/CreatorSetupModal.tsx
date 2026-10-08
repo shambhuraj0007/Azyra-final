@@ -1,14 +1,14 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { 
-  X, 
-  Sparkles, 
-  UserCheck, 
-  ArrowRight, 
-  CheckCircle2, 
-  AlertCircle, 
-  DollarSign, 
+import {
+  X,
+  Sparkles,
+  UserCheck,
+  ArrowRight,
+  CheckCircle2,
+  AlertCircle,
+  DollarSign,
   CreditCard,
   AtSign,
   Globe,
@@ -19,14 +19,14 @@ import { SocialPlatform } from '../lib/types';
 import Link from 'next/link';
 
 export default function CreatorSetupModal() {
-  const { 
-    currentUser, 
-    isSetupModalOpen, 
-    closeSetupModal, 
-    pendingCampaignId, 
-    saveProfile, 
+  const {
+    currentUser,
+    isSetupModalOpen,
+    closeSetupModal,
+    pendingCampaignId,
+    saveProfile,
     login,
-    campaigns 
+    campaigns
   } = useCampaigns();
 
   const [step, setStep] = useState<'login' | 'setup'>('login');
@@ -40,7 +40,7 @@ export default function CreatorSetupModal() {
   const [youtubeLink, setYoutubeLink] = useState('');
   const [payoutType, setPayoutType] = useState<'stripe' | 'paypal' | 'crypto'>('stripe');
   const [payoutIdentifier, setPayoutIdentifier] = useState('');
-  
+
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -181,11 +181,10 @@ export default function CreatorSetupModal() {
           <button
             type="button"
             onClick={() => setStep('login')}
-            className={`flex-1 rounded-lg py-1.5 text-xs font-heading font-bold transition text-center ${
-              step === 'login'
-                ? 'bg-limeAccent text-[#0B0F10] shadow-sm'
-                : 'text-textMuted hover:text-textMain'
-            }`}
+            className={`flex-1 rounded-lg py-1.5 text-xs font-heading font-bold transition text-center ${step === 'login'
+              ? 'bg-limeAccent text-[#0B0F10] shadow-sm'
+              : 'text-textMuted hover:text-textMain'
+              }`}
           >
             1. Sign In / Register
           </button>
@@ -197,11 +196,10 @@ export default function CreatorSetupModal() {
               }
               setStep('setup');
             }}
-            className={`flex-1 rounded-lg py-1.5 text-xs font-heading font-bold transition text-center ${
-              step === 'setup'
-                ? 'bg-limeAccent text-[#0B0F10] shadow-sm'
-                : 'text-textMuted hover:text-textMain'
-            }`}
+            className={`flex-1 rounded-lg py-1.5 text-xs font-heading font-bold transition text-center ${step === 'setup'
+              ? 'bg-limeAccent text-[#0B0F10] shadow-sm'
+              : 'text-textMuted hover:text-textMain'
+              }`}
           >
             2. Creator Profile Setup
           </button>
@@ -360,11 +358,10 @@ export default function CreatorSetupModal() {
                     key={p.id}
                     type="button"
                     onClick={() => setPrimaryPlatform(p.id as any)}
-                    className={`rounded-xl px-2.5 py-2 text-xs font-heading font-bold border text-center transition ${
-                      primaryPlatform === p.id
-                        ? 'bg-limeAccent text-[#0B0F10] border-limeAccent'
-                        : 'bg-surfaceElevated border-borderMuted text-textMuted hover:text-textMain'
-                    }`}
+                    className={`rounded-xl px-2.5 py-2 text-xs font-heading font-bold border text-center transition ${primaryPlatform === p.id
+                      ? 'bg-limeAccent text-[#0B0F10] border-limeAccent'
+                      : 'bg-surfaceElevated border-borderMuted text-textMuted hover:text-textMain'
+                      }`}
                   >
                     {p.label}
                   </button>
@@ -415,11 +412,10 @@ export default function CreatorSetupModal() {
                     key={m.id}
                     type="button"
                     onClick={() => setPayoutType(m.id as any)}
-                    className={`rounded-xl px-2 py-1.5 text-xs font-heading font-semibold border text-center transition ${
-                      payoutType === m.id
-                        ? 'bg-surfaceElevated border-limeAccent text-limeAccent'
-                        : 'bg-surfaceElevated/50 border-borderMuted text-textMuted hover:text-textMain'
-                    }`}
+                    className={`rounded-xl px-2 py-1.5 text-xs font-heading font-semibold border text-center transition ${payoutType === m.id
+                      ? 'bg-surfaceElevated border-limeAccent text-limeAccent'
+                      : 'bg-surfaceElevated/50 border-borderMuted text-textMuted hover:text-textMain'
+                      }`}
                   >
                     {m.label}
                   </button>
@@ -432,8 +428,8 @@ export default function CreatorSetupModal() {
                   payoutType === 'stripe'
                     ? 'Stripe account ID or email (e.g. acct_1234...)'
                     : payoutType === 'paypal'
-                    ? 'paypal-recipient@example.com'
-                    : 'Solana or Ethereum wallet public key'
+                      ? 'paypal-recipient@example.com'
+                      : 'Solana or Ethereum wallet public key'
                 }
                 value={payoutIdentifier}
                 onChange={(e) => setPayoutIdentifier(e.target.value)}
@@ -459,8 +455,8 @@ export default function CreatorSetupModal() {
                   {isLoading
                     ? 'Saving to Database...'
                     : targetCampaign
-                    ? 'Save & Join Campaign'
-                    : 'Save Creator Profile'}
+                      ? 'Save & Join Campaign'
+                      : 'Save Creator Profile'}
                 </span>
                 <CheckCircle2 className="h-4 w-4" />
               </button>
