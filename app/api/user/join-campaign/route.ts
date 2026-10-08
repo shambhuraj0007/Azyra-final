@@ -34,8 +34,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Add campaignId if not already present
-    if (!user.joinedCampaignIds.includes(campaignId)) {
-      user.joinedCampaignIds.push(campaignId);
+    const currentJoined: string[] = user.joinedCampaignIds || [];
+    if (!currentJoined.includes(campaignId)) {
+      user.joinedCampaignIds = [...currentJoined, campaignId];
       user.updatedAt = new Date();
       await user.save();
     }

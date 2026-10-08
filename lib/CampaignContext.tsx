@@ -2,21 +2,21 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { 
-  Campaign, 
-  ClipSubmission, 
-  UserProfile, 
-  CampaignParticipant, 
+import {
+  Campaign,
+  ClipSubmission,
+  UserProfile,
+  CampaignParticipant,
   UserRole,
-  SocialPlatform 
+  SocialPlatform
 } from './types';
-import { 
+import {
   GUEST_USER,
-  INITIAL_CREATOR, 
-  INITIAL_BRAND, 
-  INITIAL_MARKETPLACE_CAMPAIGNS, 
-  INITIAL_SUBMISSIONS, 
-  INITIAL_PARTICIPANTS 
+  INITIAL_CREATOR,
+  INITIAL_BRAND,
+  INITIAL_MARKETPLACE_CAMPAIGNS,
+  INITIAL_SUBMISSIONS,
+  INITIAL_PARTICIPANTS
 } from './campaignStore';
 import { parseSocialUrl, calculateClipPayout } from './campaignUtils';
 import { triggerConfetti } from './confetti';
@@ -29,10 +29,10 @@ interface CampaignContextType {
   submissions: ClipSubmission[];
   participants: CampaignParticipant[];
   isJoined: (campaignId: string) => boolean;
-  joinCampaign: (campaignId: string) => { 
-    success: boolean; 
-    reason?: 'AUTH_REQUIRED' | 'SETUP_REQUIRED'; 
-    message?: string 
+  joinCampaign: (campaignId: string) => {
+    success: boolean;
+    reason?: 'AUTH_REQUIRED' | 'SETUP_REQUIRED';
+    message?: string
   };
   isSetupModalOpen: boolean;
   pendingCampaignId: string | null;
@@ -117,9 +117,9 @@ export function CampaignProvider({ children }: { children: React.ReactNode }) {
               isProfileSetup: dbUser.creatorStatus === 'approved',
               primaryPlatform: dbUser.profile?.links?.[0]?.platform?.toLowerCase() || 'x',
               socialLinks: {
-                x: dbUser.profile?.links?.find((l:any) => l.platform === 'X')?.url || '',
-                instagram: dbUser.profile?.links?.find((l:any) => l.platform === 'Instagram')?.url || '',
-                youtube: dbUser.profile?.links?.find((l:any) => l.platform === 'YouTube')?.url || '',
+                x: dbUser.profile?.links?.find((l: any) => l.platform === 'X')?.url || '',
+                instagram: dbUser.profile?.links?.find((l: any) => l.platform === 'Instagram')?.url || '',
+                youtube: dbUser.profile?.links?.find((l: any) => l.platform === 'YouTube')?.url || '',
               },
               payoutMethod: { type: 'stripe', accountIdentifier: '' },
               wallet_balance: dbUser.wallet_balance ?? 0,
@@ -330,8 +330,8 @@ export function CampaignProvider({ children }: { children: React.ReactNode }) {
   };
 
   const switchRole = (role: UserRole) => {
-    const newUser: UserProfile = role === 'creator' 
-      ? { ...currentUser, role: 'creator' } 
+    const newUser: UserProfile = role === 'creator'
+      ? { ...currentUser, role: 'creator' }
       : { ...INITIAL_BRAND, isLoggedIn: true, isProfileSetup: true };
     setCurrentUser(newUser);
     saveStorage(newUser);
@@ -346,10 +346,10 @@ export function CampaignProvider({ children }: { children: React.ReactNode }) {
     );
   };
 
-  const joinCampaign = (campaignId: string): { 
-    success: boolean; 
-    reason?: 'AUTH_REQUIRED' | 'SETUP_REQUIRED'; 
-    message?: string 
+  const joinCampaign = (campaignId: string): {
+    success: boolean;
+    reason?: 'AUTH_REQUIRED' | 'SETUP_REQUIRED';
+    message?: string
   } => {
     // 1. Check if user is logged in -> go directly to dedicated login page!
     if (!currentUser.isLoggedIn) {
@@ -357,10 +357,10 @@ export function CampaignProvider({ children }: { children: React.ReactNode }) {
         const redirectPath = window.location.pathname;
         window.location.href = `/login?redirect=${encodeURIComponent(redirectPath)}&join=${campaignId}`;
       }
-      return { 
-        success: false, 
+      return {
+        success: false,
         reason: 'AUTH_REQUIRED',
-        message: 'Please sign in or register to join this creator campaign.' 
+        message: 'Please sign in or register to join this creator campaign.'
       };
     }
 
@@ -368,10 +368,10 @@ export function CampaignProvider({ children }: { children: React.ReactNode }) {
     if (!currentUser.isProfileSetup) {
       setPendingCampaignId(campaignId);
       setIsSetupModalOpen(true);
-      return { 
-        success: false, 
+      return {
+        success: false,
         reason: 'SETUP_REQUIRED',
-        message: 'Please complete your creator profile setup to join campaigns.' 
+        message: 'Please complete your creator profile setup to join campaigns.'
       };
     }
 

@@ -1,184 +1,651 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, Suspense, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { signIn } from 'next-auth/react';
+import { signIn, useSession } from 'next-auth/react';
 import {
-  Sparkles,
-  DollarSign,
-  Video,
   ShieldCheck,
-  ArrowLeft
+  Video,
+  Trophy,
+  DollarSign,
+  Eye,
+  EyeOff,
+  AlertCircle,
+  Mail,
+  Lock,
+  User,
+  Building2,
+  Users,
+  ArrowRight,
 } from 'lucide-react';
 import AzyraLogo from '@/components/AzyraLogo';
 import { useCampaigns } from '@/lib/CampaignContext';
 
+/* ─── Design Tokens (aligned with globals.css) ─────────────────────── */
+const TOKEN = {
+  bg: '#0B0F10',
+  surface: '#141C1E',
+  surfaceEl: '#1B2427',
+  border: 'rgba(255,255,255,0.07)',
+  borderMuted: '#223033',
+  textPrimary: '#F3F7F6',
+  textMuted: '#8E9D9E',
+  lime: '#D4F63C',
+};
+
+/* ─── Left-Panel Content per Role ─────────────────────────────────── */
+const PANEL_CONTENT = {
+  creator: {
+    bullets: [
+      { icon: <DollarSign className="h-3.5 w-3.5" />, text: 'Escrow-protected payouts' },
+      { icon: <Video className="h-3.5 w-3.5" />, text: 'Multi-platform tracking' },
+      { icon: <ShieldCheck className="h-3.5 w-3.5" />, text: 'Automated fraud detection' },
+    ],
+  },
+  brand: {
+    bullets: [
+      { icon: <DollarSign className="h-3.5 w-3.5" />, text: 'Funds held in escrow' },
+      { icon: <ShieldCheck className="h-3.5 w-3.5" />, text: 'Verified view tracking' },
+      { icon: <Trophy className="h-3.5 w-3.5" />, text: 'Leaderboard of top clippers' },
+    ],
+  },
+};
+
+/* ─── Google SVG ───────────────────────────────────────────────────── */
+function GoogleIcon() {
+  return (
+    <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
+      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+    </svg>
+  );
+}
+
+/* ─── Main Auth Content ────────────────────────────────────────────── */
 function AuthContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { data: session, status } = useSession();
   const { currentUser, campaigns, joinCampaign } = useCampaigns();
 
-  const redirectUrl = searchParams.get('redirect') || '/';
+  const urlMode = searchParams.get('mode');
+  const urlRole = searchParams.get('role');
   const joinCampaignId = searchParams.get('join') || null;
-  const targetCampaign = joinCampaignId ? campaigns.find((c) => c.id === joinCampaignId) : null;
+  const redirectUrl =
+    searchParams.get('redirect') ||
+    (joinCampaignId ? `/campaigns/${joinCampaignId}` : '/campaigns');
+
+  const [mode, setMode] = useState<'signin' | 'signup'>(
+    urlMode === 'signup' ? 'signup' : 'signin'
+  );
+  const [role, setRole] = useState<'creator' | 'brand'>(
+    urlRole === 'brand' ? 'brand' : 'creator'
+  );
+
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [companyName, setCompanyName] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  const targetCampaign = useMemo(
+    () => (joinCampaignId ? campaigns.find((c) => c.id === joinCampaignId) : null),
+    [joinCampaignId, campaigns]
+  );
+
+  /* Guard redirect after auth */
   useEffect(() => {
-    if (currentUser?.isLoggedIn) {
-      if (joinCampaignId) {
-        joinCampaign(joinCampaignId);
-      }
-      router.push(redirectUrl);
-    }
-  }, [currentUser, redirectUrl, joinCampaignId, router, joinCampaign]);
+    const isAuthed = status === 'authenticated' || currentUser?.isLoggedIn;
+    if (!isAuthed) return;
 
+    const isProfileSetup =
+      currentUser?.isProfileSetup ?? Boolean((session?.user as any)?.isProfileSetup);
+    const userRole = currentUser?.role || (session?.user as any)?.role || role;
+
+    if (userRole === 'creator' && !isProfileSetup) {
+      const setupPath = `/profile/setup?${joinCampaignId ? `join=${joinCampaignId}&` : ''}redirect=${encodeURIComponent(redirectUrl)}`;
+      router.push(setupPath);
+      return;
+    }
+
+    if (joinCampaignId && isProfileSetup) {
+      joinCampaign(joinCampaignId);
+    }
+
+    router.push(redirectUrl);
+  }, [status, currentUser, session, role, joinCampaignId, redirectUrl, router, joinCampaign]);
+
+  /* Google OAuth */
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
-    await signIn('google', { callbackUrl: redirectUrl });
+    setErrorMsg(null);
+    try {
+      document.cookie = `auth_role=${role}; path=/; max-age=600; SameSite=Lax`;
+    } catch (e) {
+      console.warn('Cookie set error:', e);
+    }
+    const callbackTarget = `/login?check=1${joinCampaignId ? `&join=${joinCampaignId}` : ''}&redirect=${encodeURIComponent(redirectUrl)}&role=${role}`;
+    await signIn('google', { callbackUrl: callbackTarget });
   };
 
+  /* Email / Password Submit */
+  const handleEmailAuthSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg(null);
+
+    if (!email.trim() || !password) {
+      setErrorMsg('Please enter both email and password.');
+      return;
+    }
+
+    if (mode === 'signup') {
+      if (!name.trim()) {
+        setErrorMsg('Please enter your full name.');
+        return;
+      }
+      if (password.length < 6) {
+        setErrorMsg('Password must be at least 6 characters long.');
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        const regRes = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: name.trim(),
+            email: email.trim().toLowerCase(),
+            password,
+            role,
+            ...(role === 'brand' && companyName.trim() ? { companyName: companyName.trim() } : {}),
+          }),
+        });
+
+        const regData = await regRes.json();
+        if (!regRes.ok || !regData.success) {
+          setErrorMsg(regData.error || 'Failed to create account.');
+          setIsLoading(false);
+          return;
+        }
+
+        const authRes = await signIn('credentials', {
+          email: email.trim().toLowerCase(),
+          password,
+          redirect: false,
+        });
+
+        if (authRes?.error) {
+          setErrorMsg('Account created, but sign-in failed. Please sign in manually.');
+          setMode('signin');
+          setIsLoading(false);
+          return;
+        }
+
+        router.refresh();
+      } catch (err: any) {
+        console.error('Registration error:', err);
+        setErrorMsg(err.message || 'An error occurred during sign up.');
+        setIsLoading(false);
+      }
+    } else {
+      setIsLoading(true);
+      try {
+        const authRes = await signIn('credentials', {
+          email: email.trim().toLowerCase(),
+          password,
+          redirect: false,
+        });
+
+        if (authRes?.error) {
+          setErrorMsg('Invalid email or password. Please try again.');
+          setIsLoading(false);
+          return;
+        }
+
+        router.refresh();
+      } catch (err: any) {
+        console.error('Sign-in error:', err);
+        setErrorMsg(err.message || 'An error occurred during sign in.');
+        setIsLoading(false);
+      }
+    }
+  };
+
+  const bullets = PANEL_CONTENT[role].bullets;
+
+  /* Heading / subline based on mode + role */
+  const heading =
+    mode === 'signin'
+      ? 'Welcome back'
+      : role === 'creator'
+      ? 'Create your creator account'
+      : 'Create your brand account';
+
+  const subline =
+    mode === 'signin'
+      ? 'Sign in to your Azyra account'
+      : role === 'creator'
+      ? 'Earn per 1,000 verified video views'
+      : 'Launch pay-per-view video campaigns';
+
+  const primaryBtnLabel = isLoading
+    ? 'Please wait\u2026'
+    : mode === 'signin'
+    ? 'Sign in'
+    : role === 'creator'
+    ? 'Create creator account'
+    : 'Create brand account';
+
   return (
-    <div className="min-h-screen bg-canvas text-textMain flex flex-col justify-between font-sans selection:bg-limeAccent selection:text-[#0B0F10]">
-      {/* Top Header */}
-      <header className="border-b border-borderMuted bg-surface/85 backdrop-blur-xl px-6 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
+    <div
+      style={{ background: TOKEN.bg, color: TOKEN.textPrimary }}
+      className="min-h-screen flex font-sans selection:bg-limeAccent selection:text-[#0B0F10]"
+    >
+      {/* LEFT PANEL */}
+      <div
+        className="hidden lg:flex lg:w-[420px] xl:w-[480px] flex-col justify-between p-10 shrink-0 border-r"
+        style={{ background: TOKEN.surface, borderColor: TOKEN.border }}
+      >
+        {/* Logo */}
+        <div>
+          <Link href="/" className="inline-block">
             <AzyraLogo size="md" />
           </Link>
-          <Link href="/" className="text-xs font-heading font-semibold text-textMuted hover:text-textMain flex items-center gap-1.5 transition">
-            <ArrowLeft className="h-3.5 w-3.5" />
-            <span>Back to Marketplace</span>
-          </Link>
         </div>
-      </header>
 
-      {/* Main Container */}
-      <main className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-8">
-        <div className="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch rounded-3xl border border-borderMuted bg-surface shadow-2xl overflow-hidden">
-          
-          {/* LEFT VALUE-PROPOSITION HERO PANEL */}
-          <div className="lg:col-span-5 bg-gradient-to-br from-surfaceElevated to-surface p-8 sm:p-10 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-borderMuted relative">
-            <div className="space-y-6">
-              <div className="inline-flex items-center gap-2 rounded-full bg-limeAccent/10 border border-limeAccent/20 px-3 py-1 text-xs font-mono font-bold text-limeAccent">
-                <Sparkles className="h-3.5 w-3.5" />
-                <span>Pure Capital Protocol</span>
-              </div>
-              <div>
-                <h2 className="text-2xl sm:text-3xl font-heading font-bold text-textMain leading-tight">
-                  The Leaderboard & Campaign Network Run by Capital
-                </h2>
-                <p className="text-xs sm:text-sm text-textMuted mt-3 leading-relaxed">
-                  Join top tech founders, product creators, and viral video clippers monetizing short-form attention with automated escrow payouts.
-                </p>
-              </div>
 
-              {/* Value proposition badges */}
-              <div className="space-y-3 pt-2">
-                <div className="flex items-start gap-3 rounded-xl bg-surface p-3.5 border border-borderMuted">
-                  <div className="h-8 w-8 rounded-lg bg-limeAccent/15 text-limeAccent flex items-center justify-center shrink-0">
-                    <DollarSign className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-heading font-bold text-textMain">Guaranteed Escrow Pools</h4>
-                    <p className="text-[11px] text-textMuted mt-0.5">Sponsor campaigns hold secured capital released automatically per 1,000 views.</p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3 rounded-xl bg-surface p-3.5 border border-borderMuted">
-                  <div className="h-8 w-8 rounded-lg bg-emeraldAccent/15 text-emeraldAccent flex items-center justify-center shrink-0">
-                    <Video className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-heading font-bold text-textMain">Multi-Platform Tracking</h4>
-                    <p className="text-[11px] text-textMuted mt-0.5">Automated view polling for X (Twitter), Instagram Reels, and YouTube Shorts.</p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3 rounded-xl bg-surface p-3.5 border border-borderMuted">
-                  <div className="h-8 w-8 rounded-lg bg-surfaceElevated text-limeAccent flex items-center justify-center shrink-0">
-                    <ShieldCheck className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-heading font-bold text-textMain">Zero Manipulation</h4>
-                    <p className="text-[11px] text-textMuted mt-0.5">Pure financial hierarchy. Zero blackbox algorithms or subjective curation.</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            {/* Bottom trust footer */}
-            <div className="pt-8 border-t border-borderMuted flex items-center justify-between text-textMuted font-mono text-[11px]">
-              <span>MongoDB Atlas Cloud</span>
-              <span>•</span>
-              <span className="text-limeAccent font-bold">140+ Clippers</span>
-            </div>
+        {/* Main copy */}
+        <div className="space-y-8">
+          <div className="space-y-3">
+            <h1 className="text-2xl font-heading font-bold leading-snug" style={{ color: TOKEN.textPrimary }}>
+              Short-form campaigns,<br />paid on verified views.
+            </h1>
+            <p className="text-sm font-sans leading-relaxed" style={{ color: TOKEN.textMuted }}>
+              Azyra connects creators and brands through transparent, escrow-backed video campaigns.
+            </p>
           </div>
 
-          {/* RIGHT AUTH FORM PANEL */}
-          <div className="lg:col-span-7 p-8 sm:p-10 flex flex-col justify-center">
-            
-            {/* Target Campaign Banner if referred via Join */}
-            {joinCampaignId && (
-              <div className="mb-6 rounded-2xl bg-gradient-to-r from-limeAccent/15 via-surfaceElevated to-surface p-4 border border-limeAccent/30 shadow-lg">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <span className="text-2xl p-2 rounded-xl bg-canvas border border-borderMuted shrink-0">
-                      {targetCampaign?.brand_logo || '🎬'}
-                    </span>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-limeAccent bg-limeAccent/10 px-2 py-0.5 rounded border border-limeAccent/20">
-                          Auto-Enroll on Sign In
-                        </span>
-                        {targetCampaign?.category && (
-                          <span className="text-[10px] font-heading text-textMuted hidden sm:inline">
-                            {targetCampaign.category}
-                          </span>
-                        )}
-                      </div>
-                      <h3 className="text-sm font-heading font-bold text-textMain truncate mt-1">
-                        {targetCampaign ? targetCampaign.title : 'Selected Campaign'}
-                      </h3>
-                      <p className="text-[11px] text-textMuted mt-0.5">
-                        {targetCampaign 
-                          ? `Earn $${targetCampaign.cpm_rate.toFixed(2)} CPM • Escrow Pool: $${targetCampaign.total_budget.toLocaleString()}`
-                          : 'Sign in or register to join immediately'}
-                      </p>
-                    </div>
-                  </div>
+          {/* Bullet list */}
+          <ul className="space-y-4">
+            {bullets.map((b, i) => (
+              <li key={i} className="flex items-center gap-3">
+                <span
+                  className="flex items-center justify-center h-7 w-7 rounded-lg shrink-0"
+                  style={{ background: 'rgba(212,246,60,0.10)', color: TOKEN.lime }}
+                >
+                  {b.icon}
+                </span>
+                <span className="text-sm font-sans" style={{ color: TOKEN.textPrimary }}>
+                  {b.text}
+                </span>
+              </li>
+            ))}
+          </ul>
+
+          {/* Stat badge */}
+          <div
+            className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs"
+            style={{
+              background: 'rgba(255,255,255,0.04)',
+              border: `1px solid ${TOKEN.border}`,
+              color: TOKEN.textMuted,
+            }}
+          >
+            <Users className="h-3.5 w-3.5" />
+            <span>140+ active clippers</span>
+          </div>
+        </div>
+
+        {/* Bottom spacer */}
+        <div />
+      </div>
+
+      {/* RIGHT PANEL */}
+      <div className="flex-1 flex items-center justify-center p-6">
+        <div className="w-full" style={{ maxWidth: '420px' }}>
+
+          {/* Campaign referral badge */}
+          {joinCampaignId && (
+            <p className="text-xs mb-6 text-center" style={{ color: TOKEN.textMuted }}>
+              Joining{' '}
+              <span style={{ color: TOKEN.textPrimary }}>
+                {targetCampaign ? targetCampaign.title : `Campaign #${joinCampaignId}`}
+              </span>
+              {targetCampaign && (
+                <>
+                  {' \u00b7 '}
+                  <span className="font-mono">${targetCampaign.cpm_rate.toFixed(2)} CPM</span>
+                </>
+              )}
+            </p>
+          )}
+
+          {/* Mode switcher */}
+          <div
+            className="flex rounded-lg p-1 mb-7"
+            style={{ background: TOKEN.surface, border: `1px solid ${TOKEN.border}` }}
+          >
+            {(['signin', 'signup'] as const).map((m) => (
+              <button
+                key={m}
+                type="button"
+                id={`auth-mode-${m}`}
+                onClick={() => { setMode(m); setErrorMsg(null); }}
+                className="flex-1 rounded-md py-2 text-sm transition-all"
+                style={{
+                  background: mode === m ? TOKEN.lime : 'transparent',
+                  color: mode === m ? '#0B0D0E' : TOKEN.textMuted,
+                  fontWeight: mode === m ? 600 : 400,
+                }}
+              >
+                {m === 'signin' ? 'Sign in' : 'Create account'}
+              </button>
+            ))}
+          </div>
+
+          {/* Heading + subline */}
+          <div className="mb-6 space-y-1">
+            <h2 className="text-xl font-heading font-bold" style={{ color: TOKEN.textPrimary }}>
+              {heading}
+            </h2>
+            <p className="text-sm font-sans" style={{ color: TOKEN.textMuted }}>
+              {subline}
+            </p>
+          </div>
+
+          {/* Role segmented control (signup only) */}
+          {mode === 'signup' && (
+            <div
+              className="flex rounded-lg p-1 mb-6"
+              style={{ background: TOKEN.surface, border: `1px solid ${TOKEN.border}` }}
+            >
+              {(['creator', 'brand'] as const).map((r) => (
+                <button
+                  key={r}
+                  type="button"
+                  id={`auth-role-${r}`}
+                  onClick={() => setRole(r)}
+                  className="flex-1 rounded-md py-2 text-sm transition-all capitalize"
+                  style={{
+                    background: role === r ? 'rgba(212,245,60,0.12)' : 'transparent',
+                    color: role === r ? TOKEN.lime : TOKEN.textMuted,
+                    fontWeight: role === r ? 600 : 400,
+                    border: role === r ? '1px solid rgba(212,245,60,0.25)' : '1px solid transparent',
+                  }}
+                >
+                  {r === 'creator' ? 'Creator' : 'Brand'}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Error */}
+          {errorMsg && (
+            <div
+              className="flex items-center gap-2.5 rounded-lg p-3 mb-5 text-sm font-sans"
+              style={{
+                background: 'rgba(239,68,68,0.08)',
+                border: '1px solid rgba(239,68,68,0.25)',
+                color: '#FCA5A5',
+              }}
+            >
+              <AlertCircle className="h-4 w-4 shrink-0 text-red-400" />
+              <span>{errorMsg}</span>
+            </div>
+          )}
+
+          {/* Google sign-in */}
+          <button
+            type="button"
+            id="auth-google-btn"
+            onClick={handleGoogleSignIn}
+            disabled={isLoading}
+            className="w-full flex items-center justify-center gap-2.5 rounded-lg text-sm font-sans font-medium transition mb-4 disabled:opacity-60"
+            style={{
+              height: '44px',
+              background: 'transparent',
+              border: `1px solid ${TOKEN.borderMuted}`,
+              color: TOKEN.textPrimary,
+              borderRadius: '8px',
+            }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.04)'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
+          >
+            <GoogleIcon />
+            <span>Continue with Google</span>
+          </button>
+
+          {/* Divider */}
+          <div className="relative flex items-center gap-3 mb-4">
+            <div className="flex-1 h-px" style={{ background: TOKEN.border }} />
+            <span className="text-xs font-sans" style={{ color: TOKEN.textMuted }}>or</span>
+            <div className="flex-1 h-px" style={{ background: TOKEN.border }} />
+          </div>
+
+          {/* Form */}
+          <form onSubmit={handleEmailAuthSubmit} className="space-y-4">
+            {/* Full Name */}
+            {mode === 'signup' && (
+              <div>
+                <label className="block text-xs font-sans font-medium mb-1.5" style={{ color: TOKEN.textMuted }}>
+                  Full name
+                </label>
+                <div className="relative">
+                  <User
+                    className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none"
+                    style={{ color: TOKEN.textMuted }}
+                  />
+                  <input
+                    id="auth-name"
+                    type="text"
+                    required
+                    placeholder="Alex Rivera"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="w-full pl-9 pr-3 text-sm font-sans outline-none transition"
+                    style={{
+                      height: '44px',
+                      background: TOKEN.surfaceEl,
+                      border: `1px solid ${TOKEN.borderMuted}`,
+                      color: TOKEN.textPrimary,
+                      borderRadius: '8px',
+                    }}
+                    onFocus={(e) => { e.currentTarget.style.borderColor = TOKEN.lime; }}
+                    onBlur={(e) => { e.currentTarget.style.borderColor = TOKEN.borderMuted; }}
+                  />
                 </div>
               </div>
             )}
 
-            <div className="text-center space-y-2 mb-8">
-              <h2 className="text-2xl font-heading font-bold">Welcome to Azyra</h2>
-              <p className="text-sm text-textMuted">Sign in to access the marketplace</p>
+            {/* Company / Brand Name */}
+            {mode === 'signup' && role === 'brand' && (
+              <div>
+                <label className="block text-xs font-sans font-medium mb-1.5" style={{ color: TOKEN.textMuted }}>
+                  Company / brand name
+                </label>
+                <div className="relative">
+                  <Building2
+                    className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none"
+                    style={{ color: TOKEN.textMuted }}
+                  />
+                  <input
+                    id="auth-company"
+                    type="text"
+                    placeholder="Acme Corp"
+                    value={companyName}
+                    onChange={(e) => setCompanyName(e.target.value)}
+                    className="w-full pl-9 pr-3 text-sm font-sans outline-none transition"
+                    style={{
+                      height: '44px',
+                      background: TOKEN.surfaceEl,
+                      border: `1px solid ${TOKEN.borderMuted}`,
+                      color: TOKEN.textPrimary,
+                      borderRadius: '8px',
+                    }}
+                    onFocus={(e) => { e.currentTarget.style.borderColor = TOKEN.lime; }}
+                    onBlur={(e) => { e.currentTarget.style.borderColor = TOKEN.borderMuted; }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Email */}
+            <div>
+              <label className="block text-xs font-sans font-medium mb-1.5" style={{ color: TOKEN.textMuted }}>
+                Email address
+              </label>
+              <div className="relative">
+                <Mail
+                  className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none"
+                  style={{ color: TOKEN.textMuted }}
+                />
+                <input
+                  id="auth-email"
+                  type="email"
+                  required
+                  placeholder="alex@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full pl-9 pr-3 text-sm font-sans outline-none transition"
+                  style={{
+                    height: '44px',
+                    background: TOKEN.surfaceEl,
+                    border: `1px solid ${TOKEN.borderMuted}`,
+                    color: TOKEN.textPrimary,
+                    borderRadius: '8px',
+                  }}
+                  onFocus={(e) => { e.currentTarget.style.borderColor = TOKEN.lime; }}
+                  onBlur={(e) => { e.currentTarget.style.borderColor = TOKEN.borderMuted; }}
+                />
+              </div>
             </div>
 
+            {/* Password + eye toggle */}
+            <div>
+              <label className="block text-xs font-sans font-medium mb-1.5" style={{ color: TOKEN.textMuted }}>
+                Password
+              </label>
+              <div className="relative">
+                <Lock
+                  className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none"
+                  style={{ color: TOKEN.textMuted }}
+                />
+                <input
+                  id="auth-password"
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  placeholder="\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full pl-9 pr-10 text-sm font-sans outline-none transition"
+                  style={{
+                    height: '44px',
+                    background: TOKEN.surfaceEl,
+                    border: `1px solid ${TOKEN.borderMuted}`,
+                    color: TOKEN.textPrimary,
+                    borderRadius: '8px',
+                  }}
+                  onFocus={(e) => { e.currentTarget.style.borderColor = TOKEN.lime; }}
+                  onBlur={(e) => { e.currentTarget.style.borderColor = TOKEN.borderMuted; }}
+                />
+                <button
+                  type="button"
+                  tabIndex={-1}
+                  id="auth-toggle-password"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded transition"
+                  style={{ color: TOKEN.textMuted }}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+
+            {/* Primary CTA */}
             <button
-              onClick={handleGoogleSignIn}
+              id="auth-submit-btn"
+              type="submit"
               disabled={isLoading}
-              className="w-full flex items-center justify-center gap-3 bg-white text-black font-bold py-3 px-4 rounded-xl shadow-md transition hover:bg-gray-100 active:scale-[0.98]"
+              className="w-full flex items-center justify-center gap-2 text-sm font-heading font-bold tracking-tight transition active:scale-[0.98] disabled:opacity-60 mt-2"
+              style={{
+                height: '44px',
+                background: TOKEN.lime,
+                color: '#0B0F10',
+                borderRadius: '8px',
+              }}
             >
-              <svg className="w-5 h-5" viewBox="0 0 24 24">
-                <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-              </svg>
-              <span>{isLoading ? "Signing in..." : "Continue with Google"}</span>
+              <span>{primaryBtnLabel}</span>
+              {!isLoading && <ArrowRight className="h-4 w-4" />}
             </button>
-          </div>
+          </form>
+
+          {/* Terms + toggle */}
+          <p className="mt-5 text-xs font-sans text-center leading-relaxed" style={{ color: TOKEN.textMuted }}>
+            By creating an account you agree to the{' '}
+            <Link href="/terms" className="underline underline-offset-2 hover:opacity-80 transition" style={{ color: TOKEN.textMuted }}>
+              Terms
+            </Link>{' '}
+            and{' '}
+            <Link href="/privacy" className="underline underline-offset-2 hover:opacity-80 transition" style={{ color: TOKEN.textMuted }}>
+              Privacy Policy
+            </Link>
+            .
+          </p>
+
+          <p className="mt-3 text-xs font-sans text-center" style={{ color: TOKEN.textMuted }}>
+            {mode === 'signup' ? (
+              <>
+                Already have an account?{' '}
+                <button
+                  type="button"
+                  id="auth-toggle-mode-signin"
+                  onClick={() => { setMode('signin'); setErrorMsg(null); }}
+                  className="underline underline-offset-2 font-semibold"
+                  style={{ color: TOKEN.textPrimary }}
+                >
+                  Sign in
+                </button>
+              </>
+            ) : (
+              <>
+                Don&apos;t have an account?{' '}
+                <button
+                  type="button"
+                  id="auth-toggle-mode-signup"
+                  onClick={() => { setMode('signup'); setErrorMsg(null); }}
+                  className="underline underline-offset-2 font-semibold"
+                  style={{ color: TOKEN.textPrimary }}
+                >
+                  Create account
+                </button>
+              </>
+            )}
+          </p>
         </div>
-      </main>
+      </div>
     </div>
   );
 }
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-canvas flex items-center justify-center text-limeAccent font-mono">Loading authentication...</div>}>
+    <Suspense
+      fallback={
+        <div
+          className="min-h-screen flex items-center justify-center text-sm"
+          style={{ background: '#0B0D0E', color: '#8A9096' }}
+        >
+          Loading\u2026
+        </div>
+      }
+    >
       <AuthContent />
     </Suspense>
   );
