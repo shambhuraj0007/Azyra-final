@@ -20,19 +20,41 @@ async function verifyAdminAuth(req: NextRequest) {
   }
 }
 
-// GET: list pending creators
+// GET: list creators with filtering and counts
 export async function GET(req: NextRequest) {
   if (!(await verifyAdminAuth(req))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
 
-  await connectToDatabase();
-  const pendingCreators = await User.find(
-    { role: "creator", creatorStatus: "pending" },
-    { profile: 1, handle: 1, email: 1, createdAt: 1 }
-  ).sort({ createdAt: 1 }).lean();
+  const { searchParams } = new URL(req.url);
+  const statusFilter = searchParams.get("status") || "pending"; // "pending" | "approved" | "rejected" | "all"
 
-  return NextResponse.json({ creators: pendingCreators });
+  await connectToDatabase();
+
+  const query: any = { role: "creator" };
+  if (statusFilter !== "all") {
+    query.creatorStatus = statusFilter;
+  }
+
+  const creators = await User.find(query)
+    .sort({ createdAt: -1 })
+    .lean();
+
+  const [pendingCount, approvedCount, rejectedCount] = await Promise.all([
+    User.countDocuments({ role: "creator", creatorStatus: "pending" }),
+    User.countDocuments({ role: "creator", creatorStatus: "approved" }),
+    User.countDocuments({ role: "creator", creatorStatus: "rejected" }),
+  ]);
+
+  return NextResponse.json({
+    creators,
+    counts: {
+      pending: pendingCount,
+      approved: approvedCount,
+      rejected: rejectedCount,
+      all: pendingCount + approvedCount + rejectedCount,
+    },
+  });
 }
 
 // POST: Approve or Reject
@@ -41,36 +63,50 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
 
-  const { creatorId, action, reason } = await req.json(); // action: "approve" or "reject"
-  const adminId = process.env.ADMIN_ID || "system";
+  const { creatorId, action, reason } = await req.json(); // action: "approve" | "reject" | "pending"
+  const adminId = process.env.ADMIN_ID || "admin_azyra";
 
   await connectToDatabase();
 
   if (action === "approve") {
     await User.updateOne(
-      { _id: creatorId, role: "creator", creatorStatus: "pending" },
+      { _id: creatorId, role: "creator" },
       {
         $set: {
           creatorStatus: "approved",
+          isProfileSetup: true,
           publicProfileEnabled: true,
+          rejectionReason: null,
           reviewedAt: new Date(),
           reviewedBy: adminId,
-          updatedAt: new Date()
-        }
+          updatedAt: new Date(),
+        },
       }
     );
   } else if (action === "reject") {
     await User.updateOne(
-      { _id: creatorId, role: "creator", creatorStatus: "pending" },
+      { _id: creatorId, role: "creator" },
       {
         $set: {
           creatorStatus: "rejected",
           publicProfileEnabled: false,
-          rejectionReason: reason || "Does not meet criteria",
+          rejectionReason: reason || "Does not meet verification criteria",
           reviewedAt: new Date(),
           reviewedBy: adminId,
-          updatedAt: new Date()
-        }
+          updatedAt: new Date(),
+        },
+      }
+    );
+  } else if (action === "pending") {
+    await User.updateOne(
+      { _id: creatorId, role: "creator" },
+      {
+        $set: {
+          creatorStatus: "pending",
+          reviewedAt: null,
+          reviewedBy: null,
+          updatedAt: new Date(),
+        },
       }
     );
   } else {

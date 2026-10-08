@@ -38,6 +38,7 @@ export const metadata: Metadata = {
 };
 
 import { NextAuthProvider } from "../components/NextAuthProvider";
+import GlobalCreatorApplicationPopup from "../components/GlobalCreatorApplicationPopup";
 
 export default function RootLayout({
   children,
@@ -57,7 +58,10 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col bg-canvas text-textMain font-sans selection:bg-limeAccent selection:text-[#0B0F10]">
         <NextAuthProvider>
-          <CampaignProvider>{children}</CampaignProvider>
+          <CampaignProvider>
+            {children}
+            <GlobalCreatorApplicationPopup />
+          </CampaignProvider>
         </NextAuthProvider>
       </body>
     </html>

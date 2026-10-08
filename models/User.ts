@@ -23,8 +23,17 @@ export interface IUser extends Document {
     }>;
     sampleUrls?: string[];
     payoutMethod?: {
-      type: 'stripe' | 'paypal' | 'crypto';
+      type: 'stripe' | 'paypal' | 'crypto' | 'bank';
       accountIdentifier: string;
+      isVerified?: boolean;
+      connectedAt?: Date;
+      bankDetails?: {
+        bankName?: string;
+        accountHolderName?: string;
+        accountNumber?: string;
+        routingNumber?: string;
+        accountType?: 'checking' | 'savings';
+      };
     };
   };
   brandProfile?: {
@@ -75,8 +84,17 @@ const UserSchema = new Schema<IUser>(
       ],
       sampleUrls: [String],
       payoutMethod: {
-        type: { type: String, enum: ['stripe', 'paypal', 'crypto'], default: 'stripe' },
+        type: { type: String, enum: ['stripe', 'paypal', 'crypto', 'bank'], default: 'bank' },
         accountIdentifier: String,
+        isVerified: { type: Boolean, default: false },
+        connectedAt: Date,
+        bankDetails: {
+          bankName: String,
+          accountHolderName: String,
+          accountNumber: String,
+          routingNumber: String,
+          accountType: { type: String, enum: ['checking', 'savings'], default: 'checking' },
+        },
       },
     },
     brandProfile: {

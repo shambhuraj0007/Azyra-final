@@ -50,6 +50,8 @@ export async function POST(request: NextRequest) {
         payoutMethod: {
           type: payoutMethod?.type || 'stripe',
           accountIdentifier: payoutMethod?.accountIdentifier || '',
+          isVerified: payoutMethod?.isVerified ?? false,
+          connectedAt: payoutMethod?.isVerified ? new Date() : undefined,
         },
         wallet_balance: 0,
         total_earned: 0,
@@ -58,6 +60,24 @@ export async function POST(request: NextRequest) {
       });
       await user.save();
     } else {
+      // If a verified creator modifies their profile, send back to pending verification
+      const isCoreProfileModified =
+        (name !== undefined && name !== user.name) ||
+        (normalizedHandle && normalizedHandle !== user.handle) ||
+        (bio !== undefined && bio !== user.bio) ||
+        (primaryPlatform && primaryPlatform !== user.primaryPlatform) ||
+        (socialLinks && (
+          socialLinks.x !== user.socialLinks?.x ||
+          socialLinks.instagram !== user.socialLinks?.instagram ||
+          socialLinks.youtube !== user.socialLinks?.youtube
+        ));
+
+      if (user.creatorStatus === 'approved' && isCoreProfileModified) {
+        user.creatorStatus = 'pending';
+        user.reviewedAt = null as any;
+        user.reviewedBy = null as any;
+      }
+
       user.name = name ?? user.name;
       user.handle = normalizedHandle || user.handle;
       user.avatar = avatar || user.avatar;
@@ -66,15 +86,35 @@ export async function POST(request: NextRequest) {
       user.isProfileSetup = true;
       user.primaryPlatform = primaryPlatform || user.primaryPlatform;
       user.socialLinks = {
-        x: socialLinks?.x ?? user.socialLinks.x,
-        instagram: socialLinks?.instagram ?? user.socialLinks.instagram,
-        youtube: socialLinks?.youtube ?? user.socialLinks.youtube,
+        x: socialLinks?.x ?? user.socialLinks?.x ?? '',
+        instagram: socialLinks?.instagram ?? user.socialLinks?.instagram ?? '',
+        youtube: socialLinks?.youtube ?? user.socialLinks?.youtube ?? '',
       };
+
+      // Keep user.profile synchronized for admin gateway inspection
+      if (!user.profile) {
+        user.profile = {};
+      }
+      user.profile.displayName = user.name;
+      user.profile.bio = user.bio;
+      const updatedLinks: any[] = [];
+      if (user.socialLinks.x) updatedLinks.push({ platform: 'X', url: user.socialLinks.x });
+      if (user.socialLinks.instagram) updatedLinks.push({ platform: 'Instagram', url: user.socialLinks.instagram });
+      if (user.socialLinks.youtube) updatedLinks.push({ platform: 'YouTube', url: user.socialLinks.youtube });
+      if (updatedLinks.length > 0) {
+        user.profile.links = updatedLinks;
+      }
+
       if (payoutMethod) {
-        user.payoutMethod = {
-          type: payoutMethod.type || user.payoutMethod?.type || 'stripe',
+        const updatedPayout = {
+          type: payoutMethod.type || user.payoutMethod?.type || 'bank',
           accountIdentifier: payoutMethod.accountIdentifier ?? user.payoutMethod?.accountIdentifier ?? '',
+          isVerified: payoutMethod.isVerified !== undefined ? Boolean(payoutMethod.isVerified) : (user.payoutMethod?.isVerified ?? false),
+          connectedAt: payoutMethod.connectedAt ? new Date(payoutMethod.connectedAt) : (user.payoutMethod?.connectedAt || new Date()),
+          bankDetails: payoutMethod.bankDetails || user.payoutMethod?.bankDetails || undefined,
         };
+        user.payoutMethod = updatedPayout;
+        user.profile.payoutMethod = updatedPayout;
       }
       user.updatedAt = new Date();
       await user.save();

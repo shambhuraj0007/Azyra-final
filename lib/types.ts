@@ -52,14 +52,24 @@ export interface UserProfile {
     youtube?: string;
   };
   payoutMethod?: {
-    type: 'stripe' | 'paypal' | 'crypto';
+    type: 'stripe' | 'paypal' | 'crypto' | 'bank';
     accountIdentifier: string;
+    isVerified?: boolean;
+    connectedAt?: number;
+    bankDetails?: {
+      bankName?: string;
+      accountHolderName?: string;
+      accountNumber?: string;
+      routingNumber?: string;
+      accountType?: 'checking' | 'savings';
+    };
   };
   wallet_balance: number;
   stripe_connect_id?: string;
   total_earned?: number;
   total_views_generated?: number;
   joinedCampaignIds?: string[];
+  creatorStatus?: 'none' | 'pending' | 'approved' | 'rejected';
 }
 
 export interface CampaignGuidelines {

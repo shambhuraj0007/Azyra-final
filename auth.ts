@@ -60,75 +60,95 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   ],
   callbacks: {
     async signIn({ user, account }) {
-      if (account?.provider === 'google') {
-        await connectToDatabase();
+      try {
+        if (account?.provider === 'google') {
+          await connectToDatabase();
 
-        let desiredRole: 'creator' | 'brand' = 'creator';
-        try {
-          const cookieStore = await cookies();
-          const roleCookie = cookieStore.get('auth_role')?.value;
-          if (roleCookie === 'brand' || roleCookie === 'creator') {
-            desiredRole = roleCookie;
+          let desiredRole: 'creator' | 'brand' = 'creator';
+          try {
+            const cookieStore = await cookies();
+            const roleCookie = cookieStore.get('auth_role')?.value;
+            if (roleCookie === 'brand' || roleCookie === 'creator') {
+              desiredRole = roleCookie;
+            }
+          } catch {
+            // ignore if cookies are inaccessible in this context
           }
-        } catch {
-          // ignore if cookies are inaccessible in this context
-        }
 
-        const normalizedEmail = user.email?.toLowerCase();
-        let dbUser = await User.findOne({
-          $or: [
-            { googleId: user.id },
-            ...(normalizedEmail ? [{ email: normalizedEmail }] : []),
-          ],
-        });
+          const normalizedEmail = user.email?.toLowerCase();
+          const googleId = account.providerAccountId || user.id;
 
-        if (!dbUser) {
-          await User.create({
-            googleId: user.id,
-            email: normalizedEmail,
-            name: user.name || '',
-            image: user.image || '',
-            role: desiredRole,
-            isProfileSetup: false,
-            creatorStatus: 'none',
-            wallet_balance: 0,
-            total_earned: 0,
-            total_views_generated: 0,
-            joinedCampaignIds: [],
+          let dbUser = await User.findOne({
+            $or: [
+              { googleId: googleId },
+              ...(normalizedEmail ? [{ email: normalizedEmail }] : []),
+            ],
           });
-        } else {
-          const updateData: any = { updatedAt: new Date() };
-          if (!dbUser.googleId && user.id) {
-            updateData.googleId = user.id;
+
+          if (!dbUser) {
+            await User.create({
+              googleId: googleId,
+              email: normalizedEmail,
+              name: user.name || '',
+              image: user.image || '',
+              role: desiredRole,
+              isProfileSetup: false,
+              creatorStatus: 'none',
+              wallet_balance: 0,
+              total_earned: 0,
+              total_views_generated: 0,
+              joinedCampaignIds: [],
+            });
+          } else {
+            const updateData: any = { updatedAt: new Date() };
+            if (!dbUser.googleId && googleId) {
+              updateData.googleId = googleId;
+            }
+            if (!dbUser.image && user.image) {
+              updateData.image = user.image;
+            }
+            if (!dbUser.name && user.name) {
+              updateData.name = user.name;
+            }
+            await User.updateOne({ _id: dbUser._id }, { $set: updateData });
           }
-          if (!dbUser.image && user.image) {
-            updateData.image = user.image;
-          }
-          if (!dbUser.name && user.name) {
-            updateData.name = user.name;
-          }
-          await User.updateOne({ _id: dbUser._id }, { $set: updateData });
+          return true;
         }
-        return true;
-      }
 
-      if (account?.provider === 'credentials') {
-        return true;
-      }
+        if (account?.provider === 'credentials') {
+          return true;
+        }
 
-      return false;
+        return false;
+      } catch (error) {
+        console.error("NextAuth signIn Error:", error);
+        return false;
+      }
     },
     async jwt({ token, user, account }) {
       await connectToDatabase();
+      const mongoose = require('mongoose');
 
       if (user) {
-        token.dbId = (user as any).id || (user as any)._id?.toString() || token.sub;
-        token.role = (user as any).role || "creator";
-        token.isProfileSetup = Boolean((user as any).isProfileSetup);
-        token.creatorStatus = (user as any).creatorStatus || "none";
-        token.handle = (user as any).handle || "";
+        if (account?.provider === 'google') {
+          const dbUser = await User.findOne({ email: user.email?.toLowerCase() });
+          if (dbUser) {
+            token.dbId = dbUser._id.toString();
+            token.role = dbUser.role;
+            token.isProfileSetup = Boolean(dbUser.isProfileSetup);
+            token.creatorStatus = dbUser.creatorStatus;
+            token.handle = dbUser.handle || "";
+          }
+        } else {
+          token.dbId = (user as any).id || (user as any)._id?.toString() || token.sub;
+          token.role = (user as any).role || "creator";
+          token.isProfileSetup = Boolean((user as any).isProfileSetup);
+          token.creatorStatus = (user as any).creatorStatus || "none";
+          token.handle = (user as any).handle || "";
+        }
       } else if (token.dbId || token.email) {
-        const dbUser = token.dbId
+        const isValidId = typeof token.dbId === 'string' && /^[0-9a-fA-F]{24}$/.test(token.dbId);
+        const dbUser = isValidId
           ? await User.findById(token.dbId)
           : await User.findOne({ email: token.email?.toLowerCase() });
 

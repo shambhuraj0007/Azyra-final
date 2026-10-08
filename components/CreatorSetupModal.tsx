@@ -38,7 +38,7 @@ export default function CreatorSetupModal() {
   const [xLink, setXLink] = useState('');
   const [instagramLink, setInstagramLink] = useState('');
   const [youtubeLink, setYoutubeLink] = useState('');
-  const [payoutType, setPayoutType] = useState<'stripe' | 'paypal' | 'crypto'>('stripe');
+  const [payoutType, setPayoutType] = useState<'stripe' | 'paypal' | 'crypto' | 'bank'>('bank');
   const [payoutIdentifier, setPayoutIdentifier] = useState('');
 
   const [isLoading, setIsLoading] = useState(false);
@@ -369,32 +369,36 @@ export default function CreatorSetupModal() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-heading font-bold uppercase tracking-wider text-textMain mb-1">
-                  X (Twitter) Profile Link
-                </label>
-                <input
-                  type="text"
-                  placeholder="https://x.com/username"
-                  value={xLink}
-                  onChange={(e) => setXLink(e.target.value)}
-                  className="w-full rounded-xl bg-surfaceElevated border border-borderMuted px-3 py-2 text-xs text-textMain font-mono focus:border-limeAccent outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-heading font-bold uppercase tracking-wider text-textMain mb-1">
-                  Instagram Handle
-                </label>
-                <input
-                  type="text"
-                  placeholder="@handle"
-                  value={instagramLink}
-                  onChange={(e) => setInstagramLink(e.target.value)}
-                  className="w-full rounded-xl bg-surfaceElevated border border-borderMuted px-3 py-2 text-xs text-textMain font-mono focus:border-limeAccent outline-none"
-                />
-              </div>
+            <div>
+              <label className="block text-xs font-heading font-bold uppercase tracking-wider text-textMain mb-1">
+                {primaryPlatform === 'x' && 'X (Twitter) Profile Link or @Handle *'}
+                {primaryPlatform === 'instagram' && 'Instagram Reels Profile Link or @Handle *'}
+                {primaryPlatform === 'youtube_shorts' && 'YouTube Shorts Channel Link *'}
+              </label>
+              <input
+                type="text"
+                placeholder={
+                  primaryPlatform === 'x'
+                    ? 'https://x.com/username or @handle'
+                    : primaryPlatform === 'instagram'
+                    ? 'https://instagram.com/username or @handle'
+                    : 'https://youtube.com/@handle'
+                }
+                value={
+                  primaryPlatform === 'x'
+                    ? xLink
+                    : primaryPlatform === 'instagram'
+                    ? instagramLink
+                    : youtubeLink
+                }
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (primaryPlatform === 'x') setXLink(val);
+                  else if (primaryPlatform === 'instagram') setInstagramLink(val);
+                  else if (primaryPlatform === 'youtube_shorts') setYoutubeLink(val);
+                }}
+                className="w-full rounded-xl bg-surfaceElevated border border-borderMuted px-3.5 py-2.5 text-xs text-textMain font-mono focus:border-limeAccent outline-none"
+              />
             </div>
 
             {/* Payout method */}
@@ -402,11 +406,12 @@ export default function CreatorSetupModal() {
               <label className="block text-xs font-heading font-bold uppercase tracking-wider text-textMain mb-1">
                 Payout Destination *
               </label>
-              <div className="grid grid-cols-3 gap-2 mb-2">
+              <div className="grid grid-cols-4 gap-2 mb-2">
                 {[
-                  { id: 'stripe', label: 'Stripe Connect' },
+                  { id: 'bank', label: 'Bank' },
+                  { id: 'stripe', label: 'Stripe' },
                   { id: 'paypal', label: 'PayPal' },
-                  { id: 'crypto', label: 'Solana / ETH' },
+                  { id: 'crypto', label: 'Crypto' },
                 ].map((m) => (
                   <button
                     key={m.id}
@@ -425,7 +430,9 @@ export default function CreatorSetupModal() {
                 type="text"
                 required
                 placeholder={
-                  payoutType === 'stripe'
+                  payoutType === 'bank'
+                    ? 'Bank name and account number'
+                    : payoutType === 'stripe'
                     ? 'Stripe account ID or email (e.g. acct_1234...)'
                     : payoutType === 'paypal'
                       ? 'paypal-recipient@example.com'

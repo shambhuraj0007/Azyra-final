@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import {
   Campaign,
@@ -65,9 +65,10 @@ export function CampaignProvider({ children }: { children: React.ReactNode }) {
   const [isSetupModalOpen, setIsSetupModalOpen] = useState(false);
   const [pendingCampaignId, setPendingCampaignId] = useState<string | null>(null);
 
-  // Load everything from MongoDB database on client mount
+  const lastFetchedEmailRef = useRef<string | null>(null);
+
+  // 1. Load marketplace data once on client mount
   useEffect(() => {
-    // 1. Fetch campaigns from MongoDB
     fetch('/api/campaigns')
       .then((res) => res.json())
       .then((data) => {
@@ -77,7 +78,6 @@ export function CampaignProvider({ children }: { children: React.ReactNode }) {
       })
       .catch((e) => console.warn('Could not fetch campaigns from MongoDB:', e));
 
-    // 2. Fetch submissions from MongoDB
     fetch('/api/submissions')
       .then((res) => res.json())
       .then((data) => {
@@ -87,7 +87,6 @@ export function CampaignProvider({ children }: { children: React.ReactNode }) {
       })
       .catch((e) => console.warn('Could not fetch submissions from MongoDB:', e));
 
-    // 3. Fetch participants from MongoDB
     fetch('/api/participants')
       .then((res) => res.json())
       .then((data) => {
@@ -96,32 +95,55 @@ export function CampaignProvider({ children }: { children: React.ReactNode }) {
         }
       })
       .catch((e) => console.warn('Could not fetch participants from MongoDB:', e));
+  }, []);
 
-    // 4. Hydrate user session from MongoDB
-    // 4. Hydrate user session from MongoDB using NextAuth session
-    if (session?.user?.email) {
-      fetch(`/api/user?email=${encodeURIComponent(session.user.email)}`)
+  // 2. Hydrate user session from MongoDB when user logs in or email changes
+  useEffect(() => {
+    const userEmail = session?.user?.email;
+
+    if (userEmail) {
+      // Prevent duplicate fetches if already hydrated for this email
+      if (lastFetchedEmailRef.current === userEmail) {
+        return;
+      }
+      lastFetchedEmailRef.current = userEmail;
+
+      fetch(`/api/user?email=${encodeURIComponent(userEmail)}`)
         .then((r) => r.json())
         .then((data) => {
           if (data?.success && data?.user) {
             const dbUser = data.user;
+            const payout = dbUser.profile?.payoutMethod || dbUser.payoutMethod || null;
+            const normalizedHandle = dbUser.handle
+              ? (dbUser.handle.startsWith('@') ? dbUser.handle : `@${dbUser.handle}`)
+              : '';
+
             const merged: UserProfile = {
               id: dbUser._id || session.user.id,
               email: dbUser.email,
-              name: dbUser.name || session.user.name || '',
-              handle: dbUser.handle || '',
+              name: dbUser.profile?.displayName || dbUser.name || session.user.name || '',
+              handle: normalizedHandle,
               avatar: dbUser.image || session.user.image || '🎬',
-              bio: dbUser.profile?.bio || '',
+              bio: dbUser.profile?.bio || dbUser.bio || '',
               role: dbUser.role || 'brand',
+              creatorStatus: dbUser.creatorStatus || 'none',
               isLoggedIn: true,
               isProfileSetup: dbUser.creatorStatus === 'approved',
-              primaryPlatform: dbUser.profile?.links?.[0]?.platform?.toLowerCase() || 'x',
+              primaryPlatform: (dbUser.profile?.links?.[0]?.platform?.toLowerCase() === 'youtube'
+                ? 'youtube_shorts'
+                : dbUser.profile?.links?.[0]?.platform?.toLowerCase() as any) || dbUser.primaryPlatform || 'x',
               socialLinks: {
-                x: dbUser.profile?.links?.find((l: any) => l.platform === 'X')?.url || '',
-                instagram: dbUser.profile?.links?.find((l: any) => l.platform === 'Instagram')?.url || '',
-                youtube: dbUser.profile?.links?.find((l: any) => l.platform === 'YouTube')?.url || '',
+                x: dbUser.profile?.links?.find((l: any) => l.platform === 'X')?.url || dbUser.socialLinks?.x || '',
+                instagram: dbUser.profile?.links?.find((l: any) => l.platform === 'Instagram')?.url || dbUser.socialLinks?.instagram || '',
+                youtube: dbUser.profile?.links?.find((l: any) => l.platform === 'YouTube')?.url || dbUser.socialLinks?.youtube || '',
               },
-              payoutMethod: { type: 'stripe', accountIdentifier: '' },
+              payoutMethod: payout?.accountIdentifier ? {
+                type: payout.type || 'bank',
+                accountIdentifier: payout.accountIdentifier,
+                isVerified: payout.isVerified ?? false,
+                connectedAt: payout.connectedAt ? new Date(payout.connectedAt).getTime() : undefined,
+                bankDetails: payout.bankDetails || undefined,
+              } : undefined,
               wallet_balance: dbUser.wallet_balance ?? 0,
               total_earned: dbUser.total_earned ?? 0,
               total_views_generated: dbUser.total_views_generated ?? 0,
@@ -133,9 +155,10 @@ export function CampaignProvider({ children }: { children: React.ReactNode }) {
         })
         .catch((e) => console.warn('Could not fetch user details from DB', e));
     } else if (status === "unauthenticated") {
+      lastFetchedEmailRef.current = null;
       setCurrentUser(GUEST_USER);
     }
-  }, [session, status]);
+  }, [session?.user?.email, status]);
 
   const saveStorage = (
     u: UserProfile,
@@ -218,13 +241,15 @@ export function CampaignProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
     setCurrentUser(GUEST_USER);
     try {
       localStorage.removeItem('whop_current_user');
     } catch (e) {
       console.error(e);
     }
+    const { signOut } = await import('next-auth/react');
+    await signOut({ callbackUrl: '/' });
   };
 
   const executeJoin = async (campaignId: string, userToJoin: UserProfile = currentUser) => {

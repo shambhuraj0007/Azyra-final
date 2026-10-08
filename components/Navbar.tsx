@@ -82,8 +82,12 @@ export default function Navbar({ onOpenBidModal, totalVolume, totalProducts }: N
               href="/profile"
               className="flex items-center gap-2 rounded-xl bg-surfaceElevated border border-borderMuted hover:border-limeAccent/50 px-2.5 sm:px-3 py-1.5 text-xs transition"
             >
-              <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-surface text-xs border border-borderMuted">
-                {currentUser.avatar || '🎬'}
+              <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-surface text-xs border border-borderMuted overflow-hidden">
+                {currentUser.avatar?.startsWith('http') ? (
+                  <img src={currentUser.avatar} alt="Avatar" className="h-full w-full object-cover" />
+                ) : (
+                  currentUser.avatar || '🎬'
+                )}
               </span>
               <span className="hidden sm:inline font-mono font-bold text-textMain">
                 {currentUser.handle || currentUser.name || 'User'}

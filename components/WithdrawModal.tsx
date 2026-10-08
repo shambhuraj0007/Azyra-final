@@ -48,7 +48,7 @@ export default function WithdrawModal({ isOpen, onClose }: WithdrawModalProps) {
             </div>
             <h3 className="text-xl font-heading font-bold text-textMain">Payout Initiated!</h3>
             <p className="text-xs text-textMuted">
-              <strong className="text-emeraldAccent font-mono text-sm">${paidOut.toFixed(2)}</strong> has been transferred via Stripe Express to your verified bank account ending in <strong className="text-textMain">****4182</strong>.
+              <strong className="text-emeraldAccent font-mono text-sm">${paidOut.toFixed(2)}</strong> has been transferred via {currentUser?.payoutMethod?.type === 'bank' ? 'Direct Bank ACH Transfer' : currentUser?.payoutMethod?.type === 'paypal' ? 'PayPal' : currentUser?.payoutMethod?.type === 'crypto' ? 'Web3 Wallet' : 'Stripe Express'} to your verified account <strong className="text-textMain">{currentUser?.payoutMethod?.accountIdentifier || 'Chase ****4182'}</strong>.
             </p>
           </div>
         ) : (
@@ -59,7 +59,15 @@ export default function WithdrawModal({ isOpen, onClose }: WithdrawModalProps) {
               </div>
               <div>
                 <h3 className="text-lg font-heading font-bold text-textMain">Withdraw Creator Balance</h3>
-                <p className="text-xs text-textMuted">Instant payout via Stripe Connect</p>
+                <p className="text-xs text-textMuted">
+                  {currentUser?.payoutMethod?.type === 'bank'
+                    ? 'Direct Bank ACH / Wire Transfer'
+                    : currentUser?.payoutMethod?.type === 'paypal'
+                    ? 'Instant PayPal Payout'
+                    : currentUser?.payoutMethod?.type === 'crypto'
+                    ? 'Instant Web3 Transfer'
+                    : 'Instant payout via Stripe Connect'}
+                </p>
               </div>
             </div>
 
@@ -90,10 +98,18 @@ export default function WithdrawModal({ isOpen, onClose }: WithdrawModalProps) {
 
               <div className="rounded-xl bg-surfaceElevated p-3 border border-borderMuted flex items-center justify-between text-xs text-textMuted">
                 <div className="flex items-center gap-2">
-                  <Building className="h-4 w-4 text-textMuted" />
-                  <span>Stripe Connected: Chase ****4182</span>
+                  <Building className="h-4 w-4 text-emeraldAccent" />
+                  <span className="truncate max-w-[220px]">
+                    {currentUser?.payoutMethod?.type === 'bank'
+                      ? `Bank: ${currentUser.payoutMethod?.bankDetails?.bankName || 'Direct'} (${currentUser.payoutMethod.accountIdentifier})`
+                      : currentUser?.payoutMethod?.type === 'paypal'
+                      ? `PayPal: ${currentUser.payoutMethod.accountIdentifier}`
+                      : currentUser?.payoutMethod?.type === 'crypto'
+                      ? `Crypto: ${currentUser.payoutMethod.accountIdentifier}`
+                      : `Stripe: ${currentUser?.payoutMethod?.accountIdentifier || 'Chase ****4182'}`}
+                  </span>
                 </div>
-                <span className="text-emeraldAccent font-mono font-bold">Instant (0% fee)</span>
+                <span className="text-emeraldAccent font-mono font-bold shrink-0">Instant (0% fee)</span>
               </div>
 
               <button
@@ -101,7 +117,11 @@ export default function WithdrawModal({ isOpen, onClose }: WithdrawModalProps) {
                 disabled={currentUser.wallet_balance <= 0}
                 className="w-full rounded-xl bg-emeraldAccent hover:brightness-110 text-[#0B0F10] font-heading font-bold py-3 text-xs flex items-center justify-center gap-2 transition active:scale-[0.98] disabled:opacity-50"
               >
-                <span>Transfer ${amount} to Bank Account</span>
+                <span>
+                  {currentUser?.payoutMethod?.type === 'bank'
+                    ? `Transfer $${amount} to Bank Account`
+                    : `Transfer $${amount} to Account`}
+                </span>
                 <ArrowRight className="h-4 w-4" />
               </button>
             </form>

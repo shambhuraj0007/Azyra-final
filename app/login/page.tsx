@@ -105,10 +105,12 @@ function AuthContent() {
 
     const isProfileSetup =
       currentUser?.isProfileSetup ?? Boolean((session?.user as any)?.isProfileSetup);
+    const creatorStatus = 
+      currentUser?.creatorStatus || (session?.user as any)?.creatorStatus || 'none';
     const userRole = currentUser?.role || (session?.user as any)?.role || role;
 
-    if (userRole === 'creator' && !isProfileSetup) {
-      const setupPath = `/profile/setup?${joinCampaignId ? `join=${joinCampaignId}&` : ''}redirect=${encodeURIComponent(redirectUrl)}`;
+    if (userRole === 'creator' && creatorStatus === 'none') {
+      const setupPath = `/apply?${joinCampaignId ? `join=${joinCampaignId}&` : ''}redirect=${encodeURIComponent(redirectUrl)}`;
       router.push(setupPath);
       return;
     }
@@ -224,23 +226,23 @@ function AuthContent() {
     mode === 'signin'
       ? 'Welcome back'
       : role === 'creator'
-      ? 'Create your creator account'
-      : 'Create your brand account';
+        ? 'Create your creator account'
+        : 'Create your brand account';
 
   const subline =
     mode === 'signin'
       ? 'Sign in to your Azyra account'
       : role === 'creator'
-      ? 'Earn per 1,000 verified video views'
-      : 'Launch pay-per-view video campaigns';
+        ? 'Earn per 1,000 verified video views'
+        : 'Launch pay-per-view video campaigns';
 
   const primaryBtnLabel = isLoading
     ? 'Please wait\u2026'
     : mode === 'signin'
-    ? 'Sign in'
-    : role === 'creator'
-    ? 'Create creator account'
-    : 'Create brand account';
+      ? 'Sign in'
+      : role === 'creator'
+        ? 'Create creator account'
+        : 'Create brand account';
 
   return (
     <div
@@ -289,17 +291,7 @@ function AuthContent() {
           </ul>
 
           {/* Stat badge */}
-          <div
-            className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs"
-            style={{
-              background: 'rgba(255,255,255,0.04)',
-              border: `1px solid ${TOKEN.border}`,
-              color: TOKEN.textMuted,
-            }}
-          >
-            <Users className="h-3.5 w-3.5" />
-            <span>140+ active clippers</span>
-          </div>
+
         </div>
 
         {/* Bottom spacer */}
