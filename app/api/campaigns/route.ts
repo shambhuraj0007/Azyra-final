@@ -3,6 +3,7 @@ import { connectToDatabase } from '@/lib/mongodb';
 import CampaignModel from '@/models/Campaign';
 import User from '@/models/User';
 import { INITIAL_MARKETPLACE_CAMPAIGNS } from '@/lib/campaignStore';
+import { auth } from '@/auth';
 
 export async function GET() {
   try {
@@ -31,6 +32,14 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    const session = await auth();
+    if (!session?.user) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized: You must be logged in to create a campaign.' },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
     const { title, total_budget, cpm_rate, asset_drive_link, brand_id } = body;
 

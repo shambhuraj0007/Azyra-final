@@ -26,7 +26,10 @@ export function verifyPassword(password: string, hash: string, salt: string): bo
  * Generate a secure session token.
  */
 export function generateToken(payload: { email: string; role: string; id: string }): string {
-  const secret = process.env.NEXTAUTH_SECRET || 'azyra_super_secret_key_2026';
+  const secret = process.env.NEXTAUTH_SECRET || '';
+  if (!secret) {
+    throw new Error('NEXTAUTH_SECRET is not configured');
+  }
   const data = JSON.stringify({ ...payload, timestamp: Date.now() });
   const signature = crypto.createHmac('sha256', secret).update(data).digest('hex');
   return Buffer.from(data).toString('base64') + '.' + signature;
@@ -39,7 +42,8 @@ export function verifyToken(token: string): { email: string; role: string; id: s
   try {
     if (!token || !token.includes('.')) return null;
     const [encodedData, signature] = token.split('.');
-    const secret = process.env.NEXTAUTH_SECRET || 'azyra_super_secret_key_2026';
+    const secret = process.env.NEXTAUTH_SECRET || '';
+    if (!secret) return null;
     const data = Buffer.from(encodedData, 'base64').toString('utf-8');
     const expectedSignature = crypto.createHmac('sha256', secret).update(data).digest('hex');
     

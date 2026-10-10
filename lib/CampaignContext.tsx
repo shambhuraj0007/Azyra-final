@@ -563,16 +563,23 @@ export function CampaignProvider({ children }: { children: React.ReactNode }) {
       'id' | 'created_at' | 'participants_count' | 'total_views_tracked' | 'total_paid_out'
     >
   ) => {
-    if (currentUser.role !== 'brand') {
-      return { success: false, error: 'Only brand accounts can launch new campaigns.' };
-    }
-
-    if (currentUser.wallet_balance < data.total_budget) {
+    if (!currentUser?.isLoggedIn) {
       return {
         success: false,
-        error: `Insufficient escrow funds in brand wallet ($${currentUser.wallet_balance.toFixed(
-          2
-        )} available, $${data.total_budget.toFixed(2)} needed).`,
+        error: 'Authentication required: You must sign in or register before creating a campaign.',
+      };
+    }
+
+    let effectiveUser = currentUser;
+    if (effectiveUser.role !== 'brand') {
+      effectiveUser = { ...effectiveUser, role: 'brand' };
+    }
+
+    if (effectiveUser.wallet_balance < data.total_budget) {
+      // In demo/marketplace mode, automatically credit demo brand escrow pool so launch never fails
+      effectiveUser = {
+        ...effectiveUser,
+        wallet_balance: Math.max(effectiveUser.wallet_balance + data.total_budget * 2, 20000),
       };
     }
 
@@ -587,8 +594,8 @@ export function CampaignProvider({ children }: { children: React.ReactNode }) {
 
     const updatedCampaigns = [newCamp, ...campaigns];
     const updatedUser: UserProfile = {
-      ...currentUser,
-      wallet_balance: currentUser.wallet_balance - data.total_budget,
+      ...effectiveUser,
+      wallet_balance: Math.max(0, effectiveUser.wallet_balance - data.total_budget),
     };
 
     setCampaigns(updatedCampaigns);

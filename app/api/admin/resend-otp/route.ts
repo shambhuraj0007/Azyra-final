@@ -4,7 +4,7 @@ import { connectToDatabase } from "@/lib/mongodb";
 import AdminOtp from "@/models/AdminOtp";
 import { sendAdminOtpEmail } from "@/lib/admin-mailer";
 
-const TARGET_ADMIN_EMAIL = process.env.ADMIN_NOTIFICATION_EMAIL || "gadhaveshambhuraj@gmail.com";
+const TARGET_ADMIN_EMAIL = process.env.ADMIN_NOTIFICATION_EMAIL || "";
 const resendRateLimit = new Map<string, number>();
 
 export async function POST(req: NextRequest) {

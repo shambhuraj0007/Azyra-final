@@ -5,7 +5,7 @@ import AdminOtp from "@/models/AdminOtp";
 import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 
-const TARGET_ADMIN_EMAIL = process.env.ADMIN_NOTIFICATION_EMAIL || "gadhaveshambhuraj@gmail.com";
+const TARGET_ADMIN_EMAIL = process.env.ADMIN_NOTIFICATION_EMAIL || "";
 
 export async function POST(req: NextRequest) {
   if (!checkAdminIp(req)) {
@@ -39,10 +39,15 @@ export async function POST(req: NextRequest) {
     // Mark as verified & delete
     await AdminOtp.deleteOne({ _id: record._id });
 
+    const secret = process.env.NEXTAUTH_SECRET;
+    if (!secret) {
+      return NextResponse.json({ error: "Server authentication is not configured" }, { status: 500 });
+    }
+
     // Issue signed Admin Session JWT cookie
     const sessionToken = jwt.sign(
       { admin: true, email: TARGET_ADMIN_EMAIL, verifiedAt: Date.now() },
-      process.env.NEXTAUTH_SECRET || "fallback_secret_azyra_2026",
+      secret,
       { expiresIn: "1d" }
     );
 

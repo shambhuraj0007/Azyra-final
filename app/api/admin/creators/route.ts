@@ -13,7 +13,9 @@ async function verifyAdminAuth(req: NextRequest) {
   if (!token) return false;
 
   try {
-    const decoded = jwt.verify(token, process.env.NEXTAUTH_SECRET || "fallback") as any;
+    const secret = process.env.NEXTAUTH_SECRET;
+    if (!secret) return false;
+    const decoded = jwt.verify(token, secret) as any;
     return decoded.admin === true;
   } catch (e) {
     return false;
@@ -64,7 +66,7 @@ export async function POST(req: NextRequest) {
   }
 
   const { creatorId, action, reason } = await req.json(); // action: "approve" | "reject" | "pending"
-  const adminId = process.env.ADMIN_ID || "admin_azyra";
+  const adminId = process.env.ADMIN_ID;
 
   await connectToDatabase();
 

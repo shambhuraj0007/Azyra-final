@@ -1,26 +1,15 @@
 import nodemailer from 'nodemailer';
 
-export async function sendAdminOtpEmail(otp: string, targetEmail: string = 'gadhaveshambhuraj@gmail.com'): Promise<{ success: boolean; error?: string }> {
+export async function sendAdminOtpEmail(otp: string, targetEmail: string = process.env.ADMIN_NOTIFICATION_EMAIL || ''): Promise<{ success: boolean; error?: string }> {
   const host = process.env.SMTP_HOST || 'smtp.gmail.com';
   const port = Number(process.env.SMTP_PORT) || 465;
-  let user = process.env.SMTP_USER;
-  if (user === 'shambhuraj0007@gmail.com') {
-    user = 'shambhuraj960410054@gmail.com';
-  }
-  const pass = process.env.SMTP_PASS || 'dczn fnry mwta ousr';
-  const from = process.env.EMAIL_FROM || '"AZYRA Verification" <shambhuraj960410054@gmail.com>';
-
-  // Always log the OTP to server console for development & emergency access
-  console.log(`\n======================================================`);
-  console.log(`🔐 [AZYRA ADMIN 2FA OTP]`);
-  console.log(`Target: ${targetEmail}`);
-  console.log(`One-Time Code: ${otp}`);
-  console.log(`Valid for: 10 minutes`);
-  console.log(`======================================================\n`);
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+  const from = process.env.EMAIL_FROM || process.env.SMTP_USER;
 
   // If SMTP password is not set or placeholder, return success with console log fallback
   if (!user || !pass || pass === 'your_app_password_here') {
-    console.warn('⚠️ SMTP_PASS is not configured in .env. OTP printed to server terminal above.');
+    console.warn('⚠️ SMTP_PASS is not configured in .env.');
     return { success: true };
   }
 

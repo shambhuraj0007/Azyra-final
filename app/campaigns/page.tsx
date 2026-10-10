@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -58,6 +58,26 @@ export default function CampaignsMarketplacePage() {
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
+
+  // Authentication guard for creating a campaign
+  const handleOpenCreateCampaign = () => {
+    if (!currentUser?.isLoggedIn) {
+      router.push('/login?redirect=/campaigns&action=create');
+      return;
+    }
+    setIsCreateModalOpen(true);
+  };
+
+  // If redirected back from login with action=create and user is logged in, auto-open modal
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('action') === 'create' && currentUser?.isLoggedIn) {
+        setIsCreateModalOpen(true);
+        window.history.replaceState({}, '', '/campaigns');
+      }
+    }
+  }, [currentUser?.isLoggedIn]);
 
   // Platform filters
   const platformOptions: { id: string; label: string }[] = [
@@ -151,9 +171,30 @@ export default function CampaignsMarketplacePage() {
               post short-form clips to X, Reels, and Shorts, and receive automated payouts as view counts grow.
             </p>
 
+            {/* Quick Action Bar in Hero */}
+            <div className="pt-2 flex flex-wrap items-center gap-3">
+              <button
+                onClick={handleOpenCreateCampaign}
+                className="rounded-xl bg-limeAccent hover:brightness-110 text-[#0B0F10] font-heading font-bold px-5 py-3 text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-limeAccent/20 transition active:scale-[0.98]"
+              >
+                <Plus className="h-4 w-4 stroke-[3]" />
+                <span>Create Campaign</span>
+              </button>
+
+              <div className="flex items-center gap-4 text-xs font-mono text-textMuted bg-surfaceElevated border border-borderMuted rounded-xl px-4 py-2.5">
+                <div>
+                  <span className="text-textMuted block text-[10px] uppercase">Active Escrow</span>
+                  <strong className="text-emeraldAccent font-bold">${totalEscrowPool.toLocaleString()}</strong>
+                </div>
+                <div className="h-4 w-px bg-borderMuted" />
+                <div>
+                  <span className="text-textMuted block text-[10px] uppercase">Views Tracked</span>
+                  <strong className="text-limeAccent font-bold">{(totalViewsTracked / 1000000).toFixed(1)}M+</strong>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-
 
         {/* DISCOVER & FILTER BAR (Section 2A) */}
         <div className="space-y-4">
@@ -174,8 +215,8 @@ export default function CampaignsMarketplacePage() {
               ))}
             </div>
 
-            {/* Sort & Search */}
-            <div className="flex items-center gap-3">
+            {/* Sort, Search, and Add Campaign Button */}
+            <div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap">
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as any)}
@@ -192,8 +233,16 @@ export default function CampaignsMarketplacePage() {
                 placeholder="Search campaigns, brands..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="rounded-xl bg-surface border border-borderMuted px-3 py-2 text-xs text-textMain placeholder-textMuted/50 focus:border-limeAccent outline-none min-w-[200px]"
+                className="rounded-xl bg-surface border border-borderMuted px-3 py-2 text-xs text-textMain placeholder-textMuted/50 focus:border-limeAccent outline-none min-w-[180px]"
               />
+
+              <button
+                onClick={handleOpenCreateCampaign}
+                className="rounded-xl bg-limeAccent hover:brightness-110 text-[#0B0F10] font-heading font-bold px-3.5 py-2 text-xs flex items-center gap-1.5 shadow-md shadow-limeAccent/20 transition shrink-0 active:scale-[0.98]"
+              >
+                <Plus className="h-3.5 w-3.5 stroke-[3]" />
+                <span>Add Campaign</span>
+              </button>
             </div>
           </div>
 
@@ -275,8 +324,8 @@ export default function CampaignsMarketplacePage() {
                     {camp.description}
                   </p>
 
-                  {/* Platforms accepted */}
-                  <div className="flex flex-wrap gap-1.5 mb-4">
+                  {/* Platforms accepted & Creator Toolkit Badges */}
+                  <div className="flex flex-wrap items-center gap-1.5 mb-3">
                     {camp.platforms.map((p) => {
                       const platMeta = formatPlatform(p);
                       return (
@@ -288,6 +337,18 @@ export default function CampaignsMarketplacePage() {
                         </span>
                       );
                     })}
+
+                    {camp.guidelines.hooks && camp.guidelines.hooks.length > 0 && (
+                      <span className="rounded-md px-2 py-0.5 text-[10px] font-mono font-bold bg-amber-950/40 text-amber-300 border border-amber-500/30">
+                        ⚡ {camp.guidelines.hooks.length} Hooks
+                      </span>
+                    )}
+
+                    {camp.asset_drive_link && (
+                      <span className="rounded-md px-2 py-0.5 text-[10px] font-mono font-bold bg-limeAccent/15 text-limeAccent border border-limeAccent/30">
+                        📁 B-Roll Ready
+                      </span>
+                    )}
                   </div>
 
                   {/* CPM Rate & Caps Card (Whop Model) */}

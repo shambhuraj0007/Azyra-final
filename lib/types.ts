@@ -78,6 +78,16 @@ export interface CampaignGuidelines {
   forbidden_audio: string[];
   requirements: string[];
   notes: string;
+  // Enhanced creator fields for best implementation:
+  hooks?: string[];
+  key_talking_points?: string[];
+  call_to_action?: string;
+  dos?: string[];
+  donts?: string[];
+  media_kit_link?: string;
+  example_videos?: string[];
+  video_duration?: string;
+  target_audience?: string;
 }
 
 export interface Campaign {
@@ -88,6 +98,7 @@ export interface Campaign {
   brand_url: string;
   brand_leaderboard_rank?: number;
   title: string;
+  tagline?: string;
   description: string;
   asset_drive_link: string; // Google Drive / S3 / Dropbox raw video clips
   guidelines: CampaignGuidelines;

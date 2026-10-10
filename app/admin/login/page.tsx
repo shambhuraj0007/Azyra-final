@@ -9,7 +9,7 @@ export default function AdminLogin() {
   const [adminId, setAdminId] = useState("");
   const [password, setPassword] = useState("");
   const [otp, setOtp] = useState("");
-  const [targetEmail, setTargetEmail] = useState("gadhaveshambhuraj@gmail.com");
+  const [targetEmail, setTargetEmail] = useState("");
   const [error, setError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -34,7 +34,7 @@ export default function AdminLogin() {
       setIsLoading(false);
 
       if (res.ok && data.requiresOtp) {
-        setTargetEmail(data.email || "gadhaveshambhuraj@gmail.com");
+        setTargetEmail(data.email || "");
         setStep("otp");
         setSuccessMsg(`Security code sent`);
       } else {

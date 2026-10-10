@@ -45,11 +45,11 @@ export async function POST(req: NextRequest) {
 
     // Always fetch directly according to .env
     const targetAdminId = getLiveEnv("ADMIN_ID", "admin_azyra");
-    const targetEmail = getLiveEnv("ADMIN_NOTIFICATION_EMAIL", "gadhaveshambhuraj@gmail.com");
+    const targetEmail = getLiveEnv("ADMIN_NOTIFICATION_EMAIL", "");
     const envPlainPassword = getLiveEnv("ADMIN_PASSWORD", "");
     const hash = getLiveEnv("ADMIN_PASSWORD_HASH", "");
 
-    if (adminId.trim() !== targetAdminId) {
+    if (!targetAdminId || adminId.trim() !== targetAdminId) {
       rateLimits.set(ip, { count: (rl?.count || 0) + 1, expiresAt: now + 15 * 60 * 1000 });
       return NextResponse.json({ error: "Invalid Admin ID" }, { status: 401 });
     }
@@ -66,10 +66,6 @@ export async function POST(req: NextRequest) {
       } catch (e) {
         isValid = false;
       }
-    }
-    // 3. Fallback default
-    else if (password.trim() === "Admin@Azyra2026" || password.trim() === "Admin@Azyra2026!") {
-      isValid = true;
     }
 
     if (!isValid) {

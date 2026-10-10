@@ -27,7 +27,11 @@ import {
   Archive,
   BarChart3,
   Flame,
-  Zap
+  Zap,
+  Target,
+  Palette,
+  Film,
+  Lightbulb
 } from 'lucide-react';
 import Navbar from '../../../components/Navbar';
 import WithdrawModal from '../../../components/WithdrawModal';
@@ -236,9 +240,22 @@ function CampaignWorkspaceContent({ params }: PageProps) {
                   className="rounded-xl bg-limeAccent hover:brightness-110 text-[#0B0F10] font-heading font-bold px-4 py-2.5 text-xs flex items-center gap-2 shadow-lg shadow-limeAccent/20 transition active:scale-[0.98]"
                 >
                   <FolderDown className="h-4 w-4" />
-                  <span>Download Raw Video Footage & Hooks</span>
+                  <span>Download Raw Video Footage & B-Roll</span>
                   <ExternalLink className="h-3 w-3 opacity-70" />
                 </a>
+
+                {campaign.guidelines.media_kit_link && (
+                  <a
+                    href={campaign.guidelines.media_kit_link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="rounded-xl bg-surfaceElevated hover:bg-surface text-textMain border border-borderMuted px-4 py-2.5 text-xs font-semibold flex items-center gap-1.5 transition"
+                  >
+                    <Palette className="h-4 w-4 text-emeraldAccent" />
+                    <span>Brand Media Kit & Logos</span>
+                    <ExternalLink className="h-3 w-3 opacity-70" />
+                  </a>
+                )}
 
                 <button
                   onClick={() => copyToClipboard(campaign.asset_drive_link)}
@@ -314,69 +331,276 @@ function CampaignWorkspaceContent({ params }: PageProps) {
           </div>
         </div>
 
-        {/* GUIDELINES & CONTENT CRITERIA (Section 2C) */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Allowed Hashtags */}
-          <div className="rounded-xl border border-borderMuted bg-surface p-5 space-y-3">
-            <span className="text-xs font-heading font-bold uppercase tracking-wider text-limeAccent block">
-              Required Hashtags
-            </span>
-            <div className="flex flex-wrap gap-1.5">
-              {campaign.guidelines.allowed_hashtags.map((tag) => (
-                <button
-                  key={tag}
-                  onClick={() => copyToClipboard(tag)}
-                  className="rounded-lg bg-surfaceElevated border border-borderMuted hover:border-limeAccent px-2.5 py-1 text-xs font-mono text-textMuted hover:text-textMain flex items-center gap-1 transition"
-                  title="Click to copy"
-                >
-                  <span>{tag}</span>
-                  {copiedTag === tag ? (
-                    <Check className="h-3 w-3 text-emeraldAccent" />
-                  ) : (
-                    <Copy className="h-3 w-3 text-textMuted" />
-                  )}
-                </button>
-              ))}
+        {/* ========================================================================= */}
+        {/* CREATOR IMPLEMENTATION SUITE (All Details for Best Clip Creation)          */}
+        {/* ========================================================================= */}
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-borderMuted pb-4">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 bg-limeAccent/15 text-limeAccent rounded-xl border border-limeAccent/30">
+                <Sparkles className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="text-lg font-heading font-bold text-textMain">
+                  Creator Implementation Suite
+                </h3>
+                <p className="text-xs text-textMuted">
+                  Viral hook blueprints, core talking points, and compliance guardrails for maximum payouts
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap">
+              {campaign.guidelines.video_duration && (
+                <span className="rounded-full px-3 py-1 text-xs font-mono font-bold bg-surfaceElevated border border-borderMuted text-limeAccent">
+                  ⏱ {campaign.guidelines.video_duration}
+                </span>
+              )}
+              {campaign.guidelines.target_audience && (
+                <span className="rounded-full px-3 py-1 text-xs font-mono font-bold bg-surfaceElevated border border-borderMuted text-textMuted">
+                  🎯 {campaign.guidelines.target_audience}
+                </span>
+              )}
             </div>
           </div>
 
-          {/* Accounts to Mention */}
-          <div className="rounded-xl border border-borderMuted bg-surface p-5 space-y-3">
-            <span className="text-xs font-heading font-bold uppercase tracking-wider text-emeraldAccent block">
-              Tag / Accounts to Mention
-            </span>
-            <div className="flex flex-wrap gap-1.5">
-              {campaign.guidelines.accounts_to_mention.map((acc) => (
-                <button
-                  key={acc}
-                  onClick={() => copyToClipboard(acc)}
-                  className="rounded-lg bg-surfaceElevated border border-borderMuted hover:border-emeraldAccent px-2.5 py-1 text-xs font-mono text-textMuted hover:text-textMain flex items-center gap-1 transition"
-                  title="Click to copy"
-                >
-                  <span>{acc}</span>
-                  {copiedTag === acc ? (
-                    <Check className="h-3 w-3 text-emeraldAccent" />
-                  ) : (
-                    <Copy className="h-3 w-3 text-textMuted" />
-                  )}
-                </button>
-              ))}
+          {/* 1. VIRAL OPENING HOOKS (FIRST 3 SECONDS) */}
+          {campaign.guidelines.hooks && campaign.guidelines.hooks.length > 0 && (
+            <div className="rounded-2xl border border-amber-500/30 bg-surface p-6 shadow-xl space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Flame className="h-5 w-5 text-amber-400" />
+                  <h4 className="text-sm font-heading font-bold text-amber-300 uppercase tracking-wider">
+                    Recommended Viral Opening Hooks (First 3 Seconds)
+                  </h4>
+                </div>
+                <span className="text-[11px] font-mono text-amber-400/80 hidden sm:inline">
+                  Click to copy hook line
+                </span>
+              </div>
+              <p className="text-xs text-textMuted">
+                Say or display one of these exact hook lines in the first 2-3 seconds to maximize organic short-form retention:
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {campaign.guidelines.hooks.map((hook, idx) => (
+                  <div
+                    key={idx}
+                    onClick={() => copyToClipboard(hook)}
+                    className="group relative cursor-pointer rounded-xl bg-surfaceElevated border border-borderMuted hover:border-amber-400 p-4 transition flex items-start justify-between gap-3 shadow-md"
+                  >
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-mono text-amber-400 font-bold block uppercase">
+                        Hook Angle #{idx + 1}
+                      </span>
+                      <p className="text-xs text-textMain font-mono font-semibold leading-relaxed group-hover:text-amber-300 transition">
+                        {hook}
+                      </p>
+                    </div>
+                    <div className="p-1.5 rounded-lg bg-surface text-textMuted group-hover:text-amber-400 group-hover:bg-amber-950/40 border border-borderMuted transition shrink-0 mt-0.5">
+                      {copiedTag === hook ? (
+                        <Check className="h-4 w-4 text-emeraldAccent" />
+                      ) : (
+                        <Copy className="h-4 w-4" />
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 2. TALKING POINTS & CALL TO ACTION */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Key Talking Points */}
+            <div className="rounded-2xl border border-borderMuted bg-surface p-6 space-y-3 shadow-xl">
+              <div className="flex items-center gap-2 text-limeAccent font-heading font-bold text-sm">
+                <Target className="h-4 w-4" />
+                <span>Core Value Props & Demo Checklist</span>
+              </div>
+              <p className="text-xs text-textMuted leading-relaxed">
+                Ensure your video demonstrates at least 2 of these product capabilities:
+              </p>
+              <ul className="space-y-2 pt-1">
+                {(campaign.guidelines.key_talking_points && campaign.guidelines.key_talking_points.length > 0
+                  ? campaign.guidelines.key_talking_points
+                  : campaign.guidelines.requirements
+                ).map((point, idx) => (
+                  <li key={idx} className="flex items-start gap-2.5 text-xs text-textMain leading-relaxed">
+                    <CheckCircle2 className="h-4 w-4 text-limeAccent shrink-0 mt-0.5" />
+                    <span>{point}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Call To Action & Example Inspo Clips */}
+            <div className="space-y-4 flex flex-col justify-between">
+              {/* Mandatory Call To Action */}
+              {campaign.guidelines.call_to_action && (
+                <div className="rounded-2xl border border-emeraldAccent/40 bg-surfaceElevated p-5 space-y-2 shadow-xl">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-heading font-bold uppercase tracking-wider text-emeraldAccent flex items-center gap-1.5">
+                      <Sparkles className="h-4 w-4" />
+                      <span>Video Call-to-Action (CTA)</span>
+                    </span>
+                    <button
+                      onClick={() => copyToClipboard(campaign.guidelines.call_to_action!)}
+                      className="text-[11px] font-mono text-emeraldAccent hover:underline flex items-center gap-1"
+                    >
+                      {copiedTag === campaign.guidelines.call_to_action ? 'Copied!' : 'Copy CTA'}
+                    </button>
+                  </div>
+                  <p className="text-sm font-heading font-bold text-textMain italic bg-canvas/70 p-3 rounded-xl border border-borderMuted">
+                    {campaign.guidelines.call_to_action}
+                  </p>
+                  <span className="text-[11px] text-textMuted block">
+                    Deliver this CTA verbally or with bold text overlay in the final 5 seconds.
+                  </span>
+                </div>
+              )}
+
+              {/* Example Videos (Inspo) */}
+              {campaign.guidelines.example_videos && campaign.guidelines.example_videos.length > 0 && (
+                <div className="rounded-2xl border border-borderMuted bg-surface p-5 space-y-2 shadow-xl">
+                  <span className="text-xs font-heading font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-1.5">
+                    <Film className="h-4 w-4" />
+                    <span>Winning Clip References (Inspirations)</span>
+                  </span>
+                  <div className="space-y-1.5 pt-1">
+                    {campaign.guidelines.example_videos.map((url, i) => (
+                      <a
+                        key={i}
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-between p-2 rounded-xl bg-surfaceElevated hover:bg-surface border border-borderMuted text-xs font-mono text-textMain hover:text-cyan-300 transition"
+                      >
+                        <span className="truncate max-w-[280px]">{url}</span>
+                        <ExternalLink className="h-3.5 w-3.5 shrink-0 opacity-70" />
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Forbidden Audio & Notes */}
-          <div className="rounded-xl border border-borderMuted bg-surface p-5 space-y-2">
-            <span className="text-xs font-heading font-bold uppercase tracking-wider text-rose-400 block">
-              Do's & Don'ts
-            </span>
-            <ul className="text-xs text-textMuted space-y-1 list-disc list-inside">
-              <li>{campaign.guidelines.notes}</li>
+          {/* 3. DO'S AND DON'TS GUARDRAILS */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* DO's */}
+            <div className="rounded-2xl border border-emeraldAccent/30 bg-surface p-6 space-y-3 shadow-xl">
+              <span className="text-xs font-heading font-bold uppercase tracking-wider text-emeraldAccent flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4" />
+                <span>Creative Do's (High Payout Guaranteed)</span>
+              </span>
+              <ul className="space-y-2 text-xs text-textMain leading-relaxed">
+                {(campaign.guidelines.dos && campaign.guidelines.dos.length > 0
+                  ? campaign.guidelines.dos
+                  : [
+                      'Hook viewers immediately within the first 3 seconds',
+                      'Use bold high-contrast animated subtitles',
+                      'Show clean 1080p+ vertical screen recordings',
+                      'Maintain high energy and rapid jump cuts',
+                    ]
+                ).map((d, idx) => (
+                  <li key={idx} className="flex items-start gap-2">
+                    <span className="text-emeraldAccent font-bold">✓</span>
+                    <span>{d}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* DON'Ts */}
+            <div className="rounded-2xl border border-red-500/30 bg-surface p-6 space-y-3 shadow-xl">
+              <span className="text-xs font-heading font-bold uppercase tracking-wider text-rose-400 flex items-center gap-2">
+                <AlertCircle className="h-4 w-4" />
+                <span>Creative Don'ts (Disqualification Risks)</span>
+              </span>
+              <ul className="space-y-2 text-xs text-textMain leading-relaxed">
+                {(campaign.guidelines.donts && campaign.guidelines.donts.length > 0
+                  ? campaign.guidelines.donts
+                  : [
+                      'No static slideshows or AI image text galleries',
+                      'No copyrighted commercial audio tracks',
+                      'Do not disparage or insult direct competitors',
+                      'Never purchase fake bot views or engagement traffic',
+                    ]
+                ).map((dont, idx) => (
+                  <li key={idx} className="flex items-start gap-2 text-rose-200/90">
+                    <span className="text-rose-400 font-bold">✗</span>
+                    <span>{dont}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          {/* 4. TAGS, MENTIONS, AND AUDIO SPECIFICATIONS */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Allowed Hashtags */}
+            <div className="rounded-2xl border border-borderMuted bg-surface p-5 space-y-3 shadow-xl">
+              <span className="text-xs font-heading font-bold uppercase tracking-wider text-limeAccent block">
+                Required Hashtags (Click to copy)
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {campaign.guidelines.allowed_hashtags.map((tag) => (
+                  <button
+                    key={tag}
+                    onClick={() => copyToClipboard(tag)}
+                    className="rounded-lg bg-surfaceElevated border border-borderMuted hover:border-limeAccent px-2.5 py-1 text-xs font-mono text-textMuted hover:text-textMain flex items-center gap-1 transition"
+                    title="Click to copy"
+                  >
+                    <span>{tag}</span>
+                    {copiedTag === tag ? (
+                      <Check className="h-3 w-3 text-emeraldAccent" />
+                    ) : (
+                      <Copy className="h-3 w-3 text-textMuted" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Accounts to Mention */}
+            <div className="rounded-2xl border border-borderMuted bg-surface p-5 space-y-3 shadow-xl">
+              <span className="text-xs font-heading font-bold uppercase tracking-wider text-emeraldAccent block">
+                Tag Accounts in Caption
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {campaign.guidelines.accounts_to_mention.map((acc) => (
+                  <button
+                    key={acc}
+                    onClick={() => copyToClipboard(acc)}
+                    className="rounded-lg bg-surfaceElevated border border-borderMuted hover:border-emeraldAccent px-2.5 py-1 text-xs font-mono text-textMuted hover:text-textMain flex items-center gap-1 transition"
+                    title="Click to copy"
+                  >
+                    <span>{acc}</span>
+                    {copiedTag === acc ? (
+                      <Check className="h-3 w-3 text-emeraldAccent" />
+                    ) : (
+                      <Copy className="h-3 w-3 text-textMuted" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Audio & Music Restrictions */}
+            <div className="rounded-2xl border border-borderMuted bg-surface p-5 space-y-2 shadow-xl">
+              <span className="text-xs font-heading font-bold uppercase tracking-wider text-rose-400 block">
+                Audio & Music Rules
+              </span>
+              <p className="text-xs text-textMuted leading-relaxed">
+                {campaign.guidelines.notes}
+              </p>
               {campaign.guidelines.forbidden_audio.map((f, i) => (
-                <li key={i} className="text-rose-300/90 font-mono">
+                <div key={i} className="text-[11px] text-rose-300 font-mono bg-red-950/40 p-1.5 rounded-lg border border-red-500/20">
                   Forbidden: {f}
-                </li>
+                </div>
               ))}
-            </ul>
+            </div>
           </div>
         </div>
 

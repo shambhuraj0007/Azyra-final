@@ -176,5 +176,5 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   session: {
     strategy: "jwt",
   },
-  secret: process.env.NEXTAUTH_SECRET || 'azyra_super_secret_key_2026',
+  secret: process.env.NEXTAUTH_SECRET,
 });
