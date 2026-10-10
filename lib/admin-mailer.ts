@@ -3,7 +3,7 @@ import nodemailer from 'nodemailer';
 export async function sendAdminOtpEmail(otp: string, targetEmail: string = 'gadhaveshambhuraj@gmail.com'): Promise<{ success: boolean; error?: string }> {
   const host = process.env.SMTP_HOST || 'smtp.gmail.com';
   const port = Number(process.env.SMTP_PORT) || 465;
-  let user = process.env.SMTP_USER || 'shambhuraj960410054@gmail.com';
+  let user = process.env.SMTP_USER;
   if (user === 'shambhuraj0007@gmail.com') {
     user = 'shambhuraj960410054@gmail.com';
   }

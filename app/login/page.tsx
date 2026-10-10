@@ -105,7 +105,7 @@ function AuthContent() {
 
     const isProfileSetup =
       currentUser?.isProfileSetup ?? Boolean((session?.user as any)?.isProfileSetup);
-    const creatorStatus = 
+    const creatorStatus =
       currentUser?.creatorStatus || (session?.user as any)?.creatorStatus || 'none';
     const userRole = currentUser?.role || (session?.user as any)?.role || role;
 
@@ -456,36 +456,7 @@ function AuthContent() {
             )}
 
             {/* Company / Brand Name */}
-            {mode === 'signup' && role === 'brand' && (
-              <div>
-                <label className="block text-xs font-sans font-medium mb-1.5" style={{ color: TOKEN.textMuted }}>
-                  Company / brand name
-                </label>
-                <div className="relative">
-                  <Building2
-                    className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none"
-                    style={{ color: TOKEN.textMuted }}
-                  />
-                  <input
-                    id="auth-company"
-                    type="text"
-                    placeholder="Acme Corp"
-                    value={companyName}
-                    onChange={(e) => setCompanyName(e.target.value)}
-                    className="w-full pl-9 pr-3 text-sm font-sans outline-none transition"
-                    style={{
-                      height: '44px',
-                      background: TOKEN.surfaceEl,
-                      border: `1px solid ${TOKEN.borderMuted}`,
-                      color: TOKEN.textPrimary,
-                      borderRadius: '8px',
-                    }}
-                    onFocus={(e) => { e.currentTarget.style.borderColor = TOKEN.lime; }}
-                    onBlur={(e) => { e.currentTarget.style.borderColor = TOKEN.borderMuted; }}
-                  />
-                </div>
-              </div>
-            )}
+
 
             {/* Email */}
             <div>
@@ -532,7 +503,7 @@ function AuthContent() {
                   id="auth-password"
                   type={showPassword ? 'text' : 'password'}
                   required
-                  placeholder="\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7"
+                  placeholder="Enter your password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full pl-9 pr-10 text-sm font-sans outline-none transition"

@@ -514,8 +514,8 @@ export default function ProfilePage() {
           <button
             onClick={() => setActiveTab('details')}
             className={`flex items-center gap-2 pb-3 px-3 text-xs sm:text-sm font-heading font-bold border-b-2 transition whitespace-nowrap ${activeTab === 'details'
-                ? 'border-limeAccent text-limeAccent'
-                : 'border-transparent text-textMuted hover:text-textMain'
+              ? 'border-limeAccent text-limeAccent'
+              : 'border-transparent text-textMuted hover:text-textMain'
               }`}
           >
             <Settings className="h-4 w-4" />
@@ -525,8 +525,8 @@ export default function ProfilePage() {
           <button
             onClick={() => setActiveTab('wallet')}
             className={`flex items-center gap-2 pb-3 px-3 text-xs sm:text-sm font-heading font-bold border-b-2 transition whitespace-nowrap ${activeTab === 'wallet'
-                ? 'border-limeAccent text-limeAccent'
-                : 'border-transparent text-textMuted hover:text-textMain'
+              ? 'border-limeAccent text-limeAccent'
+              : 'border-transparent text-textMuted hover:text-textMain'
               }`}
           >
             <CreditCard className="h-4 w-4" />
@@ -543,8 +543,8 @@ export default function ProfilePage() {
           <button
             onClick={() => setActiveTab('campaigns')}
             className={`flex items-center gap-2 pb-3 px-3 text-xs sm:text-sm font-heading font-bold border-b-2 transition whitespace-nowrap ${activeTab === 'campaigns'
-                ? 'border-limeAccent text-limeAccent'
-                : 'border-transparent text-textMuted hover:text-textMain'
+              ? 'border-limeAccent text-limeAccent'
+              : 'border-transparent text-textMuted hover:text-textMain'
               }`}
           >
             <Layers className="h-4 w-4" />
@@ -554,8 +554,8 @@ export default function ProfilePage() {
           <button
             onClick={() => setActiveTab('clips')}
             className={`flex items-center gap-2 pb-3 px-3 text-xs sm:text-sm font-heading font-bold border-b-2 transition whitespace-nowrap ${activeTab === 'clips'
-                ? 'border-limeAccent text-limeAccent'
-                : 'border-transparent text-textMuted hover:text-textMain'
+              ? 'border-limeAccent text-limeAccent'
+              : 'border-transparent text-textMuted hover:text-textMain'
               }`}
           >
             <Video className="h-4 w-4" />
@@ -670,8 +670,8 @@ export default function ProfilePage() {
             {feedbackMsg && (
               <div
                 className={`rounded-xl p-3.5 text-xs flex items-center gap-2 border ${feedbackMsg.type === 'success'
-                    ? 'bg-surfaceElevated border-emeraldAccent/40 text-emeraldAccent'
-                    : 'bg-red-950/60 border-red-500/40 text-red-200'
+                  ? 'bg-surfaceElevated border-emeraldAccent/40 text-emeraldAccent'
+                  : 'bg-red-950/60 border-red-500/40 text-red-200'
                   }`}
               >
                 {feedbackMsg.type === 'success' ? (
@@ -696,8 +696,8 @@ export default function ProfilePage() {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     className={`w-full rounded-xl border border-borderMuted px-3.5 py-2.5 text-xs text-textMain outline-none transition ${isLocked
-                        ? 'bg-surfaceElevated/50 text-textMuted cursor-not-allowed opacity-80'
-                        : 'bg-surfaceElevated focus:border-limeAccent'
+                      ? 'bg-surfaceElevated/50 text-textMuted cursor-not-allowed opacity-80'
+                      : 'bg-surfaceElevated focus:border-limeAccent'
                       }`}
                   />
                 </div>
@@ -715,8 +715,8 @@ export default function ProfilePage() {
                       value={handle.replace('@', '')}
                       onChange={(e) => setHandle(e.target.value)}
                       className={`w-full rounded-xl border border-borderMuted pl-7 pr-3.5 py-2.5 text-xs text-textMain font-mono outline-none transition ${isLocked
-                          ? 'bg-surfaceElevated/50 text-textMuted cursor-not-allowed opacity-80'
-                          : 'bg-surfaceElevated focus:border-limeAccent'
+                        ? 'bg-surfaceElevated/50 text-textMuted cursor-not-allowed opacity-80'
+                        : 'bg-surfaceElevated focus:border-limeAccent'
                         }`}
                     />
                   </div>
@@ -747,8 +747,8 @@ export default function ProfilePage() {
                   onChange={(e) => setBio(e.target.value)}
                   placeholder="Tell sponsor brands about your clipping reach, audience demographics, and format..."
                   className={`w-full rounded-xl border border-borderMuted px-3.5 py-2 text-xs text-textMain placeholder-textMuted/50 outline-none transition ${isLocked
-                      ? 'bg-surfaceElevated/50 text-textMuted cursor-not-allowed opacity-80'
-                      : 'bg-surfaceElevated focus:border-limeAccent'
+                    ? 'bg-surfaceElevated/50 text-textMuted cursor-not-allowed opacity-80'
+                    : 'bg-surfaceElevated focus:border-limeAccent'
                     }`}
                 />
               </div>
@@ -772,8 +772,8 @@ export default function ProfilePage() {
                         disabled={isLocked}
                         onClick={() => setPrimaryPlatform(p.id as any)}
                         className={`rounded-xl px-3 py-2 text-xs font-heading font-bold border transition ${primaryPlatform === p.id
-                            ? 'bg-limeAccent text-[#0B0F10] border-limeAccent shadow-sm shadow-limeAccent/20'
-                            : 'bg-surfaceElevated border-borderMuted text-textMuted hover:text-textMain'
+                          ? 'bg-limeAccent text-[#0B0F10] border-limeAccent shadow-sm shadow-limeAccent/20'
+                          : 'bg-surfaceElevated border-borderMuted text-textMuted hover:text-textMain'
                           } ${isLocked ? 'cursor-not-allowed opacity-80' : ''}`}
                       >
                         {p.label}
@@ -797,15 +797,15 @@ export default function ProfilePage() {
                       primaryPlatform === 'x'
                         ? 'https://x.com/yourhandle or @username'
                         : primaryPlatform === 'instagram'
-                        ? 'https://instagram.com/yourhandle or @username'
-                        : 'https://youtube.com/@yourchannel'
+                          ? 'https://instagram.com/yourhandle or @username'
+                          : 'https://youtube.com/@yourchannel'
                     }
                     value={
                       primaryPlatform === 'x'
                         ? xLink
                         : primaryPlatform === 'instagram'
-                        ? instagramLink
-                        : youtubeLink
+                          ? instagramLink
+                          : youtubeLink
                     }
                     onChange={(e) => {
                       const val = e.target.value;
@@ -814,8 +814,8 @@ export default function ProfilePage() {
                       else if (primaryPlatform === 'youtube_shorts') setYoutubeLink(val);
                     }}
                     className={`w-full rounded-xl border border-borderMuted px-4 py-2.5 text-xs text-textMain font-mono outline-none transition ${isLocked
-                        ? 'bg-surfaceElevated/50 text-textMuted cursor-not-allowed opacity-80'
-                        : 'bg-surfaceElevated focus:border-limeAccent'
+                      ? 'bg-surfaceElevated/50 text-textMuted cursor-not-allowed opacity-80'
+                      : 'bg-surfaceElevated focus:border-limeAccent'
                       }`}
                   />
                 </div>
@@ -848,9 +848,8 @@ export default function ProfilePage() {
                             placeholder="https://x.com/username"
                             value={xLink}
                             onChange={(e) => setXLink(e.target.value)}
-                            className={`w-full rounded-xl border border-borderMuted px-3 py-2 text-xs text-textMain font-mono outline-none ${
-                              isLocked ? 'bg-surfaceElevated/50 text-textMuted cursor-not-allowed' : 'bg-surfaceElevated focus:border-limeAccent'
-                            }`}
+                            className={`w-full rounded-xl border border-borderMuted px-3 py-2 text-xs text-textMain font-mono outline-none ${isLocked ? 'bg-surfaceElevated/50 text-textMuted cursor-not-allowed' : 'bg-surfaceElevated focus:border-limeAccent'
+                              }`}
                           />
                         </div>
                       )}
@@ -866,9 +865,8 @@ export default function ProfilePage() {
                             placeholder="@handle or https://instagram.com/..."
                             value={instagramLink}
                             onChange={(e) => setInstagramLink(e.target.value)}
-                            className={`w-full rounded-xl border border-borderMuted px-3 py-2 text-xs text-textMain font-mono outline-none ${
-                              isLocked ? 'bg-surfaceElevated/50 text-textMuted cursor-not-allowed' : 'bg-surfaceElevated focus:border-limeAccent'
-                            }`}
+                            className={`w-full rounded-xl border border-borderMuted px-3 py-2 text-xs text-textMain font-mono outline-none ${isLocked ? 'bg-surfaceElevated/50 text-textMuted cursor-not-allowed' : 'bg-surfaceElevated focus:border-limeAccent'
+                              }`}
                           />
                         </div>
                       )}
@@ -884,9 +882,8 @@ export default function ProfilePage() {
                             placeholder="youtube.com/@handle"
                             value={youtubeLink}
                             onChange={(e) => setYoutubeLink(e.target.value)}
-                            className={`w-full rounded-xl border border-borderMuted px-3 py-2 text-xs text-textMain font-mono outline-none ${
-                              isLocked ? 'bg-surfaceElevated/50 text-textMuted cursor-not-allowed' : 'bg-surfaceElevated focus:border-limeAccent'
-                            }`}
+                            className={`w-full rounded-xl border border-borderMuted px-3 py-2 text-xs text-textMain font-mono outline-none ${isLocked ? 'bg-surfaceElevated/50 text-textMuted cursor-not-allowed' : 'bg-surfaceElevated focus:border-limeAccent'
+                              }`}
                           />
                         </div>
                       )}
@@ -950,19 +947,18 @@ export default function ProfilePage() {
                   <button
                     type="submit"
                     disabled={isSaving}
-                    className={`rounded-xl font-heading font-bold px-6 py-2.5 text-xs flex items-center gap-2 transition disabled:opacity-50 active:scale-[0.98] ${
-                      isApproved
+                    className={`rounded-xl font-heading font-bold px-6 py-2.5 text-xs flex items-center gap-2 transition disabled:opacity-50 active:scale-[0.98] ${isApproved
                         ? 'bg-amber-500 hover:bg-amber-400 text-[#0B0F10] shadow-md shadow-amber-500/20'
                         : 'bg-limeAccent hover:brightness-110 text-[#0B0F10] shadow-md shadow-limeAccent/20'
-                    }`}
+                      }`}
                   >
                     <Save className="h-4 w-4" />
                     <span>
                       {isSaving
                         ? 'Saving Changes...'
                         : isApproved
-                        ? 'Save & Submit for Re-Verification'
-                        : 'Save Profile Changes'}
+                          ? 'Save & Submit for Re-Verification'
+                          : 'Save Profile Changes'}
                     </span>
                   </button>
                 )}
@@ -978,8 +974,8 @@ export default function ProfilePage() {
             {payoutFeedbackMsg && (
               <div
                 className={`rounded-xl p-4 text-xs flex items-center gap-2 border ${payoutFeedbackMsg.type === 'success'
-                    ? 'bg-surfaceElevated border-emeraldAccent/40 text-emeraldAccent'
-                    : 'bg-red-950/60 border-red-500/40 text-red-200'
+                  ? 'bg-surfaceElevated border-emeraldAccent/40 text-emeraldAccent'
+                  : 'bg-red-950/60 border-red-500/40 text-red-200'
                   }`}
               >
                 {payoutFeedbackMsg.type === 'success' ? (
@@ -1210,23 +1206,23 @@ export default function ProfilePage() {
                             type="button"
                             onClick={() => setPayoutType(item.id as any)}
                             className={`rounded-2xl p-4 text-left border transition flex flex-col justify-between gap-3 ${isSelected
-                                ? 'bg-surfaceElevated border-limeAccent ring-1 ring-limeAccent'
-                                : 'bg-surfaceElevated/50 border-borderMuted hover:border-limeAccent/40'
+                              ? 'bg-surfaceElevated border-limeAccent ring-1 ring-limeAccent'
+                              : 'bg-surfaceElevated/50 border-borderMuted hover:border-limeAccent/40'
                               }`}
                           >
                             <div className="flex items-center justify-between w-full">
                               <div
                                 className={`h-8 w-8 rounded-xl flex items-center justify-center ${isSelected
-                                    ? 'bg-limeAccent text-[#0B0F10]'
-                                    : 'bg-surface border border-borderMuted text-textMuted'
+                                  ? 'bg-limeAccent text-[#0B0F10]'
+                                  : 'bg-surface border border-borderMuted text-textMuted'
                                   }`}
                               >
                                 <Icon className="h-4 w-4" />
                               </div>
                               <span
                                 className={`text-[10px] font-mono px-2 py-0.5 rounded border ${isSelected
-                                    ? 'bg-limeAccent/20 text-limeAccent border-limeAccent/30'
-                                    : 'bg-surface border-borderMuted text-textMuted'
+                                  ? 'bg-limeAccent/20 text-limeAccent border-limeAccent/30'
+                                  : 'bg-surface border-borderMuted text-textMuted'
                                   }`}
                               >
                                 {item.badge}
@@ -1320,8 +1316,8 @@ export default function ProfilePage() {
                               type="button"
                               onClick={() => setAccountType(type)}
                               className={`rounded-xl px-4 py-2 text-xs font-heading font-bold border capitalize transition ${accountType === type
-                                  ? 'bg-limeAccent text-[#0B0F10] border-limeAccent'
-                                  : 'bg-surface border-borderMuted text-textMuted hover:text-textMain'
+                                ? 'bg-limeAccent text-[#0B0F10] border-limeAccent'
+                                : 'bg-surface border-borderMuted text-textMuted hover:text-textMain'
                                 }`}
                             >
                               {type} Account
@@ -1597,8 +1593,8 @@ export default function ProfilePage() {
                           <td className="py-3 px-3 text-right">
                             <span
                               className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${sub.verification_status === 'active' || sub.verification_status === 'paid'
-                                  ? 'bg-emerald-950/60 text-emeraldAccent border border-emerald-500/30'
-                                  : 'bg-surfaceElevated text-textMuted border border-borderMuted'
+                                ? 'bg-emerald-950/60 text-emeraldAccent border border-emerald-500/30'
+                                : 'bg-surfaceElevated text-textMuted border border-borderMuted'
                                 }`}
                             >
                               {sub.verification_status}
