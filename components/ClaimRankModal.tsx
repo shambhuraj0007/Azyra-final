@@ -20,6 +20,7 @@ import { ProductEntry, BoardType } from '../lib/types';
 import { calculateRequiredBid, inferStartupName } from '../lib/data';
 import DodoCheckout from './DodoCheckout';
 import FaviconImage from './FaviconImage';
+import { toast } from '@/lib/toast';
 
 interface ClaimRankModalProps {
   isOpen: boolean;
@@ -116,7 +117,10 @@ export default function ClaimRankModal({
     if (!url || !name) return;
 
     if (enteredAmount < minNetPayable) {
-      alert(`Minimum payment to claim Rank #${targetRank} is $${minNetPayable.toLocaleString()}`);
+      toast.warning(
+        'Minimum Bid Required',
+        `Minimum payment to claim Rank #${targetRank} is $${minNetPayable.toLocaleString()}`
+      );
       return;
     }
 
@@ -145,6 +149,7 @@ export default function ClaimRankModal({
       isBump: !!existingProduct,
     });
 
+    toast.success('Rank Secured!', `Rank #${targetRank} has been claimed for ${finalName}.`);
     setSubmitted(true);
     setTimeout(() => {
       onClose();
@@ -547,7 +552,7 @@ export default function ClaimRankModal({
                         executeBid(orderId);
                       }}
                       onError={(err) => {
-                        alert(`Payment error: ${err}`);
+                        toast.error('Payment Error', err);
                       }}
                     />
                   </div>

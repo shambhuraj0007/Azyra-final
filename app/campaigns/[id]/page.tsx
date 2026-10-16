@@ -41,6 +41,7 @@ import { useCampaigns } from '../../../lib/CampaignContext';
 import AzyraLogo from '../../../components/AzyraLogo';
 import { parseSocialUrl, formatPlatform } from '../../../lib/campaignUtils';
 import { SocialPlatform } from '../../../lib/types';
+import { toast, handleUnauthorized } from '@/lib/toast';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -125,6 +126,11 @@ function CampaignWorkspaceContent({ params }: PageProps) {
     e.preventDefault();
     setSubmitError(null);
 
+    if (!currentUser.isLoggedIn) {
+      handleUnauthorized('Please sign in to submit your clip.');
+      return;
+    }
+
     const res = await submitClip({
       campaignId: campaign.id,
       videoUrl,
@@ -132,10 +138,13 @@ function CampaignWorkspaceContent({ params }: PageProps) {
     });
 
     if (!res.success) {
-      setSubmitError(res.error || 'Submission failed');
+      const err = res.error || 'Submission failed';
+      setSubmitError(err);
+      toast.error('Submission Failed', err);
       return;
     }
 
+    toast.success('Clip Submitted!', 'Your video has been logged and queued for automated tracking.');
     setSubmitSuccess(true);
     setVideoUrl('');
     setInitialViews(0);
@@ -859,7 +868,11 @@ function CampaignWorkspaceContent({ params }: PageProps) {
                       <button
                         onClick={async () => {
                           const res = await checkViews(sub.id);
-                          if (!res.success) alert(res.error);
+                          if (!res.success) {
+                            toast.error('Views Update Failed', res.error || 'Could not fetch views');
+                          } else {
+                            toast.success('Live Views Polled', `Total tracked views: ${(res.views || 0).toLocaleString()}`);
+                          }
                         }}
                         title="Check real live views from platform"
                         className="rounded-xl bg-surfaceElevated hover:bg-surface text-textMain border border-borderMuted px-3 py-2 text-xs font-mono font-bold flex items-center gap-1.5 transition active:scale-[0.98] hover:border-limeAccent"
@@ -874,7 +887,11 @@ function CampaignWorkspaceContent({ params }: PageProps) {
                         onClick={async () => {
                           if (confirm('Are you sure you want to cancel this submission?')) {
                             const res = await cancelSubmission(sub.id);
-                            if (!res.success) alert(res.error);
+                            if (!res.success) {
+                              toast.error('Cancel Failed', res.error || 'Could not cancel submission');
+                            } else {
+                              toast.info('Submission Cancelled', 'The video submission has been removed.');
+                            }
                           }
                         }}
                         title="Cancel Submission"

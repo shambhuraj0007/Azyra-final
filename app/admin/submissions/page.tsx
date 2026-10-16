@@ -14,6 +14,7 @@ import {
   AlertCircle
 } from "lucide-react";
 import Link from "next/link";
+import { toast } from "@/lib/toast";
 
 interface Submission {
   id: string;

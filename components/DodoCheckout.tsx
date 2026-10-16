@@ -12,6 +12,7 @@
  */
 import { useState, useCallback } from 'react';
 import { ShieldCheck, Loader2, CheckCircle2, XCircle, CreditCard, ExternalLink } from 'lucide-react';
+import { toast, handleUnauthorized } from '@/lib/toast';
 
 interface DodoCheckoutProps {
   amountUsd: number;
@@ -52,10 +53,12 @@ export default function DodoCheckout({
 
       if (data.status === 'PAID') {
         setState('success');
+        toast.success('Payment Verified', 'Transaction confirmed on Dodo Payments Gateway.');
         onSuccess(oid);
       } else if (data.status === 'FAILED' || data.status === 'EXPIRED') {
         setState('failed');
         setErrorMsg('Payment was not completed. Please try again.');
+        toast.error('Payment Incomplete', 'Payment session was cancelled or expired.');
         onError?.('Payment failed');
       } else {
         await pollPaymentStatus(oid, retries - 1);
@@ -81,9 +84,21 @@ export default function DodoCheckout({
           campaign_id: campaignId,
         }),
       });
+
+      // Intercept 401 Unauthorized
+      if (orderRes.status === 401) {
+        setState('failed');
+        handleUnauthorized('Please sign in to proceed with this payment.');
+        return;
+      }
+
       const orderData = await orderRes.json();
 
       if (!orderData.success || !orderData.checkout_url) {
+        if (orderData.error?.toLowerCase().includes('unauthorized')) {
+          handleUnauthorized('Please sign in to proceed with this payment.');
+          return;
+        }
         throw new Error(orderData.error || 'Could not initialize payment');
       }
 
@@ -99,6 +114,7 @@ export default function DodoCheckout({
         return;
       }
 
+      toast.info('Checkout Opened', 'Complete payment in the Dodo window. We are verifying automatically.');
       setState('processing');
 
       // Step 3: Poll server for webhook-verified payment status
@@ -108,7 +124,9 @@ export default function DodoCheckout({
     } catch (err: any) {
       console.error('[DodoCheckout]', err);
       setState('failed');
-      setErrorMsg(err.message || 'Payment failed. Please try again.');
+      const msg = err.message || 'Payment failed. Please try again.';
+      setErrorMsg(msg);
+      toast.error('Payment Error', msg);
       onError?.(err.message);
     }
   };

@@ -29,6 +29,7 @@ import { useRouter } from 'next/navigation';
 import { useCampaigns } from '../lib/CampaignContext';
 import { SocialPlatform } from '../lib/types';
 import DodoCheckout from './DodoCheckout';
+import { toast, handleUnauthorized } from '@/lib/toast';
 
 interface CreateCampaignModalProps {
   isOpen: boolean;
@@ -182,7 +183,8 @@ export default function CreateCampaignModal({ isOpen, onClose }: CreateCampaignM
     setErrorMsg(null);
 
     if (!currentUser?.isLoggedIn) {
-      setErrorMsg('You must sign in or register before creating a campaign.');
+      onClose();
+      handleUnauthorized('Please sign in or register to launch a campaign.');
       return;
     }
 
@@ -234,9 +236,11 @@ export default function CreateCampaignModal({ isOpen, onClose }: CreateCampaignM
 
     if (!res.success) {
       setErrorMsg(res.error || 'Failed to create campaign');
+      toast.error('Campaign Creation Failed', res.error || 'Unable to publish campaign.');
       return;
     }
 
+    toast.success('Campaign Launched!', `"${title.trim()}" is now live on the marketplace.`);
     setIsSuccess(true);
     setTimeout(() => {
       onClose();
@@ -916,6 +920,7 @@ export default function CreateCampaignModal({ isOpen, onClose }: CreateCampaignM
                       }}
                       onError={(err) => {
                         setErrorMsg(`Payment error: ${err}`);
+                        toast.error('Escrow Payment Failed', err);
                       }}
                     />
                     <div className="pt-2 flex justify-start">

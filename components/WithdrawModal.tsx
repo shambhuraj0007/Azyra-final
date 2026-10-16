@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { X, CheckCircle2, Wallet, ArrowRight, ShieldCheck, Building, Smartphone, Loader2, AlertCircle, Globe } from 'lucide-react';
 import { useCampaigns } from '../lib/CampaignContext';
+import { toast, handleUnauthorized } from '@/lib/toast';
 
 interface WithdrawModalProps {
   isOpen: boolean;
@@ -34,12 +35,21 @@ export default function WithdrawModal({ isOpen, onClose }: WithdrawModalProps) {
     e.preventDefault();
     setErrorMsg(null);
 
+    if (!currentUser.isLoggedIn) {
+      onClose();
+      handleUnauthorized('Please sign in to withdraw funds.');
+      return;
+    }
+
     if (withdrawAmt <= 0) {
       setErrorMsg('Withdrawal amount must be greater than $0');
+      toast.warning('Invalid Amount', 'Withdrawal amount must be greater than $0');
       return;
     }
     if (withdrawAmt > currentUser.wallet_balance) {
-      setErrorMsg(`Cannot exceed available balance ($${currentUser.wallet_balance.toFixed(2)})`);
+      const msg = `Cannot exceed available balance ($${currentUser.wallet_balance.toFixed(2)})`;
+      setErrorMsg(msg);
+      toast.warning('Insufficient Balance', msg);
       return;
     }
 
@@ -48,6 +58,7 @@ export default function WithdrawModal({ isOpen, onClose }: WithdrawModalProps) {
       if (res.success) {
         setPaidOut(res.payoutAmount);
         setSuccess(true);
+        toast.success('Payout Dispatched', `$${withdrawAmt.toFixed(2)} withdrawn to your connected balance.`);
         setTimeout(() => {
           onClose();
           setSuccess(false);
@@ -90,8 +101,20 @@ export default function WithdrawModal({ isOpen, onClose }: WithdrawModalProps) {
         body: JSON.stringify(payload),
       });
 
+      if (res.status === 401) {
+        onClose();
+        handleUnauthorized('Please sign in to withdraw funds.');
+        return;
+      }
+
       const data = await res.json();
       if (!data.success) {
+        if (data.error?.toLowerCase().includes('unauthorized')) {
+          onClose();
+          handleUnauthorized('Please sign in to withdraw funds.');
+          return;
+        }
+
         // Fallback gracefully if keys are in test sandbox
         console.warn('[Dodo Payout API fallback]:', data.error);
         const fallbackRes = withdrawCreatorBalance(withdrawAmt);
@@ -99,6 +122,12 @@ export default function WithdrawModal({ isOpen, onClose }: WithdrawModalProps) {
           setPaidOut(fallbackRes.payoutAmount);
           setTransferRef(`dodo_test_${Date.now().toString(36)}`);
           setSuccess(true);
+          toast.success(
+            'Payout Dispatched',
+            `$${withdrawAmt.toFixed(2)} transferred via ${
+              payoutRail === 'dodo_paypal' ? 'PayPal/Wise' : payoutRail === 'dodo_upi' ? 'UPI' : 'Bank Transfer'
+            }`
+          );
           setTimeout(() => {
             onClose();
             setSuccess(false);
@@ -112,12 +141,20 @@ export default function WithdrawModal({ isOpen, onClose }: WithdrawModalProps) {
       setPaidOut(withdrawAmt);
       setTransferRef(data.transfer_id || `dodo_tx_${Date.now().toString(36)}`);
       setSuccess(true);
+      toast.success(
+        'Payout Dispatched',
+        `$${withdrawAmt.toFixed(2)} transferred via ${
+          payoutRail === 'dodo_paypal' ? 'PayPal/Wise' : payoutRail === 'dodo_upi' ? 'UPI' : 'Bank Transfer'
+        }`
+      );
       setTimeout(() => {
         onClose();
         setSuccess(false);
       }, 2500);
     } catch (err: any) {
-      setErrorMsg(err.message || 'Payout failed. Please try again.');
+      const msg = err.message || 'Payout failed. Please try again.';
+      setErrorMsg(msg);
+      toast.error('Withdrawal Failed', msg);
     } finally {
       setIsSubmitting(false);
     }

@@ -40,6 +40,7 @@ export const metadata: Metadata = {
 import { Suspense } from "react";
 import { NextAuthProvider } from "../components/NextAuthProvider";
 import GlobalCreatorApplicationPopup from "../components/GlobalCreatorApplicationPopup";
+import ToastContainer from "../components/ToastContainer";
 
 export default function RootLayout({
   children,
@@ -61,6 +62,7 @@ export default function RootLayout({
         <NextAuthProvider>
           <CampaignProvider>
             {children}
+            <ToastContainer />
             <Suspense fallback={null}>
               <GlobalCreatorApplicationPopup />
             </Suspense>
