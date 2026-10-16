@@ -7,9 +7,22 @@ import jwt from "jsonwebtoken";
 
 const TARGET_ADMIN_EMAIL = process.env.ADMIN_NOTIFICATION_EMAIL || "";
 
+const otpAttempts = new Map<string, { count: number; lockedUntil: number }>();
+
 export async function POST(req: NextRequest) {
   if (!checkAdminIp(req)) {
     return NextResponse.json({ error: "Forbidden IP address" }, { status: 403 });
+  }
+
+  const clientIp = req.headers.get("x-real-ip") || req.headers.get("x-forwarded-for") || "unknown";
+  const now = Date.now();
+  const attemptInfo = otpAttempts.get(clientIp);
+
+  if (attemptInfo && attemptInfo.count >= 5 && attemptInfo.lockedUntil > now) {
+    return NextResponse.json(
+      { error: "Too many failed attempts. OTP locked. Please request a new code." },
+      { status: 429 }
+    );
   }
 
   try {
@@ -28,8 +41,23 @@ export async function POST(req: NextRequest) {
     });
 
     if (!record) {
+      const currentCount = (attemptInfo?.count || 0) + 1;
+      otpAttempts.set(clientIp, { count: currentCount, lockedUntil: now + 15 * 60 * 1000 });
+
+      // Invalidate active OTP if brute-force threshold reached
+      if (currentCount >= 5) {
+        await AdminOtp.deleteMany({ email: TARGET_ADMIN_EMAIL });
+        return NextResponse.json(
+          { error: "Max verification attempts exceeded. Code has been invalidated. Please generate a new OTP." },
+          { status: 429 }
+        );
+      }
+
       return NextResponse.json({ error: "Incorrect verification code. Please check your email and try again." }, { status: 400 });
     }
+
+    // Success -> clear rate limit entry
+    otpAttempts.delete(clientIp);
 
     if (new Date() > record.expiresAt) {
       await AdminOtp.deleteOne({ _id: record._id });

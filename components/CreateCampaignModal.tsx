@@ -28,6 +28,7 @@ import {
 import { useRouter } from 'next/navigation';
 import { useCampaigns } from '../lib/CampaignContext';
 import { SocialPlatform } from '../lib/types';
+import DodoCheckout from './DodoCheckout';
 
 interface CreateCampaignModalProps {
   isOpen: boolean;
@@ -106,9 +107,10 @@ export default function CreateCampaignModal({ isOpen, onClose }: CreateCampaignM
   const [minViewsThreshold, setMinViewsThreshold] = useState<number>(2500);
   const [platforms, setPlatforms] = useState<SocialPlatform[]>(['x', 'instagram', 'youtube_shorts']);
 
-  // Status
+  // Status & Escrow funding mode
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [escrowFundingType, setEscrowFundingType] = useState<'dodo' | 'direct'>('dodo');
 
   if (!isOpen) return null;
 
@@ -176,8 +178,7 @@ export default function CreateCampaignModal({ isOpen, onClose }: CreateCampaignM
       .map((s) => s.trim().replace(/^[-•*]\s*/, ''))
       .filter(Boolean);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const executeCampaignCreation = async (escrowOrderId?: string) => {
     setErrorMsg(null);
 
     if (!currentUser?.isLoggedIn) {
@@ -242,6 +243,11 @@ export default function CreateCampaignModal({ isOpen, onClose }: CreateCampaignM
       setIsSuccess(false);
       setStep(1);
     }, 1800);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await executeCampaignCreation();
   };
 
   return (
@@ -855,24 +861,94 @@ export default function CreateCampaignModal({ isOpen, onClose }: CreateCampaignM
                   </div>
                 </div>
 
-                <div className="pt-2 flex items-center justify-between">
-                  <button
-                    type="button"
-                    onClick={() => setStep(3)}
-                    className="text-xs font-bold text-textMuted hover:text-textMain flex items-center gap-1 transition"
-                  >
-                    <ArrowLeft className="h-3.5 w-3.5" />
-                    <span>Back</span>
-                  </button>
+                {/* Escrow Payment Method Selector */}
+                <div className="space-y-3">
+                  <label className="block text-xs font-bold uppercase text-textMain font-heading">
+                    Escrow Funding Method
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => setEscrowFundingType('dodo')}
+                      className={`rounded-xl p-3 text-left border transition flex items-start gap-3 ${
+                        escrowFundingType === 'dodo'
+                          ? 'border-limeAccent bg-limeAccent/10 ring-1 ring-limeAccent'
+                          : 'border-borderMuted bg-surfaceElevated hover:border-textMuted'
+                      }`}
+                    >
+                      <ShieldCheck className="h-5 w-5 text-limeAccent shrink-0 mt-0.5" />
+                      <div>
+                        <strong className="block text-xs text-textMain font-heading">Dodo Payments</strong>
+                        <span className="text-[10px] text-textMuted">Credit Cards, Apple Pay, Google Pay (PCI-DSS L1)</span>
+                      </div>
+                    </button>
 
-                  <button
-                    type="submit"
-                    className="rounded-2xl bg-limeAccent hover:brightness-110 text-[#0B0F10] font-heading font-bold px-7 py-3.5 text-xs flex items-center gap-2 shadow-xl shadow-limeAccent/20 transition active:scale-[0.98]"
-                  >
-                    <Coins className="h-4 w-4" />
-                    <span>Confirm Escrow Deposit & Launch Campaign</span>
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => setEscrowFundingType('direct')}
+                      className={`rounded-xl p-3 text-left border transition flex items-start gap-3 ${
+                        escrowFundingType === 'direct'
+                          ? 'border-emeraldAccent bg-emeraldAccent/10 ring-1 ring-emeraldAccent'
+                          : 'border-borderMuted bg-surfaceElevated hover:border-textMuted'
+                      }`}
+                    >
+                      <Coins className="h-5 w-5 text-emeraldAccent shrink-0 mt-0.5" />
+                      <div>
+                        <strong className="block text-xs text-textMain font-heading">Direct Test Escrow</strong>
+                        <span className="text-[10px] text-textMuted">Simulated test environment deposit</span>
+                      </div>
+                    </button>
+                  </div>
                 </div>
+
+                {escrowFundingType === 'dodo' ? (
+                  <div className="rounded-2xl border border-limeAccent/30 bg-surfaceElevated/60 p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-heading font-bold text-textMain">Fund Escrow via Dodo Payments</span>
+                      <span className="text-[10px] font-mono text-limeAccent">Secure Hosted Checkout</span>
+                    </div>
+                    <DodoCheckout
+                      amountUsd={totalBudget}
+                      type="campaign_escrow"
+                      campaignTitle={title}
+                      onSuccess={(orderId) => {
+                        executeCampaignCreation(orderId);
+                      }}
+                      onError={(err) => {
+                        setErrorMsg(`Payment error: ${err}`);
+                      }}
+                    />
+                    <div className="pt-2 flex justify-start">
+                      <button
+                        type="button"
+                        onClick={() => setStep(3)}
+                        className="text-xs font-bold text-textMuted hover:text-textMain flex items-center gap-1 transition"
+                      >
+                        <ArrowLeft className="h-3.5 w-3.5" />
+                        <span>Back</span>
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="pt-2 flex items-center justify-between">
+                    <button
+                      type="button"
+                      onClick={() => setStep(3)}
+                      className="text-xs font-bold text-textMuted hover:text-textMain flex items-center gap-1 transition"
+                    >
+                      <ArrowLeft className="h-3.5 w-3.5" />
+                      <span>Back</span>
+                    </button>
+
+                    <button
+                      type="submit"
+                      className="rounded-2xl bg-limeAccent hover:brightness-110 text-[#0B0F10] font-heading font-bold px-7 py-3.5 text-xs flex items-center gap-2 shadow-xl shadow-limeAccent/20 transition active:scale-[0.98]"
+                    >
+                      <Coins className="h-4 w-4" />
+                      <span>Confirm Escrow Deposit & Launch Campaign</span>
+                    </button>
+                  </div>
+                )}
               </form>
             )}
           </div>

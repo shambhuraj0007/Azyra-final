@@ -25,10 +25,13 @@ export async function POST(request: NextRequest) {
 
     await connectToDatabase();
 
-    const normalizedEmail = email.toLowerCase().trim();
-    const existing = await User.findOne({ email: normalizedEmail }).select('+password +passwordHash');
+    const normalizedEmail = (typeof email === 'string' ? email : '').toLowerCase().trim();
+    if (!normalizedEmail || !normalizedEmail.includes('@')) {
+      return NextResponse.json({ success: false, error: 'Invalid email address.' }, { status: 400 });
+    }
 
-    if (existing && (existing.password || existing.passwordHash)) {
+    const existing = await User.findOne({ email: normalizedEmail });
+    if (existing) {
       return NextResponse.json(
         { success: false, error: 'An account with this email already exists. Please sign in.' },
         { status: 409 }
@@ -40,41 +43,27 @@ export async function POST(request: NextRequest) {
     // Legacy hash for backwards compatibility
     const { hash, salt } = hashPassword(password);
 
-    const cleanHandle = handle
-      ? (handle.startsWith('@') ? handle : `@${handle}`)
+    const cleanHandle = typeof handle === 'string' && handle.trim()
+      ? (handle.trim().startsWith('@') ? handle.trim() : `@${handle.trim()}`)
       : `@${normalizedEmail.split('@')[0]}`;
 
-    let user;
-    if (existing) {
-      existing.password = hashedPassword;
-      existing.passwordHash = hash;
-      existing.passwordSalt = salt;
-      if (name) existing.name = name;
-      if (handle) existing.handle = cleanHandle;
-      if (role) existing.role = role === 'brand' ? 'brand' : 'creator';
-      existing.isProfileSetup = false;
-      existing.updatedAt = new Date();
-      await existing.save();
-      user = existing;
-    } else {
-      user = new User({
-        email: normalizedEmail,
-        password: hashedPassword,
-        passwordHash: hash,
-        passwordSalt: salt,
-        name: name || normalizedEmail.split('@')[0],
-        handle: cleanHandle,
-        avatar: role === 'brand' ? '⚡' : '🎬',
-        role: role === 'brand' ? 'brand' : 'creator',
-        isProfileSetup: false,
-        creatorStatus: 'none',
-        wallet_balance: role === 'brand' ? 10000 : 0,
-        total_earned: 0,
-        total_views_generated: 0,
-        joinedCampaignIds: [],
-      });
-      await user.save();
-    }
+    const user = new User({
+      email: normalizedEmail,
+      password: hashedPassword,
+      passwordHash: hash,
+      passwordSalt: salt,
+      name: (typeof name === 'string' ? name.trim() : '') || normalizedEmail.split('@')[0],
+      handle: cleanHandle,
+      avatar: role === 'brand' ? '⚡' : '🎬',
+      role: role === 'brand' ? 'brand' : 'creator',
+      isProfileSetup: false,
+      creatorStatus: 'none',
+      wallet_balance: 0,
+      total_earned: 0,
+      total_views_generated: 0,
+      joinedCampaignIds: [],
+    });
+    await user.save();
 
     // Set cookie token for legacy readers if needed
     const token = generateToken({

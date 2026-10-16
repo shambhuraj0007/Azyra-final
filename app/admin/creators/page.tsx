@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   Check,
   X,
@@ -206,6 +207,12 @@ export default function AdminCreators() {
           </div>
 
           <div className="flex items-center gap-3 self-end md:self-auto">
+            <Link
+              href="/admin/submissions"
+              className="flex items-center gap-2 px-3.5 py-2 bg-surfaceElevated hover:bg-surface text-textMain border border-borderMuted rounded-xl text-xs font-mono transition"
+            >
+              Submissions
+            </Link>
             <button
               onClick={() => fetchCreators(activeTab)}
               title="Refresh queue"

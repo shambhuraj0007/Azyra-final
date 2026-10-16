@@ -63,6 +63,8 @@ const UserSchema = new Schema<IUser>(
     googleId: { type: String, unique: true, sparse: true },
     email: { type: String, required: true, unique: true },
     password: { type: String, select: false },
+    passwordHash: { type: String, select: false },
+    passwordSalt: { type: String, select: false },
     name: { type: String },
     image: { type: String },
     role: { type: String, enum: ['brand', 'creator'], default: 'creator' },

@@ -31,6 +31,8 @@ export default function Home() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalTargetRank, setModalTargetRank] = useState(1);
   const [modalProductUrl, setModalProductUrl] = useState('');
+  const [modalProductName, setModalProductName] = useState('');
+  const [userStartupUrls, setUserStartupUrls] = useState<string[]>([]);
 
   // Hydrate from localStorage if available
   useEffect(() => {
@@ -42,6 +44,10 @@ export default function Home() {
       const savedActivities = localStorage.getItem('outbid_activities');
       if (savedActivities) {
         setActivities(JSON.parse(savedActivities));
+      }
+      const savedStartups = localStorage.getItem('azyra_user_startups');
+      if (savedStartups) {
+        setUserStartupUrls(JSON.parse(savedStartups));
       }
 
       if (typeof window !== 'undefined' && window.location.search.includes('claim=1')) {
@@ -63,10 +69,29 @@ export default function Home() {
     }
   };
 
-  const handleOpenBidModal = (targetRank: number = 1, productUrl: string = '') => {
+  const handleOpenBidModal = (
+    targetRank: number = 1,
+    productUrl: string = '',
+    productName: string = ''
+  ) => {
     setModalTargetRank(targetRank);
     setModalProductUrl(productUrl);
+    setModalProductName(productName);
     setIsModalOpen(true);
+  };
+
+  const handleAddUserStartup = (url: string) => {
+    const clean = url.trim().toLowerCase().replace(/\/$/, '');
+    if (!clean) return;
+    setUserStartupUrls((prev) => {
+      const updated = Array.from(new Set([...prev, clean]));
+      try {
+        localStorage.setItem('azyra_user_startups', JSON.stringify(updated));
+      } catch (e) {
+        console.error(e);
+      }
+      return updated;
+    });
   };
 
   // Process a new bid or bump
@@ -152,6 +177,7 @@ export default function Home() {
     setActivities(updatedActs);
 
     saveState(sorted, updatedActs);
+    handleAddUserStartup(productUrl);
     triggerConfetti();
   };
 
@@ -174,10 +200,7 @@ export default function Home() {
           <div className="pointer-events-none absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 h-[300px] w-[500px] rounded-full bg-limeAccent/5 blur-[100px]" />
 
           <div className="relative z-10 mx-auto max-w-3xl text-center flex flex-col items-center gap-5">
-            {/* Sleeker, smaller Pill Badge */}
-
-
-            {/* Sharper, refined headline (smaller text size, cleaner font weight) */}
+            {/* Sharper, refined headline */}
             <h1 className="text-4xl sm:text-5xl font-heading font-bold tracking-tight text-textMain leading-[1.15]">
               Stop Waiting on Algorithms.<br className="hidden sm:block" />
               <span className="text-limeAccent"> Own Your Visibility.</span>
@@ -216,7 +239,9 @@ export default function Home() {
             products={products}
             board={board}
             setBoard={setBoard}
-            onClaimRank={(targetRank, url) => handleOpenBidModal(targetRank, url)}
+            onClaimRank={(targetRank, url, name) => handleOpenBidModal(targetRank, url, name)}
+            userStartupUrls={userStartupUrls}
+            onAddUserStartup={handleAddUserStartup}
           />
         </section>
 
@@ -289,6 +314,7 @@ export default function Home() {
         onClose={() => setIsModalOpen(false)}
         initialTargetRank={modalTargetRank}
         initialProductUrl={modalProductUrl}
+        initialProductName={modalProductName}
         board={board}
         products={products}
         onPlaceBid={handlePlaceBid}

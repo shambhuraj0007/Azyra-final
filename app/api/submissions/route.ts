@@ -4,6 +4,7 @@ import SubmissionModel from '@/models/Submission';
 import ParticipantModel from '@/models/Participant';
 import CampaignModel from '@/models/Campaign';
 import { INITIAL_SUBMISSIONS } from '@/lib/campaignStore';
+import { auth } from '@/auth';
 
 export async function GET() {
   try {
@@ -31,15 +32,25 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { campaign_id, creator_id, video_url } = body;
-
-    if (!campaign_id || !creator_id || !video_url) {
+    const session = await auth();
+    if (!session?.user) {
       return NextResponse.json(
-        { success: false, error: 'Campaign ID, creator ID, and video URL are required.' },
+        { success: false, error: 'Unauthorized: Please sign in to submit a clip.' },
+        { status: 401 }
+      );
+    }
+
+    const body = await request.json();
+    const { campaign_id, video_url, platform, video_external_id } = body;
+
+    if (!campaign_id || !video_url) {
+      return NextResponse.json(
+        { success: false, error: 'Campaign ID and video URL are required.' },
         { status: 400 }
       );
     }
+
+    const creator_id = (session.user as any).id || session.user.email;
 
     await connectToDatabase();
 
@@ -72,7 +83,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Access Control Check 3: Prevent duplicate link submissions
-    const duplicate = await SubmissionModel.findOne({ video_url: video_url.trim() });
+    const cleanUrl = typeof video_url === 'string' ? video_url.trim() : '';
+    const duplicate = await SubmissionModel.findOne({ video_url: cleanUrl });
     if (duplicate) {
       return NextResponse.json(
         { success: false, error: 'This video clip URL has already been submitted.' },
@@ -80,11 +92,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Explicitly whitelist fields — do NOT spread uncontrolled body (Mass-Assignment protection)
     const newSub = new SubmissionModel({
-      ...body,
-      id: body.id || `sub-${Date.now()}`,
+      id: `sub-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      campaign_id,
+      creator_id,
+      creator_name: session.user.name || 'Creator',
+      creator_handle: (session.user as any).handle || `@${session.user.email?.split('@')[0]}`,
+      video_url: cleanUrl,
+      platform: platform || 'youtube_shorts',
+      video_external_id: video_external_id || '',
       submitted_at: Date.now(),
       last_polled_at: Date.now(),
+      views_count: 0,
+      likes_count: 0,
+      payable_amount: 0,
+      verification_status: 'verifying',
+      payout_status: 'pending',
     });
 
     await newSub.save();

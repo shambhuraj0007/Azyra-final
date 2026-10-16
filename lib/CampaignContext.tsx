@@ -47,6 +47,8 @@ interface CampaignContextType {
     initialViews?: number;
   }) => Promise<{ success: boolean; error?: string; submission?: ClipSubmission }>;
   simulateViewGrowth: (submissionId: string, additionalViews: number) => Promise<void>;
+  checkViews: (submissionId: string) => Promise<{ success: boolean; views?: number; error?: string }>;
+  cancelSubmission: (submissionId: string) => Promise<{ success: boolean; error?: string }>;
   createCampaign: (data: Omit<Campaign, 'id' | 'created_at' | 'participants_count' | 'total_views_tracked' | 'total_paid_out'>) => Promise<{ success: boolean; error?: string; campaign?: Campaign }>;
   toggleCampaignStatus: (campaignId: string, newStatus: Campaign['status']) => void;
   withdrawCreatorBalance: (amount?: number) => { success: boolean; payoutAmount: number };
@@ -557,6 +559,45 @@ export function CampaignProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const checkViews = async (submissionId: string) => {
+    try {
+      const res = await fetch(`/api/metrics?submissionId=${submissionId}`);
+      const data = await res.json();
+      
+      if (res.ok && data.success && data.submission) {
+        // Update local state with the latest stats
+        const subIndex = submissions.findIndex((s) => s.id === submissionId);
+        if (subIndex !== -1) {
+          const updatedSubmissions = [...submissions];
+          updatedSubmissions[subIndex] = data.submission;
+          setSubmissions(updatedSubmissions);
+          saveStorage(currentUser, campaigns, updatedSubmissions, participants);
+          return { success: true, views: data.submission.current_view_count };
+        }
+      }
+      return { success: false, error: data.error || 'Failed to check views' };
+    } catch (err: any) {
+      return { success: false, error: err.message };
+    }
+  };
+
+  const cancelSubmission = async (submissionId: string) => {
+    try {
+      const res = await fetch(`/api/submissions/${submissionId}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        const updatedSubmissions = submissions.filter(s => s.id !== submissionId);
+        setSubmissions(updatedSubmissions);
+        saveStorage(currentUser, campaigns, updatedSubmissions, participants);
+        return { success: true };
+      }
+      return { success: false, error: 'Failed to cancel submission' };
+    } catch (err: any) {
+      return { success: false, error: err.message };
+    }
+  };
+
   const createCampaign = async (
     data: Omit<
       Campaign,
@@ -660,6 +701,8 @@ export function CampaignProvider({ children }: { children: React.ReactNode }) {
         saveProfile,
         submitClip,
         simulateViewGrowth,
+        checkViews,
+        cancelSubmission,
         createCampaign,
         toggleCampaignStatus,
         withdrawCreatorBalance,

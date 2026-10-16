@@ -3,38 +3,47 @@ import { connectToDatabase } from '@/lib/mongodb';
 import ParticipantModel from '@/models/Participant';
 import CampaignModel from '@/models/Campaign';
 import User from '@/models/User';
+import { auth } from '@/auth';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { campaignId, creatorId, email } = body;
-
-    if (!campaignId || (!creatorId && !email)) {
+    const session = await auth();
+    if (!session?.user?.email) {
       return NextResponse.json(
-        { success: false, error: 'Campaign ID and creator identification are required.' },
+        { success: false, error: 'Unauthorized: Please sign in to join campaigns.' },
+        { status: 401 }
+      );
+    }
+
+    const body = await request.json();
+    const { campaignId } = body;
+
+    if (!campaignId) {
+      return NextResponse.json(
+        { success: false, error: 'Campaign ID is required.' },
         { status: 400 }
       );
     }
 
     await connectToDatabase();
 
-    // Verify creator profile in MongoDB if email provided
-    let user = null;
-    if (email) {
-      user = await User.findOne({ email: email.toLowerCase() });
-      if (user && !user.isProfileSetup) {
-        return NextResponse.json(
-          {
-            success: false,
-            needsSetup: true,
-            error: 'Creator profile setup is required before joining campaigns.',
-          },
-          { status: 403 }
-        );
-      }
+    // Verify creator profile in MongoDB
+    const user = await User.findOne({ email: session.user.email.toLowerCase() });
+    if (!user) {
+      return NextResponse.json({ success: false, error: 'User account not found.' }, { status: 404 });
+    }
+    if (!user.isProfileSetup) {
+      return NextResponse.json(
+        {
+          success: false,
+          needsSetup: true,
+          error: 'Creator profile setup is required before joining campaigns.',
+        },
+        { status: 403 }
+      );
     }
 
-    const actualCreatorId = user ? (user._id?.toString() || user.email) : creatorId;
+    const actualCreatorId = user._id?.toString() || user.email;
 
     // Check if already joined in MongoDB
     const existing = await ParticipantModel.findOne({

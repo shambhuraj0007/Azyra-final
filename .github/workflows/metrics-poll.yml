@@ -1,0 +1,21 @@
+name: Poll Metrics Every 15 Minutes
+
+on:
+  schedule:
+    # Runs every 15 minutes (free on GitHub Actions, bypasses Vercel Hobby limits)
+    - cron: '*/15 * * * *'
+  workflow_dispatch: # Allows manual trigger from GitHub UI
+
+jobs:
+  poll:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Metrics Poll Endpoint
+        run: |
+          if [ -n "${{ secrets.DEPLOYED_APP_URL }}" ]; then
+            curl -s -X GET "${{ secrets.DEPLOYED_APP_URL }}/api/metrics/poll" \
+              -H "x-cron-secret: ${{ secrets.CRON_SECRET }}" \
+              -H "User-Agent: GitHub-Actions-Cron"
+          else
+            echo "DEPLOYED_APP_URL secret is not set yet. Skipping."
+          fi

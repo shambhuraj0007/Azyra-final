@@ -312,3 +312,27 @@ export function calculateRequiredBid({
     minDeltaToBeat: targetRank === 1 ? 5 : 1,
   };
 }
+
+export function extractDomain(rawUrl: string): string {
+  if (!rawUrl) return '';
+  let cleaned = rawUrl.trim().toLowerCase();
+  cleaned = cleaned.replace(/^https?:\/\//, '');
+  cleaned = cleaned.replace(/^www\./, '');
+  cleaned = cleaned.split('/')[0].split('?')[0].split('#')[0];
+  return cleaned;
+}
+
+export function getFaviconUrl(domainOrUrl: string, size: number = 128): string {
+  const domain = extractDomain(domainOrUrl);
+  if (!domain || !domain.includes('.')) return '';
+  return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=${size}`;
+}
+
+export function inferStartupName(rawUrl: string): string {
+  const domain = extractDomain(rawUrl);
+  if (!domain) return '';
+  const root = domain.split('.')[0];
+  if (!root) return '';
+  return root.charAt(0).toUpperCase() + root.slice(1);
+}
+

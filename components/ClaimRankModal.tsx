@@ -17,13 +17,16 @@ import {
   Layers,
 } from 'lucide-react';
 import { ProductEntry, BoardType } from '../lib/types';
-import { calculateRequiredBid } from '../lib/data';
+import { calculateRequiredBid, inferStartupName } from '../lib/data';
+import DodoCheckout from './DodoCheckout';
+import FaviconImage from './FaviconImage';
 
 interface ClaimRankModalProps {
   isOpen: boolean;
   onClose: () => void;
   initialTargetRank?: number;
   initialProductUrl?: string;
+  initialProductName?: string;
   board: BoardType;
   products: ProductEntry[];
   onPlaceBid: (payload: {
@@ -45,26 +48,33 @@ export default function ClaimRankModal({
   onClose,
   initialTargetRank = 1,
   initialProductUrl = '',
+  initialProductName = '',
   board,
   products,
   onPlaceBid,
 }: ClaimRankModalProps) {
   const [targetRank, setTargetRank] = useState<number>(initialTargetRank);
   const [url, setUrl] = useState<string>(initialProductUrl);
-  const [name, setName] = useState<string>('');
+  const [name, setName] = useState<string>(initialProductName || (initialProductUrl ? inferStartupName(initialProductUrl) : ''));
   const [tagline, setTagline] = useState<string>('');
   const [logo, setLogo] = useState<string>('🚀');
   const [category, setCategory] = useState<ProductEntry['category']>('AI & ML');
   const [customBid, setCustomBid] = useState<string>('');
   const [submitted, setSubmitted] = useState<boolean>(false);
+  const [settlementMethod, setSettlementMethod] = useState<'dodo' | 'direct'>('dodo');
 
   useEffect(() => {
     if (isOpen) {
       setTargetRank(initialTargetRank || 1);
       setUrl(initialProductUrl || '');
+      if (initialProductName) {
+        setName(initialProductName);
+      } else if (initialProductUrl) {
+        setName(inferStartupName(initialProductUrl));
+      }
       setSubmitted(false);
     }
-  }, [isOpen, initialTargetRank, initialProductUrl]);
+  }, [isOpen, initialTargetRank, initialProductUrl, initialProductName]);
 
   // Clean URL comparison to check if already on the board
   const cleanUrl = url.trim().toLowerCase().replace(/\/$/, '');
@@ -102,8 +112,7 @@ export default function ClaimRankModal({
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const executeBid = (orderId?: string) => {
     if (!url || !name) return;
 
     if (enteredAmount < minNetPayable) {
@@ -111,9 +120,23 @@ export default function ClaimRankModal({
       return;
     }
 
+    const finalUrl = url.trim().startsWith('http') ? url.trim() : `https://${url.trim()}`;
+    const finalName = name.trim() || inferStartupName(finalUrl) || 'My Startup';
+
+    // Persist to user claimed startups so it's always highlighted
+    try {
+      const stored = JSON.parse(localStorage.getItem('azyra_user_startups') || '[]');
+      const cleanTarget = finalUrl.toLowerCase().replace(/\/$/, '');
+      if (!stored.includes(cleanTarget)) {
+        localStorage.setItem('azyra_user_startups', JSON.stringify([...stored, cleanTarget]));
+      }
+    } catch (e) {
+      console.error(e);
+    }
+
     onPlaceBid({
-      productName: name.trim(),
-      productUrl: url.trim().startsWith('http') ? url.trim() : `https://${url.trim()}`,
+      productName: finalName,
+      productUrl: finalUrl,
       tagline: tagline.trim() || 'Next-generation tech & software',
       logo: logo || '🚀',
       category,
@@ -126,6 +149,11 @@ export default function ClaimRankModal({
     setTimeout(() => {
       onClose();
     }, 1500);
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    executeBid();
   };
 
   const handleQuickAdd = (delta: number) => {
@@ -277,23 +305,29 @@ export default function ClaimRankModal({
             {/* FORM */}
             <form onSubmit={handleSubmit} className="space-y-4">
               
-              {/* Product Website URL */}
+              {/* Product Website URL with instant favicon preview */}
               <div>
                 <label className="block text-xs font-heading font-bold uppercase tracking-wider text-textMain mb-1.5 flex items-center justify-between">
                   <span>Product Website URL *</span>
-                  <span className="text-[10px] font-mono text-textMuted lowercase">links directly to your product</span>
+                  <span className="text-[10px] font-mono text-limeAccent">instant favicon & DNS auto-detection</span>
                 </label>
                 <div className="relative">
-                  <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-textMuted">
-                    <Globe className="h-4 w-4" />
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center justify-center w-6 h-6">
+                    <FaviconImage url={url} fallback="🌐" className="w-5 h-5 rounded" size={64} />
                   </div>
                   <input
                     type="text"
                     required
                     placeholder="https://yourproduct.com"
                     value={url}
-                    onChange={(e) => setUrl(e.target.value)}
-                    className="w-full bg-surfaceElevated border border-borderMuted rounded-xl pl-10 pr-4 py-2.5 text-xs text-textMain placeholder:text-textMuted/50 focus:border-limeAccent outline-none font-mono transition"
+                    onChange={(e) => {
+                      const newUrl = e.target.value;
+                      setUrl(newUrl);
+                      if (!name && newUrl.includes('.')) {
+                        setName(inferStartupName(newUrl));
+                      }
+                    }}
+                    className="w-full bg-surfaceElevated border border-borderMuted rounded-xl pl-11 pr-4 py-2.5 text-xs text-textMain placeholder:text-textMuted/50 focus:border-limeAccent outline-none font-mono transition"
                   />
                 </div>
               </div>
@@ -473,22 +507,68 @@ export default function ClaimRankModal({
                 </div>
               </div>
 
-              {/* ACTION BUTTON */}
-              <div className="pt-2">
-                <button
-                  type="submit"
-                  className="w-full rounded-2xl bg-gradient-to-r from-limeAccent to-emeraldAccent py-3.5 px-6 text-center text-sm font-heading font-bold text-[#0B0F10] shadow-xl shadow-limeAccent/20 hover:brightness-110 active:scale-[0.98] transition flex items-center justify-center gap-2.5 group"
-                >
-                  <Sparkles className="h-4 w-4 text-[#0B0F10]" />
-                  <span>
-                    Authorize Outbid & Claim Rank #{targetRank} ($
-                    {(customBid ? parseFloat(customBid) || minNetPayable : minNetPayable).toLocaleString()})
-                  </span>
-                  <ArrowRight className="h-4 w-4 text-[#0B0F10] group-hover:translate-x-1 transition-transform" />
-                </button>
-                <p className="text-[10px] font-mono text-center text-textMuted mt-2">
-                  Immediate Settlement • Escrow Secured
-                </p>
+              {/* SETTLEMENT METHOD SELECTOR */}
+              <div className="pt-1 space-y-2.5">
+                <div className="flex items-center justify-between text-xs font-heading font-bold text-textMain">
+                  <span>Settlement Rail:</span>
+                  <div className="flex gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setSettlementMethod('dodo')}
+                      className={`px-3 py-1 rounded-lg text-[11px] font-heading font-bold transition ${
+                        settlementMethod === 'dodo'
+                          ? 'bg-limeAccent text-[#0B0F10] shadow-md shadow-limeAccent/20'
+                          : 'bg-surfaceElevated text-textMuted border border-borderMuted hover:text-textMain'
+                      }`}
+                    >
+                      Dodo Pay (Cards/GPay)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSettlementMethod('direct')}
+                      className={`px-3 py-1 rounded-lg text-[11px] font-heading font-bold transition ${
+                        settlementMethod === 'direct'
+                          ? 'bg-emeraldAccent text-[#0B0F10] shadow-md shadow-emeraldAccent/20'
+                          : 'bg-surfaceElevated text-textMuted border border-borderMuted hover:text-textMain'
+                      }`}
+                    >
+                      Instant Test
+                    </button>
+                  </div>
+                </div>
+
+                {settlementMethod === 'dodo' ? (
+                  <div className="rounded-2xl border border-limeAccent/30 bg-[#0E1314] p-4 space-y-3">
+                    <DodoCheckout
+                      amountUsd={enteredAmount}
+                      type="rank_outbid"
+                      campaignTitle={`Outbid Rank #${targetRank}: ${name || 'Product'}`}
+                      onSuccess={(orderId) => {
+                        executeBid(orderId);
+                      }}
+                      onError={(err) => {
+                        alert(`Payment error: ${err}`);
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <div>
+                    <button
+                      type="submit"
+                      className="w-full rounded-2xl bg-gradient-to-r from-limeAccent to-emeraldAccent py-3.5 px-6 text-center text-sm font-heading font-bold text-[#0B0F10] shadow-xl shadow-limeAccent/20 hover:brightness-110 active:scale-[0.98] transition flex items-center justify-center gap-2.5 group"
+                    >
+                      <Sparkles className="h-4 w-4 text-[#0B0F10]" />
+                      <span>
+                        Authorize Outbid & Claim Rank #{targetRank} ($
+                        {(customBid ? parseFloat(customBid) || minNetPayable : minNetPayable).toLocaleString()})
+                      </span>
+                      <ArrowRight className="h-4 w-4 text-[#0B0F10] group-hover:translate-x-1 transition-transform" />
+                    </button>
+                    <p className="text-[10px] font-mono text-center text-textMuted mt-2">
+                      Immediate Settlement • Escrow Secured
+                    </p>
+                  </div>
+                )}
               </div>
 
             </form>

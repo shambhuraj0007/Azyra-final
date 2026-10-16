@@ -1,12 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import User from '@/models/User';
+import { auth } from '@/auth';
 
 export async function POST(request: NextRequest) {
   try {
+    const session = await auth();
+    if (!session?.user?.email) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized: Please sign in to update your profile.' },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
     const {
-      email,
       name,
       handle,
       bio,
@@ -14,19 +22,9 @@ export async function POST(request: NextRequest) {
       primaryPlatform,
       socialLinks,
       payoutMethod,
-      role = 'creator',
     } = body;
 
-    if (!email) {
-      return NextResponse.json(
-        { success: false, error: 'Email is required to setup profile.' },
-        { status: 400 }
-      );
-    }
-
-    await connectToDatabase();
-
-    const normalizedEmail = email.toLowerCase().trim();
+    const normalizedEmail = session.user.email.toLowerCase().trim();
     const normalizedHandle = handle ? (handle.startsWith('@') ? handle : `@${handle}`) : '';
 
     // Find and update or create new user
@@ -39,7 +37,7 @@ export async function POST(request: NextRequest) {
         handle: normalizedHandle,
         avatar: avatar || '🎬',
         bio: bio || '',
-        role,
+        role: (session.user as any).role || 'creator',
         isProfileSetup: true,
         primaryPlatform: primaryPlatform || 'x',
         socialLinks: {
@@ -82,7 +80,7 @@ export async function POST(request: NextRequest) {
       user.handle = normalizedHandle || user.handle;
       user.avatar = avatar || user.avatar;
       user.bio = bio ?? user.bio;
-      user.role = role || user.role;
+      // Do not allow users to escalate their own role: user.role is preserved
       user.isProfileSetup = true;
       user.primaryPlatform = primaryPlatform || user.primaryPlatform;
       user.socialLinks = {

@@ -70,6 +70,8 @@ export interface UserProfile {
   total_views_generated?: number;
   joinedCampaignIds?: string[];
   creatorStatus?: 'none' | 'pending' | 'approved' | 'rejected';
+  startupUrl?: string;
+  claimedStartupUrls?: string[];
 }
 
 export interface CampaignGuidelines {

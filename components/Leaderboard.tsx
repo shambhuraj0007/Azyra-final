@@ -16,16 +16,26 @@ import {
   ShieldCheck,
   Info,
   Calendar,
-  CheckCircle2
+  CheckCircle2,
+  Check,
+  Globe,
+  Zap,
+  ArrowRight,
+  Plus,
+  Shield,
+  Layers,
 } from 'lucide-react';
 import { ProductEntry, BoardType } from '../lib/types';
-import { sortLeaderboard, calculateRequiredBid } from '../lib/data';
+import { sortLeaderboard, calculateRequiredBid, extractDomain, inferStartupName } from '../lib/data';
+import FaviconImage from './FaviconImage';
 
 interface LeaderboardProps {
   products: ProductEntry[];
   board: BoardType;
   setBoard: (b: BoardType) => void;
-  onClaimRank: (targetRank: number, productUrl?: string) => void;
+  onClaimRank: (targetRank: number, productUrl?: string, productName?: string) => void;
+  userStartupUrls?: string[];
+  onAddUserStartup?: (url: string) => void;
 }
 
 export default function Leaderboard({
@@ -33,10 +43,49 @@ export default function Leaderboard({
   board,
   setBoard,
   onClaimRank,
+  userStartupUrls = [],
+  onAddUserStartup,
 }: LeaderboardProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [utcCountdown, setUtcCountdown] = useState<string>('00:00:00');
+
+  // User startup tracking
+  const [userStartups, setUserStartups] = useState<string[]>(userStartupUrls);
+  const [quickUrl, setQuickUrl] = useState('');
+  const [quickTargetRank, setQuickTargetRank] = useState(1);
+  const [customRankInput, setCustomRankInput] = useState<string>('');
+  const [isQuickBarOpen, setIsQuickBarOpen] = useState(true);
+
+  // Sync with localStorage on mount & listen for updates
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('azyra_user_startups');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setUserStartups((prev) => Array.from(new Set([...prev, ...parsed])));
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }, []);
+
+  // Update when parent prop changes
+  useEffect(() => {
+    if (userStartupUrls && userStartupUrls.length > 0) {
+      setUserStartups((prev) => Array.from(new Set([...prev, ...userStartupUrls])));
+    }
+  }, [userStartupUrls]);
+
+  // Helper to check if a URL belongs to the user
+  const isUserStartup = (url: string): boolean => {
+    if (!url) return false;
+    const targetDomain = extractDomain(url);
+    if (!targetDomain) return false;
+    return userStartups.some((userUrl) => extractDomain(userUrl) === targetDomain);
+  };
 
   // UTC countdown timer until 00:00:00 UTC
   useEffect(() => {
@@ -72,6 +121,16 @@ export default function Leaderboard({
   const sortedProducts = useMemo(() => {
     return sortLeaderboard(products, board);
   }, [products, board]);
+
+  // Check if current user has an active listing on this board
+  const userListing = useMemo(() => {
+    return sortedProducts.find((p) => isUserStartup(p.url));
+  }, [sortedProducts, userStartups]);
+
+  const userListingRank = useMemo(() => {
+    if (!userListing) return null;
+    return sortedProducts.findIndex((p) => p.id === userListing.id) + 1;
+  }, [sortedProducts, userListing]);
 
   // Filtered by search and category
   const filteredProducts = useMemo(() => {
@@ -118,16 +177,63 @@ export default function Leaderboard({
     return calc.targetSpendRequired;
   };
 
+  // Quick claim bid calculation for the inline bar
+  const quickCalc = useMemo(() => {
+    return calculateRequiredBid({
+      targetRank: quickTargetRank,
+      sortedProducts,
+      board,
+      existingProductUrl: quickUrl,
+    });
+  }, [quickTargetRank, sortedProducts, board, quickUrl]);
+
+  // Handle Quick Add and Claim to Gateway
+  const handleQuickClaim = (e: React.FormEvent) => {
+    e.preventDefault();
+    const clean = quickUrl.trim();
+    if (!clean) return;
+
+    const finalUrl = clean.startsWith('http') ? clean : `https://${clean}`;
+    const inferred = inferStartupName(finalUrl) || 'My Startup';
+
+    // Register to user's saved startups
+    const updated = Array.from(new Set([...userStartups, finalUrl]));
+    setUserStartups(updated);
+    try {
+      localStorage.setItem('azyra_user_startups', JSON.stringify(updated));
+    } catch (err) {
+      console.error(err);
+    }
+    if (onAddUserStartup) {
+      onAddUserStartup(finalUrl);
+    }
+
+    // Direct transition to select rank & gateway modal
+    const targetRank =
+      customRankInput && !isNaN(parseInt(customRankInput))
+        ? Math.min(100, Math.max(1, parseInt(customRankInput)))
+        : quickTargetRank;
+
+    onClaimRank(targetRank, finalUrl, inferred);
+  };
+
+  const quickDomain = extractDomain(quickUrl);
+  const inferredQuickName = inferStartupName(quickUrl);
+  const quickExistingProduct = useMemo(() => {
+    if (!quickDomain) return null;
+    return sortedProducts.find((p) => extractDomain(p.url) === quickDomain);
+  }, [quickDomain, sortedProducts]);
+
   return (
     <div className="space-y-8">
       {/* Board Selector Tabs & Daily UTC Countdown Header */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 rounded-2xl bg-surface p-2.5 border border-borderMuted">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 rounded-2xl bg-surface p-2.5 border border-borderMuted shadow-md">
         <div className="flex w-full sm:w-auto items-center gap-1.5 p-1 bg-surfaceElevated rounded-xl border border-borderMuted">
           <button
             onClick={() => setBoard('all-time')}
             className={`flex-1 sm:flex-none flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-xs sm:text-sm font-heading font-bold transition-all ${board === 'all-time'
-                ? 'bg-limeAccent text-[#0B0F10] shadow-md shadow-limeAccent/20'
-                : 'text-textMuted hover:text-textMain hover:bg-surface'
+              ? 'bg-limeAccent text-[#0B0F10] shadow-md shadow-limeAccent/20'
+              : 'text-textMuted hover:text-textMain hover:bg-surface'
               }`}
           >
             <Trophy className="h-4 w-4" />
@@ -140,8 +246,8 @@ export default function Leaderboard({
           <button
             onClick={() => setBoard('daily')}
             className={`flex-1 sm:flex-none flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-xs sm:text-sm font-heading font-bold transition-all ${board === 'daily'
-                ? 'bg-limeAccent text-[#0B0F10] shadow-md shadow-limeAccent/20'
-                : 'text-textMuted hover:text-textMain hover:bg-surface'
+              ? 'bg-limeAccent text-[#0B0F10] shadow-md shadow-limeAccent/20'
+              : 'text-textMuted hover:text-textMain hover:bg-surface'
               }`}
           >
             <Flame className="h-4 w-4" />
@@ -169,6 +275,69 @@ export default function Leaderboard({
         </div>
       </div>
 
+      {/* USER'S ACTIVE LISTING HUD (If user already has a claimed startup on this board) */}
+      {userListing && userListingRank && (
+        <div className="relative overflow-hidden rounded-2xl border-2 border-limeAccent bg-gradient-to-r from-limeAccent/15 via-surface to-surface p-4 sm:p-5 shadow-xl glow-lime">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div className="flex items-center gap-3.5">
+              <div className="relative">
+                <div className="p-2 rounded-2xl bg-surfaceElevated border border-limeAccent/40 shadow-inner">
+                  <FaviconImage url={userListing.url} fallback={userListing.logo} className="w-9 h-9 rounded-xl" size={128} />
+                </div>
+                <span className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-limeAccent text-[#0B0F10] text-[10px] font-black">
+                  ★
+                </span>
+              </div>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-base sm:text-lg font-heading font-black text-textMain">
+                    {userListing.name}
+                  </span>
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-limeAccent text-[#0B0F10] text-[10px] font-heading font-black uppercase tracking-wider shadow-sm">
+                    <Sparkles className="h-3 w-3 fill-[#0B0F10]" />
+                    YOUR ACTIVE LISTING
+                  </span>
+                  <span className="rounded bg-surfaceElevated px-2 py-0.5 text-[10px] font-mono text-textMuted border border-borderMuted">
+                    {userListing.category}
+                  </span>
+                </div>
+                <div className="flex items-center gap-3 text-xs text-textMuted mt-1">
+                  <span>
+                    Currently holding <strong className="text-limeAccent font-mono font-bold">Rank #{userListingRank}</strong>
+                  </span>
+                  <span>•</span>
+                  <span>
+                    Total Spend: <strong className="text-textMain font-mono font-bold">${(board === 'all-time' ? userListing.allTimeSpend : userListing.todaySpend).toLocaleString()}</strong>
+                  </span>
+                  <span>•</span>
+                  <span>{userListing.clicks || 0} clicks</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2.5 w-full md:w-auto">
+              <button
+                onClick={() => onClaimRank(userListingRank, userListing.url, userListing.name)}
+                className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 rounded-xl bg-limeAccent hover:brightness-110 text-[#0B0F10] font-heading font-black py-2.5 px-4 text-xs shadow-lg shadow-limeAccent/25 transition active:scale-[0.98]"
+              >
+                <ShieldCheck className="h-4 w-4 text-[#0B0F10]" />
+                <span>Defend / Boost Rank (#{userListingRank})</span>
+              </button>
+              <button
+                onClick={() => setIsQuickBarOpen((prev) => !prev)}
+                className="inline-flex items-center justify-center gap-1 rounded-xl bg-surfaceElevated hover:bg-surface text-textMuted hover:text-textMain py-2.5 px-3 text-xs border border-borderMuted transition"
+                title="List another startup"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Add Another</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+
+
       {/* TOP 3 PODIUM / SPOTLIGHT SHOWCASE */}
       {searchTerm === '' && selectedCategory === 'All' && sortedProducts.length >= 3 && (
         <div className="pt-4 pb-2">
@@ -187,7 +356,20 @@ export default function Leaderboard({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-6 items-end">
             {/* Rank 2 (Silver) */}
             {top2 && (
-              <div className="order-2 md:order-1 relative rounded-2xl border border-borderMuted bg-surface p-5 shadow-xl transition-all hover:border-limeAccent/40 hover:-translate-y-1">
+              <div
+                className={`order-2 md:order-1 relative rounded-2xl border bg-surface p-5 shadow-xl transition-all hover:-translate-y-1 ${isUserStartup(top2.url)
+                  ? 'border-limeAccent ring-2 ring-limeAccent/70 shadow-[0_0_35px_rgba(209,250,77,0.2)] bg-gradient-to-b from-limeAccent/10 via-surface to-surface'
+                  : 'border-borderMuted hover:border-limeAccent/40'
+                  }`}
+              >
+                {/* YOUR LISTING BADGE IF APPLICABLE */}
+                {isUserStartup(top2.url) && (
+                  <div className="absolute -top-3.5 right-4 z-20 flex items-center gap-1.5 rounded-full bg-limeAccent px-3 py-1 text-[10px] font-heading font-black text-[#0B0F10] shadow-lg shadow-limeAccent/40 animate-pulse">
+                    <Sparkles className="h-3 w-3 fill-[#0B0F10]" />
+                    <span>YOUR STARTUP</span>
+                  </div>
+                )}
+
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-surfaceElevated font-mono font-black text-textMain text-sm ring-1 ring-borderMuted">
@@ -203,8 +385,8 @@ export default function Leaderboard({
                 </div>
 
                 <div className="flex items-start gap-3 mb-3">
-                  <div className="text-3xl p-2 rounded-xl bg-surfaceElevated border border-borderMuted">
-                    {top2.logo}
+                  <div className="p-2 rounded-xl bg-surfaceElevated border border-borderMuted shrink-0">
+                    <FaviconImage url={top2.url} fallback={top2.logo} className="w-8 h-8 rounded-lg" size={128} />
                   </div>
                   <div>
                     <h3 className="text-lg font-heading font-black text-textMain hover:text-limeAccent transition">
@@ -235,21 +417,38 @@ export default function Leaderboard({
                 </div>
 
                 <button
-                  onClick={() => onClaimRank(2, top2.url)}
-                  className="w-full rounded-xl bg-surfaceElevated hover:bg-surface text-textMain hover:border-limeAccent font-heading font-bold py-2.5 px-3 text-xs flex items-center justify-center gap-2 border border-borderMuted shadow-md transition active:scale-[0.98]"
+                  onClick={() => onClaimRank(2, top2.url, top2.name)}
+                  className={`w-full rounded-xl font-heading font-bold py-2.5 px-3 text-xs flex items-center justify-center gap-2 border shadow-md transition active:scale-[0.98] ${isUserStartup(top2.url)
+                    ? 'bg-limeAccent text-[#0B0F10] border-limeAccent hover:brightness-110 font-black'
+                    : 'bg-surfaceElevated hover:bg-surface text-textMain hover:border-limeAccent border-borderMuted'
+                    }`}
                 >
-                  <Coins className="h-3.5 w-3.5 text-textMuted" />
-                  <span>Claim #2 (${getOvertakeCost(2).toLocaleString()})</span>
+                  {isUserStartup(top2.url) ? (
+                    <>
+                      <ShieldCheck className="h-3.5 w-3.5 text-[#0B0F10]" />
+                      <span>Defend Your Rank #2 (${getOvertakeCost(2).toLocaleString()})</span>
+                    </>
+                  ) : (
+                    <>
+                      <Coins className="h-3.5 w-3.5 text-textMuted" />
+                      <span>Claim #2 (${getOvertakeCost(2).toLocaleString()})</span>
+                    </>
+                  )}
                 </button>
               </div>
             )}
 
             {/* Rank 1 (Electric Lime Monarch) - Elevated Podium */}
             {top1 && (
-              <div className="order-1 md:order-2 relative rounded-3xl border-2 border-limeAccent bg-gradient-to-b from-limeAccent/10 via-surface to-surface p-6 shadow-2xl glow-lime transition-all hover:scale-[1.02] -translate-y-2">
+              <div
+                className={`order-1 md:order-2 relative rounded-3xl border-2 bg-gradient-to-b from-limeAccent/10 via-surface to-surface p-6 shadow-2xl glow-lime transition-all hover:scale-[1.02] -translate-y-2 ${isUserStartup(top1.url)
+                  ? 'border-limeAccent ring-4 ring-limeAccent/60 shadow-[0_0_45px_rgba(209,250,77,0.3)]'
+                  : 'border-limeAccent'
+                  }`}
+              >
                 <div className="absolute -top-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5 rounded-full bg-limeAccent px-4 py-1 text-xs font-heading font-black text-[#0B0F10] shadow-lg shadow-limeAccent/40">
                   <Crown className="h-3.5 w-3.5 fill-[#0B0F10]" />
-                  <span>REIGNING #1 KING</span>
+                  <span>{isUserStartup(top1.url) ? 'YOUR REIGNING #1 LISTING' : 'REIGNING #1 KING'}</span>
                 </div>
 
                 <div className="flex items-center justify-between mb-4 pt-2">
@@ -272,8 +471,8 @@ export default function Leaderboard({
                 </div>
 
                 <div className="flex items-start gap-3.5 mb-4">
-                  <div className="text-4xl p-2.5 rounded-2xl bg-surfaceElevated border border-limeAccent/40 shadow-inner">
-                    {top1.logo}
+                  <div className="p-2.5 rounded-2xl bg-surfaceElevated border border-limeAccent/40 shadow-inner shrink-0">
+                    <FaviconImage url={top1.url} fallback={top1.logo} className="w-10 h-10 rounded-xl" size={128} />
                   </div>
                   <div>
                     <h3 className="text-xl font-heading font-black text-textMain hover:text-limeAccent transition">
@@ -309,18 +508,40 @@ export default function Leaderboard({
                 </div>
 
                 <button
-                  onClick={() => onClaimRank(1, top1.url)}
+                  onClick={() => onClaimRank(1, top1.url, top1.name)}
                   className="w-full rounded-2xl bg-limeAccent hover:brightness-110 text-[#0B0F10] font-heading font-black py-3 px-4 text-sm flex items-center justify-center gap-2 shadow-lg shadow-limeAccent/30 transition-all hover:scale-[1.01] active:scale-[0.98]"
                 >
-                  <Sparkles className="h-4 w-4 fill-[#0B0F10]" />
-                  <span>Claim #1 (${getOvertakeCost(1).toLocaleString()})</span>
+                  {isUserStartup(top1.url) ? (
+                    <>
+                      <ShieldCheck className="h-4 w-4 fill-[#0B0F10]" />
+                      <span>Defend Sovereign #1 (${getOvertakeCost(1).toLocaleString()})</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-4 w-4 fill-[#0B0F10]" />
+                      <span>Claim #1 (${getOvertakeCost(1).toLocaleString()})</span>
+                    </>
+                  )}
                 </button>
               </div>
             )}
 
             {/* Rank 3 (Bronze) */}
             {top3 && (
-              <div className="order-3 relative rounded-2xl border border-borderMuted bg-surface p-5 shadow-xl transition-all hover:border-limeAccent/40 hover:-translate-y-1">
+              <div
+                className={`order-3 relative rounded-2xl border bg-surface p-5 shadow-xl transition-all hover:-translate-y-1 ${isUserStartup(top3.url)
+                  ? 'border-limeAccent ring-2 ring-limeAccent/70 shadow-[0_0_35px_rgba(209,250,77,0.2)] bg-gradient-to-b from-limeAccent/10 via-surface to-surface'
+                  : 'border-borderMuted hover:border-limeAccent/40'
+                  }`}
+              >
+                {/* YOUR LISTING BADGE IF APPLICABLE */}
+                {isUserStartup(top3.url) && (
+                  <div className="absolute -top-3.5 right-4 z-20 flex items-center gap-1.5 rounded-full bg-limeAccent px-3 py-1 text-[10px] font-heading font-black text-[#0B0F10] shadow-lg shadow-limeAccent/40 animate-pulse">
+                    <Sparkles className="h-3 w-3 fill-[#0B0F10]" />
+                    <span>YOUR STARTUP</span>
+                  </div>
+                )}
+
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-surfaceElevated font-mono font-black text-textMain text-sm ring-1 ring-borderMuted">
@@ -336,8 +557,8 @@ export default function Leaderboard({
                 </div>
 
                 <div className="flex items-start gap-3 mb-3">
-                  <div className="text-3xl p-2 rounded-xl bg-surfaceElevated border border-borderMuted">
-                    {top3.logo}
+                  <div className="p-2 rounded-xl bg-surfaceElevated border border-borderMuted shrink-0">
+                    <FaviconImage url={top3.url} fallback={top3.logo} className="w-8 h-8 rounded-lg" size={128} />
                   </div>
                   <div>
                     <h3 className="text-lg font-heading font-black text-textMain hover:text-limeAccent transition">
@@ -368,15 +589,169 @@ export default function Leaderboard({
                 </div>
 
                 <button
-                  onClick={() => onClaimRank(3, top3.url)}
-                  className="w-full rounded-xl bg-surfaceElevated hover:bg-surface text-textMain hover:border-limeAccent font-heading font-bold py-2.5 px-3 text-xs flex items-center justify-center gap-2 border border-borderMuted shadow-md transition active:scale-[0.98]"
+                  onClick={() => onClaimRank(3, top3.url, top3.name)}
+                  className={`w-full rounded-xl font-heading font-bold py-2.5 px-3 text-xs flex items-center justify-center gap-2 border shadow-md transition active:scale-[0.98] ${isUserStartup(top3.url)
+                    ? 'bg-limeAccent text-[#0B0F10] border-limeAccent hover:brightness-110 font-black'
+                    : 'bg-surfaceElevated hover:bg-surface text-textMain hover:border-limeAccent border-borderMuted'
+                    }`}
                 >
-                  <Coins className="h-3.5 w-3.5 text-textMuted" />
-                  <span>Claim #3 (${getOvertakeCost(3).toLocaleString()})</span>
+                  {isUserStartup(top3.url) ? (
+                    <>
+                      <ShieldCheck className="h-3.5 w-3.5 text-[#0B0F10]" />
+                      <span>Defend Your Rank #3 (${getOvertakeCost(3).toLocaleString()})</span>
+                    </>
+                  ) : (
+                    <>
+                      <Coins className="h-3.5 w-3.5 text-textMuted" />
+                      <span>Claim #3 (${getOvertakeCost(3).toLocaleString()})</span>
+                    </>
+                  )}
                 </button>
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* QUICK CLAIM COMMAND BAR (Directly after Top 3, Start of Leaderboard) */}
+      {isQuickBarOpen && (
+        <div className="relative rounded-2xl border-2 border-limeAccent bg-gradient-to-r from-[#0C1214] via-[#10191B] to-[#0C1214] p-3 sm:p-3.5 shadow-[0_0_35px_rgba(209,250,77,0.16)] ring-1 ring-limeAccent/30 transition-all hover:shadow-[0_0_45px_rgba(209,250,77,0.22)]">
+          <form onSubmit={handleQuickClaim} className="space-y-2.5">
+            <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2.5">
+              {/* Left: Favicon Box */}
+              <div className="flex items-center gap-2 pl-1 shrink-0">
+                <div className="relative flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-xl bg-surfaceElevated border border-borderMuted shadow-inner">
+                  <FaviconImage
+                    url={quickUrl}
+                    fallback="🚀"
+                    className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg object-contain"
+                    size={128}
+                  />
+                  {quickDomain && (
+                    <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-emerald-500 ring-2 ring-[#0C1214]">
+                      <Check className="h-2 w-2 text-black stroke-[3]" />
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Center: Input */}
+              <div className="flex-1 min-w-0 px-1 sm:px-2">
+                <input
+                  type="text"
+                  required
+                  placeholder="Paste your startup link to claim rank (e.g. acme.com or https://...)"
+                  value={quickUrl}
+                  onChange={(e) => setQuickUrl(e.target.value)}
+                  className="w-full bg-transparent text-sm sm:text-base font-medium text-textMain placeholder:text-textMuted/45 focus:outline-none font-sans"
+                />
+              </div>
+
+              {/* Target Rank Preset Selector & Custom Rank Option */}
+              <div className="flex items-center justify-between sm:justify-start gap-1 bg-surfaceElevated/80 rounded-xl px-2 py-1 border border-borderMuted/60 shrink-0">
+                <span className="text-[11px] font-mono font-bold text-textMuted/70 hidden sm:inline">
+                  Rank:
+                </span>
+                {[1, 2, 3, 5, 10].map((rk) => (
+                  <button
+                    key={rk}
+                    type="button"
+                    onClick={() => {
+                      setQuickTargetRank(rk);
+                      setCustomRankInput('');
+                    }}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-heading font-bold transition-all ${
+                      quickTargetRank === rk && customRankInput === ''
+                        ? 'bg-limeAccent text-[#0B0F10] shadow-md shadow-limeAccent/30 font-black scale-105'
+                        : 'text-textMuted hover:text-textMain hover:bg-surface'
+                    }`}
+                  >
+                    #{rk}
+                  </button>
+                ))}
+
+                {/* Custom Rank Input Option */}
+                <div className="flex items-center pl-1 border-l border-borderMuted/60">
+                  <div
+                    className={`flex items-center gap-0.5 px-2 py-0.5 rounded-lg border transition-all ${
+                      customRankInput !== ''
+                        ? 'bg-limeAccent text-[#0B0F10] border-limeAccent shadow-md shadow-limeAccent/30 font-black ring-1 ring-limeAccent/40'
+                        : 'bg-surface/70 border-borderMuted text-textMuted hover:border-limeAccent/50 focus-within:border-limeAccent focus-within:text-limeAccent'
+                    }`}
+                  >
+                    <span className={`text-[11px] font-mono font-bold ${customRankInput !== '' ? 'text-[#0B0F10]' : 'text-textMuted'}`}>
+                      #
+                    </span>
+                    <input
+                      type="number"
+                      min={1}
+                      max={100}
+                      placeholder="Custom"
+                      value={customRankInput}
+                      onChange={(e) => {
+                        const raw = e.target.value;
+                        setCustomRankInput(raw);
+                        const val = parseInt(raw);
+                        if (!isNaN(val) && val >= 1) {
+                          setQuickTargetRank(Math.min(100, Math.max(1, val)));
+                        }
+                      }}
+                      className={`w-12 sm:w-14 bg-transparent text-xs font-mono font-bold text-center outline-none ${
+                        customRankInput !== ''
+                          ? 'text-[#0B0F10] placeholder:text-[#0B0F10]/50 font-black'
+                          : 'text-textMain placeholder:text-textMuted/50'
+                      }`}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Claim CTA Button */}
+              <button
+                type="submit"
+                disabled={!quickUrl.trim()}
+                className="rounded-xl bg-limeAccent hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed text-[#0B0F10] font-heading font-black py-2.5 sm:py-3 px-5 sm:px-6 text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-limeAccent/25 hover:scale-[1.02] active:scale-[0.98] transition-all shrink-0 cursor-pointer"
+              >
+                <Sparkles className="h-4 w-4 fill-[#0B0F10]" />
+                <span>Claim #{quickTargetRank}</span>
+                <ArrowRight className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Live Intel Strip (Appears compactly when URL entered) */}
+            {quickDomain && (
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 border-t border-white/5 text-[11px] font-mono">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="flex h-2 w-2 relative">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                  </span>
+                  <span className="text-white font-bold">{inferredQuickName || quickDomain}</span>
+                  <span className="text-textMuted">({quickDomain})</span>
+                  {quickExistingProduct ? (
+                    <span className="rounded bg-limeAccent/15 border border-limeAccent/40 px-1.5 py-0.2 text-[10px] font-bold text-limeAccent">
+                      Active Rank #{sortedProducts.findIndex((p) => p.id === quickExistingProduct.id) + 1} (Bump Discount)
+                    </span>
+                  ) : (
+                    <span className="rounded bg-emerald-500/10 border border-emerald-500/30 px-1.5 py-0.2 text-[10px] font-bold text-emerald-400">
+                      Favicon Ready
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-textMuted">Cost to take #{quickTargetRank}:</span>
+                  <strong className="text-limeAccent font-heading font-black text-sm">
+                    ${quickCalc.netPayable.toLocaleString()}
+                  </strong>
+                  {quickCalc.currentHolder && (
+                    <span className="text-textMuted/70 text-[10px]">
+                      (Outbidding {quickCalc.currentHolder.name})
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+          </form>
         </div>
       )}
 
@@ -390,8 +765,8 @@ export default function Leaderboard({
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
                 className={`rounded-xl px-3.5 py-1.5 text-xs font-heading transition ${selectedCategory === cat
-                    ? 'bg-limeAccent text-[#0B0F10] font-bold shadow-md shadow-limeAccent/20'
-                    : 'bg-surface text-textMuted hover:bg-surfaceElevated hover:text-textMain border border-borderMuted'
+                  ? 'bg-limeAccent text-[#0B0F10] font-bold shadow-md shadow-limeAccent/20'
+                  : 'bg-surface text-textMuted hover:bg-surfaceElevated hover:text-textMain border border-borderMuted'
                   }`}
               >
                 {cat}
@@ -438,18 +813,25 @@ export default function Leaderboard({
               const actualRank = sortedProducts.findIndex((p) => p.id === product.id) + 1;
               const spend = board === 'all-time' ? product.allTimeSpend : product.todaySpend;
               const overtakeCost = getOvertakeCost(actualRank);
+              const isOwnListing = isUserStartup(product.url);
 
               return (
                 <div
                   key={product.id}
-                  className={`group grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-4 px-4 sm:px-6 py-4 items-center transition-colors hover:bg-surfaceElevated/40 ${actualRank === 1 ? 'bg-limeAccent/[0.04]' : ''
+                  className={`group grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-4 px-4 sm:px-6 py-4 items-center transition-all ${isOwnListing
+                    ? 'relative z-10 bg-gradient-to-r from-limeAccent/15 via-limeAccent/[0.04] to-surface border-l-4 border-l-limeAccent border-y border-r border-limeAccent/50 rounded-2xl shadow-[0_0_30px_rgba(209,250,77,0.1)] ring-1 ring-limeAccent/40 my-1'
+                    : actualRank === 1
+                      ? 'bg-limeAccent/[0.04] hover:bg-surfaceElevated/40'
+                      : 'hover:bg-surfaceElevated/40'
                     }`}
                 >
                   {/* Rank Column */}
                   <div className="md:col-span-1 flex md:flex-col items-center justify-between md:justify-center gap-1">
                     <div className="flex items-center gap-2">
                       <span
-                        className={`flex h-8 w-8 items-center justify-center rounded-xl font-mono text-sm font-black ${actualRank === 1
+                        className={`flex h-8 w-8 items-center justify-center rounded-xl font-mono text-sm font-black ${isOwnListing
+                          ? 'bg-limeAccent text-[#0B0F10] shadow-md shadow-limeAccent/30 ring-2 ring-limeAccent/60'
+                          : actualRank === 1
                             ? 'bg-limeAccent text-[#0B0F10] shadow-md shadow-limeAccent/20'
                             : actualRank === 2
                               ? 'bg-surfaceElevated text-textMain border border-borderMuted'
@@ -482,8 +864,8 @@ export default function Leaderboard({
 
                   {/* Product Details Column */}
                   <div className="md:col-span-5 flex items-start gap-3">
-                    <div className="text-2xl p-2 rounded-xl bg-surfaceElevated border border-borderMuted shrink-0">
-                      {product.logo}
+                    <div className="p-2 rounded-xl bg-surfaceElevated border border-borderMuted shrink-0">
+                      <FaviconImage url={product.url} fallback={product.logo} className="w-8 h-8 rounded-lg" size={128} />
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
@@ -496,6 +878,15 @@ export default function Leaderboard({
                           {product.name}
                           <ExternalLink className="h-3 w-3 text-textMuted group-hover:text-limeAccent" />
                         </a>
+
+                        {/* HIGHLIGHT BADGE FOR OWN LISTING */}
+                        {isOwnListing && (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-limeAccent text-[#0B0F10] font-heading font-black text-[10px] uppercase tracking-wider shadow-sm shadow-limeAccent/40 shrink-0">
+                            <Sparkles className="h-2.5 w-2.5 fill-[#0B0F10]" />
+                            YOUR LISTING
+                          </span>
+                        )}
+
                         <span className="rounded bg-surfaceElevated px-2 py-0.5 text-[10px] font-mono font-medium text-textMuted border border-borderMuted">
                           {product.category}
                         </span>
@@ -508,6 +899,11 @@ export default function Leaderboard({
                       <p className="text-xs text-textMuted line-clamp-1 mt-0.5">
                         {product.tagline}
                       </p>
+                      {isOwnListing && (
+                        <p className="text-[11px] font-mono text-limeAccent font-bold mt-0.5">
+                          ★ Your active sovereign rank #{actualRank} • Safeguard against outbids
+                        </p>
+                      )}
                       <a
                         href={product.url}
                         target="_blank"
@@ -549,13 +945,25 @@ export default function Leaderboard({
                   {/* CTA: Claim This Exact Rank Button */}
                   <div className="md:col-span-2 flex justify-end pt-2 md:pt-0">
                     <button
-                      onClick={() => onClaimRank(actualRank, product.url)}
-                      className="w-full md:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl bg-surfaceElevated hover:bg-limeAccent hover:text-[#0B0F10] text-textMain font-mono font-bold px-3.5 py-2 text-xs border border-borderMuted hover:border-limeAccent transition-all shadow-sm active:scale-[0.98] group/btn"
+                      onClick={() => onClaimRank(actualRank, product.url, product.name)}
+                      className={`w-full md:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl font-mono font-bold px-3.5 py-2 text-xs transition-all shadow-sm active:scale-[0.98] group/btn ${isOwnListing
+                        ? 'bg-limeAccent text-[#0B0F10] hover:brightness-110 font-heading font-black shadow-lg shadow-limeAccent/20'
+                        : 'bg-surfaceElevated hover:bg-limeAccent hover:text-[#0B0F10] text-textMain border border-borderMuted hover:border-limeAccent'
+                        }`}
                     >
-                      <Coins className="h-3.5 w-3.5 text-limeAccent group-hover/btn:text-[#0B0F10] transition" />
-                      <span>
-                        Claim #{actualRank} (${overtakeCost.toLocaleString()})
-                      </span>
+                      {isOwnListing ? (
+                        <>
+                          <ShieldCheck className="h-3.5 w-3.5 text-[#0B0F10]" />
+                          <span>Defend / Boost (#{actualRank})</span>
+                        </>
+                      ) : (
+                        <>
+                          <Coins className="h-3.5 w-3.5 text-limeAccent group-hover/btn:text-[#0B0F10] transition" />
+                          <span>
+                            Claim #{actualRank} (${overtakeCost.toLocaleString()})
+                          </span>
+                        </>
+                      )}
                     </button>
                   </div>
                 </div>

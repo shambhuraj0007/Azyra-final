@@ -14,7 +14,12 @@ export function checkAdminIp(req: NextRequest): boolean {
     }
   }
 
-  return allowlist.includes(clientIp) || allowlist.includes("127.0.0.1") || allowlist.includes("::1");
+  // Allow localhost for local development
+  if (clientIp === "127.0.0.1" || clientIp === "::1" || clientIp === "localhost") {
+    return true;
+  }
+
+  return allowlist.includes(clientIp);
 }
 
 export function generateAdminSessionToken(): string {

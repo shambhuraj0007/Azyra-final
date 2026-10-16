@@ -31,7 +31,8 @@ import {
   Target,
   Palette,
   Film,
-  Lightbulb
+  Lightbulb,
+  Trash2
 } from 'lucide-react';
 import Navbar from '../../../components/Navbar';
 import WithdrawModal from '../../../components/WithdrawModal';
@@ -59,6 +60,8 @@ function CampaignWorkspaceContent({ params }: PageProps) {
     openSetupModal,
     submitClip,
     simulateViewGrowth,
+    checkViews,
+    cancelSubmission,
     toggleCampaignStatus
   } = useCampaigns();
 
@@ -158,8 +161,8 @@ function CampaignWorkspaceContent({ params }: PageProps) {
           <div className="flex items-center gap-2">
             <span
               className={`rounded-full px-3 py-1 text-xs font-mono font-bold uppercase tracking-wider border ${campaign.status === 'active'
-                  ? 'bg-emeraldAccent/15 text-emeraldAccent border-emeraldAccent/30'
-                  : 'bg-limeAccent/15 text-limeAccent border-limeAccent/30'
+                ? 'bg-emeraldAccent/15 text-emeraldAccent border-emeraldAccent/30'
+                : 'bg-limeAccent/15 text-limeAccent border-limeAccent/30'
                 }`}
             >
               Status: {campaign.status.replace('_', ' ')}
@@ -483,6 +486,43 @@ function CampaignWorkspaceContent({ params }: PageProps) {
                   </div>
                 </div>
               )}
+
+              {/* Target Audience & Production Specs (Fills empty space) */}
+              <div className="rounded-2xl border border-borderMuted bg-surface p-5 space-y-4 shadow-xl flex-1 flex flex-col justify-center">
+                <span className="text-xs font-heading font-bold uppercase tracking-wider text-purple-400 flex items-center gap-1.5 border-b border-borderMuted pb-2">
+                  <Target className="h-4 w-4" />
+                  <span>Production & Audience Specs</span>
+                </span>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-[10px] uppercase font-bold text-textMuted mb-1">Target Audience</p>
+                    <p className="text-xs text-textMain leading-relaxed font-medium">
+                      {campaign.guidelines.target_audience || 'General broad audience. Focus on high retention and visual hooks.'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase font-bold text-textMuted mb-1">Ideal Duration</p>
+                    <p className="text-xs text-textMain font-mono bg-surfaceElevated border border-borderMuted p-1.5 rounded-lg inline-block">
+                      {campaign.guidelines.video_duration || '30 - 60s (9:16 vertical)'}
+                    </p>
+                  </div>
+                </div>
+
+                {campaign.guidelines.media_kit_link && (
+                  <div className="pt-2">
+                    <a
+                      href={campaign.guidelines.media_kit_link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full flex items-center justify-center gap-2 rounded-xl bg-purple-950/20 hover:bg-purple-950/40 text-purple-300 border border-purple-900/40 py-2.5 text-xs font-bold transition shadow-sm"
+                    >
+                      <FolderDown className="h-4 w-4" />
+                      Download Official Brand Assets
+                    </a>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -498,11 +538,11 @@ function CampaignWorkspaceContent({ params }: PageProps) {
                 {(campaign.guidelines.dos && campaign.guidelines.dos.length > 0
                   ? campaign.guidelines.dos
                   : [
-                      'Hook viewers immediately within the first 3 seconds',
-                      'Use bold high-contrast animated subtitles',
-                      'Show clean 1080p+ vertical screen recordings',
-                      'Maintain high energy and rapid jump cuts',
-                    ]
+                    'Hook viewers immediately within the first 3 seconds',
+                    'Use bold high-contrast animated subtitles',
+                    'Show clean 1080p+ vertical screen recordings',
+                    'Maintain high energy and rapid jump cuts',
+                  ]
                 ).map((d, idx) => (
                   <li key={idx} className="flex items-start gap-2">
                     <span className="text-emeraldAccent font-bold">✓</span>
@@ -522,11 +562,11 @@ function CampaignWorkspaceContent({ params }: PageProps) {
                 {(campaign.guidelines.donts && campaign.guidelines.donts.length > 0
                   ? campaign.guidelines.donts
                   : [
-                      'No static slideshows or AI image text galleries',
-                      'No copyrighted commercial audio tracks',
-                      'Do not disparage or insult direct competitors',
-                      'Never purchase fake bot views or engagement traffic',
-                    ]
+                    'No static slideshows or AI image text galleries',
+                    'No copyrighted commercial audio tracks',
+                    'Do not disparage or insult direct competitors',
+                    'Never purchase fake bot views or engagement traffic',
+                  ]
                 ).map((dont, idx) => (
                   <li key={idx} className="flex items-start gap-2 text-rose-200/90">
                     <span className="text-rose-400 font-bold">✗</span>
@@ -640,7 +680,7 @@ function CampaignWorkspaceContent({ params }: PageProps) {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="md:col-span-2 space-y-1">
                 <label className="block text-xs font-heading font-bold uppercase tracking-wider text-textMain">
-                  Published Video URL *
+                  Published Post URL *
                 </label>
                 <input
                   type="text"
@@ -815,14 +855,32 @@ function CampaignWorkspaceContent({ params }: PageProps) {
                         </div>
                       </div>
 
-                      {/* Simulation Button for Testing the Automated Loop! */}
+                      {/* Real Live Views Button */}
                       <button
-                        onClick={() => simulateViewGrowth(sub.id, 15000)}
-                        title="Simulate traffic spike / worker poll (+15,000 views)"
+                        onClick={async () => {
+                          const res = await checkViews(sub.id);
+                          if (!res.success) alert(res.error);
+                        }}
+                        title="Check real live views from platform"
                         className="rounded-xl bg-surfaceElevated hover:bg-surface text-textMain border border-borderMuted px-3 py-2 text-xs font-mono font-bold flex items-center gap-1.5 transition active:scale-[0.98] hover:border-limeAccent"
                       >
-                        <Zap className="h-3.5 w-3.5 text-limeAccent" />
-                        <span>Simulate +15k Views</span>
+                        <RefreshCw className="h-3.5 w-3.5 text-limeAccent" />
+                        <span>Check Views</span>
+                      </button>
+
+
+                      {/* Cancel Submission Button */}
+                      <button
+                        onClick={async () => {
+                          if (confirm('Are you sure you want to cancel this submission?')) {
+                            const res = await cancelSubmission(sub.id);
+                            if (!res.success) alert(res.error);
+                          }
+                        }}
+                        title="Cancel Submission"
+                        className="rounded-xl bg-red-950/20 hover:bg-red-950/40 text-red-400 border border-red-900/40 px-3 py-2 text-xs font-mono font-bold flex items-center gap-1.5 transition active:scale-[0.98] hover:border-red-500/50"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
                       </button>
                     </div>
                   </div>

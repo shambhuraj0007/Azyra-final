@@ -8,9 +8,9 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { email, password } = body;
 
-    if (!email) {
+    if (typeof email !== 'string' || typeof password !== 'string') {
       return NextResponse.json(
-        { success: false, error: 'Email is required.' },
+        { success: false, error: 'Email and password must be valid strings.' },
         { status: 400 }
       );
     }
@@ -18,36 +18,34 @@ export async function POST(request: NextRequest) {
     await connectToDatabase();
 
     const normalizedEmail = email.toLowerCase().trim();
-    const user = await User.findOne({ email: normalizedEmail });
+    const user = await User.findOne({ email: normalizedEmail }).select('+password +passwordHash +passwordSalt');
 
     if (!user) {
       return NextResponse.json(
-        { success: false, error: 'No account found with this email. Please sign up.' },
-        { status: 404 }
+        { success: false, error: 'Invalid email or password.' },
+        { status: 401 }
       );
     }
 
-    // If user has a password set, verify it
-    if (user.passwordHash && user.passwordSalt) {
-      if (!password) {
-        return NextResponse.json(
-          { success: false, error: 'Password is required to sign in.' },
-          { status: 400 }
-        );
-      }
-      const isValid = verifyPassword(password, user.passwordHash, user.passwordSalt);
-      if (!isValid) {
-        return NextResponse.json(
-          { success: false, error: 'Invalid password. Please check your credentials.' },
-          { status: 401 }
-        );
-      }
-    } else if (password) {
-      // First time setting a password for an existing account
-      const { hash, salt } = hashPassword(password);
-      user.passwordHash = hash;
-      user.passwordSalt = salt;
-      await user.save();
+    let isValid = false;
+    if (user.password) {
+      const bcrypt = (await import('bcryptjs')).default;
+      isValid = await bcrypt.compare(password, user.password);
+    } else if (user.passwordHash && user.passwordSalt) {
+      isValid = verifyPassword(password, user.passwordHash, user.passwordSalt);
+    } else {
+      // Account created via Google OAuth with no password set
+      return NextResponse.json(
+        { success: false, error: 'This account was created via Google OAuth. Please use "Sign in with Google".' },
+        { status: 400 }
+      );
+    }
+
+    if (!isValid) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid email or password.' },
+        { status: 401 }
+      );
     }
 
     const token = generateToken({
