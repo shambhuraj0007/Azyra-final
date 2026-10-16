@@ -61,7 +61,7 @@ export default function CreatorSetupModal() {
         setInstagramLink(currentUser.socialLinks?.instagram || '');
         setYoutubeLink(currentUser.socialLinks?.youtube || '');
         setPayoutType(currentUser.payoutMethod?.type || 'stripe');
-        setPayoutIdentifier(currentUser.payoutMethod?.accountIdentifier || 'acct_1Nzk98WhopConnect');
+        setPayoutIdentifier(currentUser.payoutMethod?.accountIdentifier || 'acct_1Nzk98AzyraConnect');
       } else {
         setStep('login');
         setEmail(currentUser?.email || '');

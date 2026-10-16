@@ -1,17 +1,17 @@
 'use client';
 
-import { useState } from 'react';
-import { 
-  X, 
-  Sparkles, 
-  Building2, 
-  CheckCircle2, 
-  ArrowRight, 
-  ArrowLeft, 
-  DollarSign, 
-  FolderDown, 
-  ShieldCheck, 
-  Video, 
+import { useState, useEffect } from 'react';
+import {
+  X,
+  Sparkles,
+  Building2,
+  CheckCircle2,
+  ArrowRight,
+  ArrowLeft,
+  DollarSign,
+  FolderDown,
+  ShieldCheck,
+  Video,
   Coins,
   Copy,
   Check,
@@ -23,7 +23,9 @@ import {
   Target,
   Palette,
   Film,
-  Lock
+  Lock,
+  Globe,
+  Loader2,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useCampaigns } from '../lib/CampaignContext';
@@ -51,11 +53,47 @@ export default function CreateCampaignModal({ isOpen, onClose }: CreateCampaignM
   const [category, setCategory] = useState<any>('DevTools');
   const [description, setDescription] = useState('');
   const [targetAudience, setTargetAudience] = useState('Developers, tech enthusiasts, and early adopters');
+  const [browserTitle, setBrowserTitle] = useState('');
+  const [fetchingMetadata, setFetchingMetadata] = useState(false);
+
+  useEffect(() => {
+    const clean = brandUrl.trim();
+    if (!clean || !clean.includes('.') || clean === 'https://example.com' || clean.length < 5) {
+      setBrowserTitle('');
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setFetchingMetadata(true);
+      try {
+        const res = await fetch(`/api/metadata?url=${encodeURIComponent(clean)}`);
+        const data = await res.json();
+        if (data.success && data.title) {
+          setBrowserTitle(data.title);
+          if (!brandName || brandName === 'My Brand') {
+            setBrandName(data.siteName || data.title.split(/[-|•:]/)[0].trim());
+          }
+          if (!tagline && data.description) {
+            setTagline(data.description.slice(0, 100));
+          }
+          if (!description && data.description) {
+            setDescription(data.description);
+          }
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setFetchingMetadata(false);
+      }
+    }, 450);
+
+    return () => clearTimeout(timer);
+  }, [brandUrl]);
 
   // Step 2: Creator Toolkit & Viral Strategy (The Creator Suite)
   const [assetDriveLink, setAssetDriveLink] = useState('https://drive.google.com/drive/folders/raw_footage_b_roll');
   const [mediaKitLink, setMediaKitLink] = useState('https://drive.google.com/drive/folders/brand_logos_overlays');
-  
+
   // Hooks
   const [hooksText, setHooksText] = useState(
     '“I just deleted my old workflow and this is why...”\n' +
@@ -101,7 +139,10 @@ export default function CreateCampaignModal({ isOpen, onClose }: CreateCampaignM
   const [videoDuration, setVideoDuration] = useState('20 - 45 seconds (9:16 Vertical)');
   const [guidelinesNotes, setGuidelinesNotes] = useState('Hook the audience immediately in the first 2 seconds before they scroll.');
 
-  // Step 3: Reward Model & Platforms
+  // Step 3: Reward Model & Platforms (Two Primary Options)
+  const [rewardModel, setRewardModel] = useState<'cpm' | 'custom_bounty'>('cpm');
+  const [customBountyType, setCustomBountyType] = useState<'whop' | 'fixed' | 'milestones'>('whop');
+  const [bountyAmount, setBountyAmount] = useState<number>(100);
   const [cpmRate, setCpmRate] = useState<number>(1.50);
   const [totalBudget, setTotalBudget] = useState<number>(5000);
   const [maxPayoutPerClip, setMaxPayoutPerClip] = useState<number>(300);
@@ -230,13 +271,13 @@ export default function CreateCampaignModal({ isOpen, onClose }: CreateCampaignM
         video_duration: videoDuration,
         target_audience: targetAudience,
         success_criteria: successCriteria.trim(),
-        payout_structure: payoutStructure,
+        payout_structure: rewardModel === 'cpm' ? 'cpm' : `custom_${customBountyType}`,
       },
       total_budget: totalBudget,
       remaining_budget: totalBudget,
-      cpm_rate: cpmRate,
-      max_payout_per_clip: maxPayoutPerClip,
-      min_views_threshold: minViewsThreshold,
+      cpm_rate: rewardModel === 'cpm' ? cpmRate : bountyAmount,
+      max_payout_per_clip: rewardModel === 'cpm' ? maxPayoutPerClip : bountyAmount,
+      min_views_threshold: rewardModel === 'cpm' ? minViewsThreshold : 0,
       platforms,
       category,
       status: 'active',
@@ -435,6 +476,19 @@ export default function CreateCampaignModal({ isOpen, onClose }: CreateCampaignM
                     placeholder="https://cursor.com"
                     className="w-full rounded-xl bg-surfaceElevated border border-borderMuted px-3.5 py-2 text-xs text-textMain focus:border-limeAccent outline-none font-mono"
                   />
+                  {fetchingMetadata && (
+                    <div className="flex items-center gap-1.5 pt-1.5 text-[11px] font-mono text-limeAccent animate-pulse">
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      <span>Fetching page title & metadata...</span>
+                    </div>
+                  )}
+                  {!fetchingMetadata && browserTitle && (
+                    <div className="flex items-center gap-1.5 mt-2 px-3 py-1.5 rounded-xl bg-surfaceElevated border border-borderMuted text-xs font-mono text-textMuted truncate">
+                      <Globe className="h-3.5 w-3.5 text-limeAccent shrink-0" />
+                      <span className="text-textMuted shrink-0">Title:</span>
+                      <span className="text-textMain truncate font-medium">{browserTitle}</span>
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -684,194 +738,333 @@ export default function CreateCampaignModal({ isOpen, onClose }: CreateCampaignM
             {/* STEP 3: Reward & Success Model */}
             {step === 3 && (
               <div className="space-y-5">
-                {/* Reward Structure Selector */}
+                {/* TWO-OPTION REWARD SWITCH BUTTON */}
                 <div>
-                  <label className="block text-xs font-bold uppercase text-textMain mb-2 font-heading">
-                    Reward & Compensation Structure
-                  </label>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                    {[
-                      { id: 'cpm', label: 'Performance CPM', desc: 'Pay based on verified view tiers ($/1k views)' },
-                      { id: 'milestone', label: 'Milestone Rewards', desc: 'Bounties for hitting view milestones' },
-                      { id: 'hybrid', label: 'Hybrid Model', desc: 'Baseline quality payout + viral CPM bonus' },
-                    ].map((m) => (
-                      <button
-                        key={m.id}
-                        type="button"
-                        onClick={() => setPayoutStructure(m.id as any)}
-                        className={`rounded-xl p-3 text-left border transition ${
-                          payoutStructure === m.id
-                            ? 'border-limeAccent bg-limeAccent/10 ring-1 ring-limeAccent'
-                            : 'border-borderMuted bg-surfaceElevated hover:border-textMuted'
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-xs font-bold uppercase text-textMain font-heading">
+                      Reward & Compensation Model *
+                    </label>
+                    <span className="text-[10px] font-mono text-limeAccent bg-limeAccent/10 px-2.5 py-0.5 rounded-full border border-limeAccent/30">
+                      {rewardModel === 'cpm' ? '📈 1K Views Payout Model' : '🎯 Custom  Bounty Model'}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 p-1.5 rounded-2xl bg-canvas border border-borderMuted gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRewardModel('cpm');
+                        setPayoutStructure('cpm');
+                      }}
+                      className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs sm:text-sm font-heading font-bold transition-all ${rewardModel === 'cpm'
+                        ? 'bg-limeAccent text-[#0B0F10] shadow-md shadow-limeAccent/20 scale-[1.01]'
+                        : 'text-textMuted hover:text-textMain hover:bg-surfaceElevated'
                         }`}
-                      >
-                        <strong className="block text-xs text-textMain font-heading">{m.label}</strong>
-                        <span className="text-[10px] text-textMuted leading-snug">{m.desc}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                    >
+                      <Coins className="h-4 w-4" />
+                      <span>1K Per View Money (CPM)</span>
+                    </button>
 
-                {/* CORE SUCCESS CRITERIA: Describe the success of the campaign for payout */}
-                <div className="rounded-2xl border border-emeraldAccent/30 bg-surfaceElevated/60 p-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <label className="block text-xs font-bold uppercase text-emeraldAccent font-heading flex items-center gap-1.5">
-                      <Target className="h-4 w-4" />
-                      <span>Campaign Success Criteria for Payout *</span>
-                    </label>
-                    <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-500/30">
-                      Required for Escrow Release
-                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRewardModel('custom_bounty');
+                        setPayoutStructure('milestone');
+                        if (successCriteria.startsWith('1. Video must feature live product demonstration')) {
+                          setSuccessCriteria(
+                            '1. Feature genuine product workflow demonstration or Whop checkout experience.\n' +
+                            '2. Include official campaign tracking link in bio or pinned comment.\n' +
+                            '3. Must deliver clear viewer value with 100% organic engagement (zero bots).\n' +
+                            '4. Submit live post URL and analytics proof for escrow bounty release.'
+                          );
+                        }
+                      }}
+                      className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs sm:text-sm font-heading font-bold transition-all ${rewardModel === 'custom_bounty'
+                        ? 'bg-limeAccent text-[#0B0F10] shadow-md shadow-limeAccent/20 scale-[1.01]'
+                        : 'text-textMuted hover:text-textMain hover:bg-surfaceElevated'
+                        }`}
+                    >
+                      <Sparkles className="h-4 w-4" />
+                      <span>Custom Success / Bounties (Whop Style)</span>
+                    </button>
                   </div>
-                  <p className="text-[11px] text-textMuted leading-relaxed">
-                    Explicitly define what constitutes a successful creator submission to qualify for payout. Creators will be held to these exact standards before escrow funds unlock.
+                  <p className="text-[11px] text-textMuted mt-1.5 leading-relaxed font-sans">
+                    {rewardModel === 'cpm'
+                      ? 'Pay creators strictly based on verified view counts at an agreed dollar rate per 1,000 views.'
+                      : 'Define custom deliverables like Whop: flat video bounties, customer checkouts, signups, or custom milestones where you set whatever rules you want.'}
                   </p>
-
-                  <textarea
-                    rows={4}
-                    required
-                    placeholder="Describe what makes a submission successful for payout (e.g. video retention, product demo, CTA link in bio, organic reach)..."
-                    value={successCriteria}
-                    onChange={(e) => setSuccessCriteria(e.target.value)}
-                    className="w-full rounded-xl bg-canvas border border-borderMuted px-3.5 py-2.5 text-xs text-textMain leading-relaxed focus:border-emeraldAccent outline-none font-mono"
-                  />
-
-                  {/* Quick criteria preset pills */}
-                  <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                    <span className="text-[10px] text-textMuted font-heading font-bold mr-1">Quick Add:</span>
-                    {[
-                      '30s+ Watch Retention',
-                      'Live Product Screen Demo in first 5s',
-                      'Pinned CTA Link in Comments/Bio',
-                      'Zero Bot Traffic / Organic Verified',
-                      '1080p High-Res Vertical (9:16)',
-                    ].map((pill) => (
-                      <button
-                        key={pill}
-                        type="button"
-                        onClick={() => {
-                          if (!successCriteria.includes(pill)) {
-                            setSuccessCriteria((prev) => (prev ? `${prev}\n• ${pill}` : `• ${pill}`));
-                          }
-                        }}
-                        className="px-2 py-0.5 rounded-md bg-canvas hover:bg-surface text-[10px] text-textMuted hover:text-emeraldAccent border border-borderMuted transition"
-                      >
-                        +{pill}
-                      </button>
-                    ))}
-                  </div>
                 </div>
 
-                {/* CPM & Budget Parameters */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold uppercase text-textMain mb-1.5 font-heading">
-                      Pay-Per-View CPM Rate ($/1,000 views) *
-                    </label>
-                    <div className="relative">
-                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-textMuted font-mono text-sm">
-                        $
-                      </span>
-                      <input
-                        type="number"
-                        step="0.10"
-                        min="0.50"
-                        value={cpmRate}
-                        onChange={(e) => setCpmRate(parseFloat(e.target.value) || 1)}
-                        className="w-full rounded-xl bg-surfaceElevated border border-borderMuted pl-8 pr-3 py-2.5 text-sm text-textMain font-mono font-bold focus:border-limeAccent outline-none"
+                {/* OPTION 1 SUB-OPTIONS: 1K PER VIEW MONEY (CPM) */}
+                {rewardModel === 'cpm' && (
+                  <div className="space-y-4 animate-in fade-in duration-200">
+                    {/* CORE SUCCESS CRITERIA: Describe the success of the campaign for payout */}
+                    <div className="rounded-2xl border border-emeraldAccent/30 bg-surfaceElevated/60 p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <label className="block text-xs font-bold uppercase text-emeraldAccent font-heading flex items-center gap-1.5">
+                          <Target className="h-4 w-4" />
+                          <span>View Qualification & Quality Standards *</span>
+                        </label>
+                        <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-500/30">
+                          Required for View Escrow Release
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-textMuted leading-relaxed">
+                        Specify quality standards that creators must hit for their views to count towards CPM payout.
+                      </p>
+
+                      <textarea
+                        rows={3}
+                        required
+                        placeholder="Describe what makes views eligible for payout (e.g. video retention, product demo, CTA link in bio, organic reach)..."
+                        value={successCriteria}
+                        onChange={(e) => setSuccessCriteria(e.target.value)}
+                        className="w-full rounded-xl bg-canvas border border-borderMuted px-3.5 py-2.5 text-xs text-textMain leading-relaxed focus:border-emeraldAccent outline-none font-mono"
                       />
-                    </div>
-                    <span className="text-[10px] text-textMuted mt-1 block">
-                      Industry avg: $1.20 – $2.00 CPM for tech / SaaS
-                    </span>
-                  </div>
 
-                  <div>
-                    <label className="block text-xs font-bold uppercase text-textMain mb-1.5 font-heading">
-                      Total Escrow Pool Budget ($) *
-                    </label>
-                    <div className="relative">
-                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-textMuted font-mono text-sm">
-                        $
+                      {/* Quick criteria preset pills */}
+                      <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                        <span className="text-[10px] text-textMuted font-heading font-bold mr-1">Quick Add:</span>
+                        {[
+                          '30s+ Watch Retention',
+                          'Live Product Screen Demo in first 5s',
+                          'Pinned CTA Link in Comments/Bio',
+                          'Zero Bot Traffic / Organic Verified',
+                          '1080p High-Res Vertical (9:16)',
+                        ].map((pill) => (
+                          <button
+                            key={pill}
+                            type="button"
+                            onClick={() => {
+                              if (!successCriteria.includes(pill)) {
+                                setSuccessCriteria((prev) => (prev ? `${prev}\n• ${pill}` : `• ${pill}`));
+                              }
+                            }}
+                            className="px-2 py-0.5 rounded-md bg-canvas hover:bg-surface text-[10px] text-textMuted hover:text-emeraldAccent border border-borderMuted transition"
+                          >
+                            +{pill}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* CPM & Budget Parameters */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-bold uppercase text-textMain mb-1.5 font-heading">
+                          Pay-Per-View CPM Rate ($/1,000 views) *
+                        </label>
+                        <div className="relative">
+                          <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-textMuted font-mono text-sm">
+                            $
+                          </span>
+                          <input
+                            type="number"
+                            step="0.10"
+                            min="0.50"
+                            value={cpmRate}
+                            onChange={(e) => setCpmRate(parseFloat(e.target.value) || 1)}
+                            className="w-full rounded-xl bg-surfaceElevated border border-borderMuted pl-8 pr-3 py-2.5 text-sm text-textMain font-mono font-bold focus:border-limeAccent outline-none"
+                          />
+                        </div>
+                        <span className="text-[10px] text-textMuted mt-1 block">
+                          Industry avg: $1.20 – $2.00 CPM for tech / SaaS
+                        </span>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold uppercase text-textMain mb-1.5 font-heading">
+                          Total Escrow Pool Budget ($) *
+                        </label>
+                        <div className="relative">
+                          <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-textMuted font-mono text-sm">
+                            $
+                          </span>
+                          <input
+                            type="number"
+                            step="500"
+                            min="500"
+                            value={totalBudget}
+                            onChange={(e) => setTotalBudget(parseFloat(e.target.value) || 500)}
+                            className="w-full rounded-xl bg-surfaceElevated border border-borderMuted pl-8 pr-3 py-2.5 text-sm text-textMain font-mono font-bold focus:border-limeAccent outline-none"
+                          />
+                        </div>
+                        <span className="text-[10px] text-emeraldAccent mt-1 block font-mono">
+                          Funds approximately ~{estimatedViews.toLocaleString()} organic views
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-bold uppercase text-textMain mb-1.5 font-heading">
+                          Max Payout Cap Per Clip ($)
+                        </label>
+                        <input
+                          type="number"
+                          step="50"
+                          value={maxPayoutPerClip}
+                          onChange={(e) => setMaxPayoutPerClip(parseFloat(e.target.value) || 100)}
+                          className="w-full rounded-xl bg-surfaceElevated border border-borderMuted px-3.5 py-2.5 text-xs text-textMain font-mono font-bold focus:border-limeAccent outline-none"
+                        />
+                        <span className="text-[10px] text-textMuted mt-1 block">
+                          Guarantees a single mega-viral video doesn&apos;t exhaust the full escrow
+                        </span>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold uppercase text-textMain mb-1.5 font-heading">
+                          Min Views Before Payout Unlocks
+                        </label>
+                        <input
+                          type="number"
+                          step="500"
+                          value={minViewsThreshold}
+                          onChange={(e) => setMinViewsThreshold(parseInt(e.target.value, 10) || 1000)}
+                          className="w-full rounded-xl bg-surfaceElevated border border-borderMuted px-3.5 py-2.5 text-xs text-textMain font-mono font-bold focus:border-limeAccent outline-none"
+                        />
+                        <span className="text-[10px] text-textMuted mt-1 block">
+                          Protects against low-effort spam clips with 10 views
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Creator Success Tiers Preview */}
+                    <div className="rounded-2xl bg-canvas border border-borderMuted p-4 space-y-2 font-mono">
+                      <span className="text-[10px] uppercase tracking-wider text-textMuted font-bold block">
+                        Creator Success Payout Progression (Preview)
                       </span>
-                      <input
-                        type="number"
-                        step="500"
-                        min="500"
-                        value={totalBudget}
-                        onChange={(e) => setTotalBudget(parseFloat(e.target.value) || 500)}
-                        className="w-full rounded-xl bg-surfaceElevated border border-borderMuted pl-8 pr-3 py-2.5 text-sm text-textMain font-mono font-bold focus:border-limeAccent outline-none"
+                      <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                        <div className="rounded-xl bg-surfaceElevated p-2 border border-borderMuted">
+                          <span className="text-[10px] text-textMuted block font-heading">Tier 1: Min Unlock</span>
+                          <span className="text-textMain font-bold">{minViewsThreshold.toLocaleString()} views</span>
+                          <span className="text-emerald-400 font-bold block mt-0.5">
+                            ${((minViewsThreshold / 1000) * cpmRate).toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="rounded-xl bg-surfaceElevated p-2 border border-borderMuted">
+                          <span className="text-[10px] text-textMuted block font-heading">Tier 2: Viral Growth</span>
+                          <span className="text-textMain font-bold">25,000 views</span>
+                          <span className="text-limeAccent font-bold block mt-0.5">
+                            ${Math.min(maxPayoutPerClip, 25 * cpmRate).toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="rounded-xl bg-surfaceElevated p-2 border border-borderMuted">
+                          <span className="text-[10px] text-textMuted block font-heading">Tier 3: Mega Viral</span>
+                          <span className="text-textMain font-bold">100,000+ views</span>
+                          <span className="text-amber-400 font-bold block mt-0.5">
+                            ${maxPayoutPerClip} (Max Cap)
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* OPTION 2 SUB-OPTIONS: CUSTOM SUCCESS / BOUNTIES (WHOP MODEL) */}
+                {rewardModel === 'custom_bounty' && (
+                  <div className="space-y-4 animate-in fade-in duration-200">
+                    {/* Custom Bounty Type Pills */}
+
+
+                    {/* Company Custom Success Description (Describe Whatever They Want) */}
+                    <div className="rounded-2xl border border-limeAccent/30 bg-surfaceElevated/60 p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <label className="block text-xs font-bold uppercase text-limeAccent font-heading flex items-center gap-1.5">
+                          <Sparkles className="h-4 w-4" />
+                          <span>Describe Your Custom Campaign Success Criteria *</span>
+                        </label>
+                        <span className="text-[10px] font-mono text-limeAccent bg-limeAccent/10 px-2 py-0.5 rounded border border-limeAccent/30">
+                          100% Brand Controlled
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-textMuted leading-relaxed">
+                        Describe whatever you want creators to accomplish for payout. You define the exact rules, deliverables, checkout proofs, or actions needed to unlock escrow funds.
+                      </p>
+
+                      <textarea
+                        rows={4}
+                        required
+                        placeholder="Define your custom requirements (e.g. 1. Show live Whop checkout demo, 2. Feature custom bio link, 3. Must be high retention organic video, 4. Submit screenshot proof of sales/members)..."
+                        value={successCriteria}
+                        onChange={(e) => setSuccessCriteria(e.target.value)}
+                        className="w-full rounded-xl bg-canvas border border-borderMuted px-3.5 py-2.5 text-xs text-textMain leading-relaxed focus:border-limeAccent outline-none font-mono"
                       />
-                    </div>
-                    <span className="text-[10px] text-emeraldAccent mt-1 block font-mono">
-                      Funds approximately ~{estimatedViews.toLocaleString()} organic views
-                    </span>
-                  </div>
-                </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold uppercase text-textMain mb-1.5 font-heading">
-                      Max Payout Cap Per Clip ($)
-                    </label>
-                    <input
-                      type="number"
-                      step="50"
-                      value={maxPayoutPerClip}
-                      onChange={(e) => setMaxPayoutPerClip(parseFloat(e.target.value) || 100)}
-                      className="w-full rounded-xl bg-surfaceElevated border border-borderMuted px-3.5 py-2.5 text-xs text-textMain font-mono font-bold focus:border-limeAccent outline-none"
-                    />
-                    <span className="text-[10px] text-textMuted mt-1 block">
-                      Guarantees a single mega-viral video doesn&apos;t exhaust the full escrow
-                    </span>
-                  </div>
+                      {/* Custom Whop / Action Quick Presets */}
+                      <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                        <span className="text-[10px] text-textMuted font-heading font-bold mr-1">Quick Add:</span>
+                        {[
+                          'Whop Member Checkout Demo',
+                          'Pinned Bio Tracking Link',
+                          'Full 45s Workflow Tutorial',
+                          'Organic Reach / Zero Bot Traffic',
+                          'Live Testimonial & Screen Share',
+                        ].map((pill) => (
+                          <button
+                            key={pill}
+                            type="button"
+                            onClick={() => {
+                              if (!successCriteria.includes(pill)) {
+                                setSuccessCriteria((prev) => (prev ? `${prev}\n• ${pill}` : `• ${pill}`));
+                              }
+                            }}
+                            className="px-2 py-0.5 rounded-md bg-canvas hover:bg-surface text-[10px] text-textMuted hover:text-limeAccent border border-borderMuted transition"
+                          >
+                            +{pill}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
 
-                  <div>
-                    <label className="block text-xs font-bold uppercase text-textMain mb-1.5 font-heading">
-                      Min Views Before Payout Unlocks
-                    </label>
-                    <input
-                      type="number"
-                      step="500"
-                      value={minViewsThreshold}
-                      onChange={(e) => setMinViewsThreshold(parseInt(e.target.value, 10) || 1000)}
-                      className="w-full rounded-xl bg-surfaceElevated border border-borderMuted px-3.5 py-2.5 text-xs text-textMain font-mono font-bold focus:border-limeAccent outline-none"
-                    />
-                    <span className="text-[10px] text-textMuted mt-1 block">
-                      Protects against low-effort spam clips with 10 views
-                    </span>
-                  </div>
-                </div>
+                    {/* Custom Bounty & Budget Parameters */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-bold uppercase text-textMain mb-1.5 font-heading">
+                          Bounty Payout per Approved Submission ($) *
+                        </label>
+                        <div className="relative">
+                          <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-textMuted font-mono text-sm">
+                            $
+                          </span>
+                          <input
+                            type="number"
+                            step="10"
+                            min="10"
+                            value={bountyAmount}
+                            onChange={(e) => setBountyAmount(parseFloat(e.target.value) || 50)}
+                            className="w-full rounded-xl bg-surfaceElevated border border-borderMuted pl-8 pr-3 py-2.5 text-sm text-textMain font-mono font-bold focus:border-limeAccent outline-none"
+                          />
+                        </div>
+                        <span className="text-[10px] text-textMuted mt-1 block">
+                          Fixed bounty released once creator meets your success criteria
+                        </span>
+                      </div>
 
-                {/* Creator Success Tiers Preview */}
-                <div className="rounded-2xl bg-canvas border border-borderMuted p-4 space-y-2 font-mono">
-                  <span className="text-[10px] uppercase tracking-wider text-textMuted font-bold block">
-                    Creator Success Payout Progression (Preview)
-                  </span>
-                  <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                    <div className="rounded-xl bg-surfaceElevated p-2 border border-borderMuted">
-                      <span className="text-[10px] text-textMuted block font-heading">Tier 1: Min Unlock</span>
-                      <span className="text-textMain font-bold">{minViewsThreshold.toLocaleString()} views</span>
-                      <span className="text-emerald-400 font-bold block mt-0.5">
-                        ${((minViewsThreshold / 1000) * cpmRate).toFixed(2)}
-                      </span>
-                    </div>
-                    <div className="rounded-xl bg-surfaceElevated p-2 border border-borderMuted">
-                      <span className="text-[10px] text-textMuted block font-heading">Tier 2: Viral Growth</span>
-                      <span className="text-textMain font-bold">25,000 views</span>
-                      <span className="text-limeAccent font-bold block mt-0.5">
-                        ${Math.min(maxPayoutPerClip, 25 * cpmRate).toFixed(2)}
-                      </span>
-                    </div>
-                    <div className="rounded-xl bg-surfaceElevated p-2 border border-borderMuted">
-                      <span className="text-[10px] text-textMuted block font-heading">Tier 3: Mega Viral</span>
-                      <span className="text-textMain font-bold">100,000+ views</span>
-                      <span className="text-amber-400 font-bold block mt-0.5">
-                        ${maxPayoutPerClip} (Max Cap)
-                      </span>
+                      <div>
+                        <label className="block text-xs font-bold uppercase text-textMain mb-1.5 font-heading">
+                          Total Escrow Pool Budget ($) *
+                        </label>
+                        <div className="relative">
+                          <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-textMuted font-mono text-sm">
+                            $
+                          </span>
+                          <input
+                            type="number"
+                            step="500"
+                            min="250"
+                            value={totalBudget}
+                            onChange={(e) => setTotalBudget(parseFloat(e.target.value) || 500)}
+                            className="w-full rounded-xl bg-surfaceElevated border border-borderMuted pl-8 pr-3 py-2.5 text-sm text-textMain font-mono font-bold focus:border-limeAccent outline-none"
+                          />
+                        </div>
+                        <span className="text-[10px] text-limeAccent mt-1 block font-mono">
+                          Funds up to {Math.floor(totalBudget / (bountyAmount || 1))} approved creator submissions
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
 
                 <div>
                   <label className="block text-xs font-bold uppercase text-textMain mb-2 font-heading">
@@ -889,11 +1082,10 @@ export default function CreateCampaignModal({ isOpen, onClose }: CreateCampaignM
                           key={p.id}
                           type="button"
                           onClick={() => togglePlatform(p.id as any)}
-                          className={`rounded-xl px-4 py-2 text-xs font-heading font-bold border transition ${
-                            selected
-                              ? 'bg-limeAccent text-[#0B0F10] border-limeAccent shadow-md shadow-limeAccent/20'
-                              : 'bg-surfaceElevated border-borderMuted text-textMuted hover:text-textMain'
-                          }`}
+                          className={`rounded-xl px-4 py-2 text-xs font-heading font-bold border transition ${selected
+                            ? 'bg-limeAccent text-[#0B0F10] border-limeAccent shadow-md shadow-limeAccent/20'
+                            : 'bg-surfaceElevated border-borderMuted text-textMuted hover:text-textMain'
+                            }`}
                         >
                           {p.label} {selected ? '✓' : ''}
                         </button>
@@ -944,22 +1136,45 @@ export default function CreateCampaignModal({ isOpen, onClose }: CreateCampaignM
                   </div>
 
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
-                    <div className="rounded-xl bg-canvas p-2.5 border border-borderMuted">
-                      <span className="text-[10px] text-textMuted block uppercase font-heading">CPM Rate</span>
-                      <strong className="text-sm font-mono text-limeAccent font-bold">${cpmRate.toFixed(2)}</strong>
-                    </div>
-                    <div className="rounded-xl bg-canvas p-2.5 border border-borderMuted">
-                      <span className="text-[10px] text-textMuted block uppercase font-heading">Total Escrow</span>
-                      <strong className="text-sm font-mono text-textMain font-bold">${totalBudget.toLocaleString()}</strong>
-                    </div>
-                    <div className="rounded-xl bg-canvas p-2.5 border border-borderMuted">
-                      <span className="text-[10px] text-textMuted block uppercase font-heading">Per Clip Cap</span>
-                      <strong className="text-sm font-mono text-textMain font-bold">${maxPayoutPerClip}</strong>
-                    </div>
-                    <div className="rounded-xl bg-canvas p-2.5 border border-borderMuted">
-                      <span className="text-[10px] text-textMuted block uppercase font-heading">Min Views</span>
-                      <strong className="text-sm font-mono text-emeraldAccent font-bold">{minViewsThreshold.toLocaleString()}</strong>
-                    </div>
+                    {rewardModel === 'cpm' ? (
+                      <>
+                        <div className="rounded-xl bg-canvas p-2.5 border border-borderMuted">
+                          <span className="text-[10px] text-textMuted block uppercase font-heading">CPM Rate</span>
+                          <strong className="text-sm font-mono text-limeAccent font-bold">${cpmRate.toFixed(2)}</strong>
+                        </div>
+                        <div className="rounded-xl bg-canvas p-2.5 border border-borderMuted">
+                          <span className="text-[10px] text-textMuted block uppercase font-heading">Total Escrow</span>
+                          <strong className="text-sm font-mono text-textMain font-bold">${totalBudget.toLocaleString()}</strong>
+                        </div>
+                        <div className="rounded-xl bg-canvas p-2.5 border border-borderMuted">
+                          <span className="text-[10px] text-textMuted block uppercase font-heading">Per Clip Cap</span>
+                          <strong className="text-sm font-mono text-textMain font-bold">${maxPayoutPerClip}</strong>
+                        </div>
+                        <div className="rounded-xl bg-canvas p-2.5 border border-borderMuted">
+                          <span className="text-[10px] text-textMuted block uppercase font-heading">Min Views</span>
+                          <strong className="text-sm font-mono text-emeraldAccent font-bold">{minViewsThreshold.toLocaleString()}</strong>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="rounded-xl bg-canvas p-2.5 border border-borderMuted">
+                          <span className="text-[10px] text-textMuted block uppercase font-heading">Payout Model</span>
+                          <strong className="text-xs font-heading text-limeAccent font-bold">Custom Whop</strong>
+                        </div>
+                        <div className="rounded-xl bg-canvas p-2.5 border border-borderMuted">
+                          <span className="text-[10px] text-textMuted block uppercase font-heading">Bounty / Clip</span>
+                          <strong className="text-sm font-mono text-limeAccent font-bold">${bountyAmount}</strong>
+                        </div>
+                        <div className="rounded-xl bg-canvas p-2.5 border border-borderMuted">
+                          <span className="text-[10px] text-textMuted block uppercase font-heading">Total Escrow</span>
+                          <strong className="text-sm font-mono text-textMain font-bold">${totalBudget.toLocaleString()}</strong>
+                        </div>
+                        <div className="rounded-xl bg-canvas p-2.5 border border-borderMuted">
+                          <span className="text-[10px] text-textMuted block uppercase font-heading">Submissions</span>
+                          <strong className="text-sm font-mono text-emeraldAccent font-bold">{Math.floor(totalBudget / (bountyAmount || 1))} clips</strong>
+                        </div>
+                      </>
+                    )}
                   </div>
 
                   {/* Success Criteria Summary in Step 4 */}

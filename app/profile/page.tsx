@@ -1344,7 +1344,7 @@ export default function ProfilePage() {
                         required
                         placeholder={
                           payoutType === 'stripe'
-                            ? 'e.g. acct_1Nzk98WhopConnect or stripe-payouts@example.com'
+                            ? 'e.g. acct_1Nzk98AzyraConnect or stripe-payouts@example.com'
                             : payoutType === 'paypal'
                               ? 'e.g. your-paypal-id@example.com'
                               : 'e.g. 7xKXtg... or 0x483842184F844783...'

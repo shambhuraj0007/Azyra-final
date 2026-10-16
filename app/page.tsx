@@ -122,6 +122,12 @@ export default function Home() {
     let updatedList: ProductEntry[] = [];
     let updatedProduct: ProductEntry;
 
+    // Record old ranks before outbid to compute exact rank delta indicators
+    const oldRanks = new Map<string, number>();
+    products.forEach((p, idx) => {
+      oldRanks.set(p.id, idx + 1);
+    });
+
     if (existingIndex !== -1) {
       // Bump existing product: add bidAmount to cumulative spend
       const current = products[existingIndex];
@@ -134,7 +140,6 @@ export default function Home() {
         allTimeSpend: current.allTimeSpend + bidAmount,
         todaySpend: current.todaySpend + bidAmount,
         recentBidDelta: bidAmount,
-        rankDelta: 2, // simulated climb
       };
       updatedList = [...products];
       updatedList[existingIndex] = updatedProduct;
@@ -151,7 +156,6 @@ export default function Home() {
         todaySpend: bidAmount,
         createdAt: Date.now(), // timestamp for tie-breaker rule
         recentBidDelta: bidAmount,
-        rankDelta: 1,
         clicks: Math.floor(Math.random() * 50) + 10,
         description: tagline,
         verified: true,
@@ -161,7 +165,19 @@ export default function Home() {
 
     // Re-sort according to financial hierarchy & tie-breaker rule
     const sorted = sortLeaderboard(updatedList, board);
-    setProducts(sorted);
+
+    // Compute dynamic rankDelta (+1, -1, 0) for each product
+    const finalized = sorted.map((p, newIdx) => {
+      const newRank = newIdx + 1;
+      const oldRank = oldRanks.get(p.id);
+      const rankDelta = oldRank !== undefined ? oldRank - newRank : 1;
+      return {
+        ...p,
+        rankDelta,
+      };
+    });
+
+    setProducts(finalized);
 
     // Add to activity stream
     const newActivity: BidActivity = {
@@ -176,7 +192,7 @@ export default function Home() {
     const updatedActs = [newActivity, ...activities.slice(0, 19)];
     setActivities(updatedActs);
 
-    saveState(sorted, updatedActs);
+    saveState(finalized, updatedActs);
     handleAddUserStartup(productUrl);
     triggerConfetti();
   };

@@ -152,7 +152,7 @@ export function CampaignProvider({ children }: { children: React.ReactNode }) {
               joinedCampaignIds: dbUser.joinedCampaignIds || [],
             };
             setCurrentUser(merged);
-            localStorage.setItem('whop_current_user', JSON.stringify(merged));
+            localStorage.setItem('azyra_current_user', JSON.stringify(merged));
           }
         })
         .catch((e) => console.warn('Could not fetch user details from DB', e));
@@ -169,10 +169,10 @@ export function CampaignProvider({ children }: { children: React.ReactNode }) {
     p?: CampaignParticipant[]
   ) => {
     try {
-      localStorage.setItem('whop_current_user', JSON.stringify(u));
-      if (c) localStorage.setItem('whop_campaigns', JSON.stringify(c));
-      if (s) localStorage.setItem('whop_submissions', JSON.stringify(s));
-      if (p) localStorage.setItem('whop_participants', JSON.stringify(p));
+      localStorage.setItem('azyra_current_user', JSON.stringify(u));
+      if (c) localStorage.setItem('azyra_campaigns', JSON.stringify(c));
+      if (s) localStorage.setItem('azyra_submissions', JSON.stringify(s));
+      if (p) localStorage.setItem('azyra_participants', JSON.stringify(p));
     } catch (e) {
       console.error(e);
     }
@@ -246,7 +246,7 @@ export function CampaignProvider({ children }: { children: React.ReactNode }) {
   const logout = async () => {
     setCurrentUser(GUEST_USER);
     try {
-      localStorage.removeItem('whop_current_user');
+      localStorage.removeItem('azyra_current_user');
     } catch (e) {
       console.error(e);
     }

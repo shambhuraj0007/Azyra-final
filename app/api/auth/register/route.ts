@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    response.cookies.set('whop_session', token, {
+    response.cookies.set('azyra_session', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',

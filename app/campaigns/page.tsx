@@ -351,7 +351,7 @@ export default function CampaignsMarketplacePage() {
                     )}
                   </div>
 
-                  {/* CPM Rate & Caps Card (Whop Model) */}
+                  {/* CPM Rate & Caps Card (Azyra Model) */}
                   <div className="rounded-xl bg-surfaceElevated border border-borderMuted p-3 mb-4 space-y-1.5">
                     <div className="flex items-center justify-between">
                       <span className="text-[10px] uppercase font-heading font-bold text-textMuted">

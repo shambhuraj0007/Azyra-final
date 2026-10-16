@@ -34,7 +34,7 @@ export default function CampaignNavbar({
           <div className="flex items-center gap-2 font-mono text-[11px]">
             <span className="flex h-2 w-2 rounded-full bg-emeraldAccent animate-pulse"></span>
             <span className="font-semibold text-textMain">
-              Whop Content Rewards Protocol
+              Azyra Content Rewards Protocol
             </span>
             <span className="text-borderMuted hidden sm:inline">•</span>
             <span className="text-textMuted hidden sm:inline">

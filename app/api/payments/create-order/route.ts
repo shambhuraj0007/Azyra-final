@@ -87,21 +87,39 @@ export async function POST(req: NextRequest) {
     const returnUrl = `${appOrigin}/payments/result?order_id=${orderId}`;
 
     const productId = process.env.DODO_PRODUCT_ID;
+    if (!productId) {
+      console.error('[Dodo] DODO_PRODUCT_ID is not configured in .env.');
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Dodo Product ID is not configured. Please create a "Pay What You Want" one-time product in your Dodo dashboard (min $1) and add DODO_PRODUCT_ID=pdt_... to .env',
+        },
+        { status: 500 }
+      );
+    }
+
     const amountInCents = Math.round(amount_usd * 100);
 
     // Use Dodo Payments REST API for checkout sessions
     const checkoutPayload: Record<string, any> = {
       billing: {
-        city: 'Global',
+        city: 'Wilmington',
         country: 'US',
-        state: 'NA',
-        street: 'N/A',
-        zipcode: '00000',
+        state: 'DE',
+        street: '1209 Orange St',
+        zipcode: '19801',
       },
       customer: {
         email: session.user.email,
         name: session.user.name || 'Azyra User',
       },
+      product_cart: [
+        {
+          product_id: productId,
+          quantity: 1,
+          amount: amountInCents,
+        },
+      ],
       payment_link: true,
       return_url: returnUrl,
       metadata: {
@@ -110,20 +128,7 @@ export async function POST(req: NextRequest) {
         campaign_id: campaign_id || '',
         user_email: session.user.email,
       },
-      total_amount: amountInCents,
-      currency: 'USD',
     };
-
-    // If a Dodo Product ID is provided (e.g. Pay-What-You-Want one-time product), attach to product_cart
-    if (productId) {
-      checkoutPayload.product_cart = [
-        {
-          product_id: productId,
-          quantity: 1,
-          amount: amountInCents,
-        },
-      ];
-    }
 
     let checkoutResponse: any;
     try {

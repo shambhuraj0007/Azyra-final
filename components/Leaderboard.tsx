@@ -53,9 +53,33 @@ export default function Leaderboard({
   // User startup tracking
   const [userStartups, setUserStartups] = useState<string[]>(userStartupUrls);
   const [quickUrl, setQuickUrl] = useState('');
+  const [quickBrowserTitle, setQuickBrowserTitle] = useState('');
   const [quickTargetRank, setQuickTargetRank] = useState(1);
   const [customRankInput, setCustomRankInput] = useState<string>('');
   const [isQuickBarOpen, setIsQuickBarOpen] = useState(true);
+
+  // Automatically fetch browser title for quick link input
+  useEffect(() => {
+    const clean = quickUrl.trim();
+    if (!clean || !clean.includes('.') || clean.length < 4) {
+      setQuickBrowserTitle('');
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/metadata?url=${encodeURIComponent(clean)}`);
+        const data = await res.json();
+        if (data.success && data.title) {
+          setQuickBrowserTitle(data.title);
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }, 450);
+
+    return () => clearTimeout(timer);
+  }, [quickUrl]);
 
   // Sync with localStorage on mount & listen for updates
   useEffect(() => {
@@ -728,6 +752,11 @@ export default function Leaderboard({
                   </span>
                   <span className="text-white font-bold">{inferredQuickName || quickDomain}</span>
                   <span className="text-textMuted">({quickDomain})</span>
+                  {quickBrowserTitle && (
+                    <span className="text-limeAccent/90 font-medium truncate max-w-[180px] sm:max-w-[260px]">
+                      · &ldquo;{quickBrowserTitle}&rdquo;
+                    </span>
+                  )}
                   {quickExistingProduct ? (
                     <span className="rounded bg-limeAccent/15 border border-limeAccent/40 px-1.5 py-0.2 text-[10px] font-bold text-limeAccent">
                       Active Rank #{sortedProducts.findIndex((p) => p.id === quickExistingProduct.id) + 1} (Bump Discount)

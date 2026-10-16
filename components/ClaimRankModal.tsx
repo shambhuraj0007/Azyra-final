@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { X, CheckCircle, Crown, Flame, ShieldCheck, Edit3 } from 'lucide-react';
+import { X, CheckCircle, Crown, Flame, ShieldCheck, Edit3, Loader2, Globe } from 'lucide-react';
 import { ProductEntry, BoardType } from '../lib/types';
 import { calculateRequiredBid, inferStartupName } from '../lib/data';
 import DodoCheckout from './DodoCheckout';
@@ -49,6 +49,8 @@ export default function ClaimRankModal({
   const [customBid, setCustomBid] = useState<string>('');
   const [submitted, setSubmitted] = useState<boolean>(false);
   const [showEditProduct, setShowEditProduct] = useState<boolean>(false);
+  const [browserTitle, setBrowserTitle] = useState<string>('');
+  const [fetchingMetadata, setFetchingMetadata] = useState<boolean>(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -61,6 +63,7 @@ export default function ClaimRankModal({
       }
       setSubmitted(false);
       setShowEditProduct(false);
+      setBrowserTitle('');
     }
   }, [isOpen, initialTargetRank, initialProductUrl, initialProductName]);
 
@@ -80,6 +83,44 @@ export default function ClaimRankModal({
       setCategory(existingProduct.category);
     }
   }, [existingProduct]);
+
+  // Automatically fetch the browser display line / title of the link
+  useEffect(() => {
+    if (!cleanUrl || !cleanUrl.includes('.') || cleanUrl.length < 4) {
+      setBrowserTitle('');
+      setFetchingMetadata(false);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setFetchingMetadata(true);
+      try {
+        const res = await fetch(`/api/metadata?url=${encodeURIComponent(cleanUrl)}`);
+        const data = await res.json();
+        if (data.success && data.title) {
+          setBrowserTitle(data.title);
+          // Autofill name if not explicitly customized
+          setName((prev) => {
+            const inferred = inferStartupName(cleanUrl);
+            if (!prev || prev === inferred) {
+              return data.siteName || data.title.split(/[-|•:]/)[0].trim() || inferred;
+            }
+            return prev;
+          });
+          // Autofill tagline if empty
+          if (data.description) {
+            setTagline((prev) => prev ? prev : data.description.slice(0, 120));
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch link metadata', err);
+      } finally {
+        setFetchingMetadata(false);
+      }
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [cleanUrl]);
 
   const bidCalculation = useMemo(() => {
     return calculateRequiredBid({
@@ -274,6 +315,11 @@ export default function ClaimRankModal({
                   <div className="min-w-0">
                     <span className="text-xs font-bold text-white block truncate">{existingProduct.name}</span>
                     <span className="text-[11px] font-mono text-textMuted truncate block">{existingProduct.url.replace(/^https?:\/\//, '')}</span>
+                    {browserTitle && (
+                      <span className="text-[10px] text-limeAccent/80 font-mono truncate block mt-0.5">
+                        Title: {browserTitle}
+                      </span>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
@@ -311,6 +357,22 @@ export default function ClaimRankModal({
                     className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-3 py-2 text-xs text-white placeholder:text-textMuted/50 focus:border-limeAccent outline-none font-mono"
                   />
                 </div>
+
+                {/* Browser display title indicator */}
+                {fetchingMetadata && (
+                  <div className="flex items-center gap-1.5 px-2 py-1 text-[11px] font-mono text-limeAccent">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    <span>Fetching browser page title...</span>
+                  </div>
+                )}
+                {!fetchingMetadata && browserTitle && (
+                  <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/[0.03] border border-white/5 text-[11px] font-mono text-textMuted truncate">
+                    <Globe className="h-3 w-3 text-limeAccent shrink-0" />
+                    <span className="text-white/60 shrink-0">Title:</span>
+                    <span className="text-white truncate font-medium">{browserTitle}</span>
+                  </div>
+                )}
+
                 {!existingProduct && (
                   <div className="grid grid-cols-3 gap-2">
                     <input
