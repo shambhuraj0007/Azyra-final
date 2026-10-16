@@ -141,7 +141,7 @@ export default function CreateCampaignModal({ isOpen, onClose }: CreateCampaignM
 
   // Step 3: Reward Model & Platforms (Two Primary Options)
   const [rewardModel, setRewardModel] = useState<'cpm' | 'custom_bounty'>('cpm');
-  const [customBountyType, setCustomBountyType] = useState<'whop' | 'fixed' | 'milestones'>('whop');
+  const [customBountyType, setCustomBountyType] = useState<'action' | 'fixed' | 'milestones'>('action');
   const [bountyAmount, setBountyAmount] = useState<number>(100);
   const [cpmRate, setCpmRate] = useState<number>(1.50);
   const [totalBudget, setTotalBudget] = useState<number>(5000);
@@ -772,7 +772,7 @@ export default function CreateCampaignModal({ isOpen, onClose }: CreateCampaignM
                         setPayoutStructure('milestone');
                         if (successCriteria.startsWith('1. Video must feature live product demonstration')) {
                           setSuccessCriteria(
-                            '1. Feature genuine product workflow demonstration or Whop checkout experience.\n' +
+                            '1. Feature genuine product workflow demonstration or Azyra checkout experience.\n' +
                             '2. Include official campaign tracking link in bio or pinned comment.\n' +
                             '3. Must deliver clear viewer value with 100% organic engagement (zero bots).\n' +
                             '4. Submit live post URL and analytics proof for escrow bounty release.'
@@ -785,13 +785,13 @@ export default function CreateCampaignModal({ isOpen, onClose }: CreateCampaignM
                         }`}
                     >
                       <Sparkles className="h-4 w-4" />
-                      <span>Custom Success / Bounties (Whop Style)</span>
+                      <span>Custom Success / Bounties (Azyra Protocol)</span>
                     </button>
                   </div>
                   <p className="text-[11px] text-textMuted mt-1.5 leading-relaxed font-sans">
                     {rewardModel === 'cpm'
                       ? 'Pay creators strictly based on verified view counts at an agreed dollar rate per 1,000 views.'
-                      : 'Define custom deliverables like Whop: flat video bounties, customer checkouts, signups, or custom milestones where you set whatever rules you want.'}
+                      : 'Define custom deliverables with Azyra: flat video bounties, customer checkouts, signups, or custom milestones where you set whatever rules you want.'}
                   </p>
                 </div>
 
@@ -961,7 +961,7 @@ export default function CreateCampaignModal({ isOpen, onClose }: CreateCampaignM
                   </div>
                 )}
 
-                {/* OPTION 2 SUB-OPTIONS: CUSTOM SUCCESS / BOUNTIES (WHOP MODEL) */}
+                {/* OPTION 2 SUB-OPTIONS: CUSTOM SUCCESS / BOUNTIES (AZYRA PROTOCOL) */}
                 {rewardModel === 'custom_bounty' && (
                   <div className="space-y-4 animate-in fade-in duration-200">
                     {/* Custom Bounty Type Pills */}
@@ -985,17 +985,17 @@ export default function CreateCampaignModal({ isOpen, onClose }: CreateCampaignM
                       <textarea
                         rows={4}
                         required
-                        placeholder="Define your custom requirements (e.g. 1. Show live Whop checkout demo, 2. Feature custom bio link, 3. Must be high retention organic video, 4. Submit screenshot proof of sales/members)..."
+                        placeholder="Define your custom requirements (e.g. 1. Show live product demo, 2. Feature custom bio link, 3. Must be high retention organic video, 4. Submit screenshot proof of sales/members)..."
                         value={successCriteria}
                         onChange={(e) => setSuccessCriteria(e.target.value)}
                         className="w-full rounded-xl bg-canvas border border-borderMuted px-3.5 py-2.5 text-xs text-textMain leading-relaxed focus:border-limeAccent outline-none font-mono"
                       />
 
-                      {/* Custom Whop / Action Quick Presets */}
+                      {/* Custom Azyra / Action Quick Presets */}
                       <div className="flex flex-wrap items-center gap-1.5 pt-1">
                         <span className="text-[10px] text-textMuted font-heading font-bold mr-1">Quick Add:</span>
                         {[
-                          'Whop Member Checkout Demo',
+                          'Verified Member Checkout Demo',
                           'Pinned Bio Tracking Link',
                           'Full 45s Workflow Tutorial',
                           'Organic Reach / Zero Bot Traffic',
@@ -1159,7 +1159,7 @@ export default function CreateCampaignModal({ isOpen, onClose }: CreateCampaignM
                       <>
                         <div className="rounded-xl bg-canvas p-2.5 border border-borderMuted">
                           <span className="text-[10px] text-textMuted block uppercase font-heading">Payout Model</span>
-                          <strong className="text-xs font-heading text-limeAccent font-bold">Custom Whop</strong>
+                          <strong className="text-xs font-heading text-limeAccent font-bold">Azyra Custom</strong>
                         </div>
                         <div className="rounded-xl bg-canvas p-2.5 border border-borderMuted">
                           <span className="text-[10px] text-textMuted block uppercase font-heading">Bounty / Clip</span>
