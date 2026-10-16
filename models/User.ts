@@ -113,9 +113,6 @@ const UserSchema = new Schema<IUser>(
   { timestamps: true, strict: false }
 );
 
-UserSchema.index({ googleId: 1 }, { unique: true, sparse: true });
-UserSchema.index({ email: 1 }, { unique: true });
-UserSchema.index({ handle: 1 }, { unique: true, sparse: true });
 UserSchema.index({ role: 1, creatorStatus: 1 });
 
 const UserModel: Model<IUser> =

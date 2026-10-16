@@ -37,6 +37,7 @@ export const metadata: Metadata = {
   manifest: "/site.webmanifest",
 };
 
+import { Suspense } from "react";
 import { NextAuthProvider } from "../components/NextAuthProvider";
 import GlobalCreatorApplicationPopup from "../components/GlobalCreatorApplicationPopup";
 
@@ -60,7 +61,9 @@ export default function RootLayout({
         <NextAuthProvider>
           <CampaignProvider>
             {children}
-            <GlobalCreatorApplicationPopup />
+            <Suspense fallback={null}>
+              <GlobalCreatorApplicationPopup />
+            </Suspense>
           </CampaignProvider>
         </NextAuthProvider>
       </body>
