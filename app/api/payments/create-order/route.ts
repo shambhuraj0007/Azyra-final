@@ -66,17 +66,31 @@ export async function POST(req: NextRequest) {
     const orderId = `azyra_${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 
     // ── STEP 5: Create Dodo checkout session ────────────────────────────────
-    // Dodo Payments uses product_cart with product_ids created in the dashboard.
-    // For dynamic amounts, we use the payments API directly via REST.
+    const apiKey = process.env.DODO_PAYMENTS_API_KEY;
+    if (!apiKey) {
+      console.error('[Dodo] DODO_PAYMENTS_API_KEY is not configured.');
+      return NextResponse.json(
+        { success: false, error: 'Payment gateway API key is not configured on the server. Please add DODO_PAYMENTS_API_KEY in environment variables.' },
+        { status: 500 }
+      );
+    }
+
     const isDodoProd = process.env.DODO_PAYMENTS_ENVIRONMENT === 'live_mode';
     const baseUrl = isDodoProd
       ? 'https://live.dodopayments.com'
       : 'https://test.dodopayments.com';
 
-    const returnUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/payments/result?order_id=${orderId}`;
+    // Auto-detect public origin (handles Vercel deployments and custom domains cleanly)
+    const host = req.headers.get('x-forwarded-host') || req.headers.get('host');
+    const proto = req.headers.get('x-forwarded-proto') || 'https';
+    const appOrigin = host ? `${proto}://${host}` : (process.env.NEXTAUTH_URL || 'http://localhost:3000');
+    const returnUrl = `${appOrigin}/payments/result?order_id=${orderId}`;
 
-    // Use Dodo Payments REST API for dynamic-amount checkout sessions
-    const checkoutPayload = {
+    const productId = process.env.DODO_PRODUCT_ID;
+    const amountInCents = Math.round(amount_usd * 100);
+
+    // Use Dodo Payments REST API for checkout sessions
+    const checkoutPayload: Record<string, any> = {
       billing: {
         city: 'Global',
         country: 'US',
@@ -96,28 +110,49 @@ export async function POST(req: NextRequest) {
         campaign_id: campaign_id || '',
         user_email: session.user.email,
       },
+      total_amount: amountInCents,
+      currency: 'USD',
     };
+
+    // If a Dodo Product ID is provided (e.g. Pay-What-You-Want one-time product), attach to product_cart
+    if (productId) {
+      checkoutPayload.product_cart = [
+        {
+          product_id: productId,
+          quantity: 1,
+          amount: amountInCents,
+        },
+      ];
+    }
 
     let checkoutResponse: any;
     try {
       const dodoResp = await fetch(`${baseUrl}/payments`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${process.env.DODO_PAYMENTS_API_KEY}`,
+          'Authorization': `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          ...checkoutPayload,
-          total_amount: Math.round(amount_usd * 100), // cents
-          currency: 'USD',
-        }),
+        body: JSON.stringify(checkoutPayload),
       });
 
       if (!dodoResp.ok) {
         const errBody = await dodoResp.text();
         console.error('[Dodo] Checkout creation failed:', dodoResp.status, errBody);
+
+        let parsedErr: any = null;
+        try {
+          parsedErr = JSON.parse(errBody);
+        } catch {}
+
+        const detailedMsg = parsedErr?.message || parsedErr?.error || `Dodo API error (${dodoResp.status})`;
         return NextResponse.json(
-          { success: false, error: 'Failed to create checkout session' },
+          {
+            success: false,
+            error: detailedMsg,
+            code: parsedErr?.code || 'DODO_API_ERROR',
+            status: dodoResp.status,
+          },
           { status: 502 }
         );
       }
@@ -137,7 +172,7 @@ export async function POST(req: NextRequest) {
     if (!checkoutUrl) {
       console.error('[Dodo] No checkout URL in response:', checkoutResponse);
       return NextResponse.json(
-        { success: false, error: 'Failed to generate checkout link' },
+        { success: false, error: 'Failed to generate checkout link from payment gateway' },
         { status: 502 }
       );
     }

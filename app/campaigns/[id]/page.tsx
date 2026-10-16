@@ -376,6 +376,29 @@ function CampaignWorkspaceContent({ params }: PageProps) {
             </div>
           </div>
 
+          {/* CAMPAIGN SUCCESS CRITERIA & PAYOUT ELIGIBILITY */}
+          {campaign.guidelines.success_criteria && (
+            <div className="rounded-2xl border border-emeraldAccent/40 bg-gradient-to-r from-emeraldAccent/10 via-surface to-surface p-6 shadow-xl space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="h-5 w-5 text-emeraldAccent" />
+                  <h4 className="text-sm font-heading font-bold text-emerald-300 uppercase tracking-wider">
+                    Campaign Success Criteria & Payout Eligibility
+                  </h4>
+                </div>
+                <span className="text-[10px] font-mono text-emeraldAccent bg-emeraldAccent/15 px-2.5 py-1 rounded-full border border-emeraldAccent/30 font-bold">
+                  Escrow Rules
+                </span>
+              </div>
+              <p className="text-xs text-textMuted">
+                To unlock escrow rewards, your video submission must fulfill the following success criteria set by the brand:
+              </p>
+              <div className="rounded-xl bg-surfaceElevated border border-borderMuted p-4 text-xs font-mono text-textMain leading-relaxed whitespace-pre-line">
+                {campaign.guidelines.success_criteria}
+              </div>
+            </div>
+          )}
+
           {/* 1. VIRAL OPENING HOOKS (FIRST 3 SECONDS) */}
           {campaign.guidelines.hooks && campaign.guidelines.hooks.length > 0 && (
             <div className="rounded-2xl border border-amber-500/30 bg-surface p-6 shadow-xl space-y-4">

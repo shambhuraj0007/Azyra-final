@@ -90,6 +90,8 @@ export interface CampaignGuidelines {
   example_videos?: string[];
   video_duration?: string;
   target_audience?: string;
+  success_criteria?: string;
+  payout_structure?: string;
 }
 
 export interface Campaign {

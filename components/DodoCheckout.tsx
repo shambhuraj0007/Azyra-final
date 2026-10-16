@@ -19,6 +19,8 @@ interface DodoCheckoutProps {
   type: 'campaign_escrow' | 'creator_payout' | 'rank_outbid';
   campaignId?: string;
   campaignTitle?: string;
+  compact?: boolean;
+  buttonLabel?: string;
   onSuccess: (orderId: string) => void;
   onError?: (err: string) => void;
 }
@@ -30,6 +32,8 @@ export default function DodoCheckout({
   type,
   campaignId,
   campaignTitle,
+  compact = false,
+  buttonLabel,
   onSuccess,
   onError,
 }: DodoCheckoutProps) {
@@ -171,42 +175,46 @@ export default function DodoCheckout({
   }
 
   return (
-    <div className="space-y-4">
-      {/* Payment Summary */}
-      <div className="rounded-xl bg-surfaceElevated border border-borderMuted p-4 space-y-2">
-        <div className="flex items-center justify-between text-xs text-textMuted">
-          <span className="font-heading font-bold uppercase">
-            {type === 'campaign_escrow'
-              ? '💰 Escrow Deposit'
-              : type === 'rank_outbid'
-              ? '🚀 Rank Outbid Settlement'
-              : '💸 Creator Withdrawal'}
-          </span>
-          <span className="font-mono font-bold text-textMain text-sm">${amountUsd.toFixed(2)}</span>
-        </div>
-        {campaignTitle && (
-          <div className="flex items-center justify-between text-[11px] text-textMuted border-t border-borderMuted pt-2">
-            <span>Campaign</span>
-            <span className="font-heading font-bold text-textMain truncate max-w-[160px]">{campaignTitle}</span>
+    <div className={compact ? 'space-y-2.5' : 'space-y-4'}>
+      {!compact && (
+        <>
+          {/* Payment Summary */}
+          <div className="rounded-xl bg-surfaceElevated border border-borderMuted p-4 space-y-2">
+            <div className="flex items-center justify-between text-xs text-textMuted">
+              <span className="font-heading font-bold uppercase">
+                {type === 'campaign_escrow'
+                  ? '💰 Escrow Deposit'
+                  : type === 'rank_outbid'
+                  ? '🚀 Rank Outbid Settlement'
+                  : '💸 Creator Withdrawal'}
+              </span>
+              <span className="font-mono font-bold text-textMain text-sm">${amountUsd.toFixed(2)}</span>
+            </div>
+            {campaignTitle && (
+              <div className="flex items-center justify-between text-[11px] text-textMuted border-t border-borderMuted pt-2">
+                <span>Campaign</span>
+                <span className="font-heading font-bold text-textMain truncate max-w-[160px]">{campaignTitle}</span>
+              </div>
+            )}
+            <div className="flex items-center gap-1.5 pt-1 text-[10px] text-emeraldAccent">
+              <ShieldCheck className="h-3 w-3" />
+              <span>PCI-DSS Level 1 · SOC 2 Type II · End-to-end encrypted</span>
+            </div>
           </div>
-        )}
-        <div className="flex items-center gap-1.5 pt-1 text-[10px] text-emeraldAccent">
-          <ShieldCheck className="h-3 w-3" />
-          <span>PCI-DSS Level 1 · SOC 2 Type II · End-to-end encrypted</span>
-        </div>
-      </div>
 
-      {/* Accepted Payment Methods */}
-      <div className="flex items-center gap-2 flex-wrap">
-        {['Credit Card', 'Apple Pay', 'Google Pay', 'Link'].map((m) => (
-          <span
-            key={m}
-            className="rounded-lg bg-surface border border-borderMuted px-2 py-1 text-[10px] font-mono text-textMuted"
-          >
-            {m}
-          </span>
-        ))}
-      </div>
+          {/* Accepted Payment Methods */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {['Credit Card', 'Apple Pay', 'Google Pay', 'Link'].map((m) => (
+              <span
+                key={m}
+                className="rounded-lg bg-surface border border-borderMuted px-2 py-1 text-[10px] font-mono text-textMuted"
+              >
+                {m}
+              </span>
+            ))}
+          </div>
+        </>
+      )}
 
       {/* Pay Button */}
       <button
@@ -223,24 +231,19 @@ export default function DodoCheckout({
         ) : (
           <>
             <CreditCard className="h-4 w-4" />
-            <span>Pay ${amountUsd.toFixed(2)}</span>
+            <span>
+              {buttonLabel || `Pay $${amountUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+            </span>
             <ExternalLink className="h-3.5 w-3.5 opacity-60" />
           </>
         )}
       </button>
 
-      <p className="text-center text-[10px] text-textMuted">
-        Secured by{' '}
-        <a
-          href="https://dodopayments.com"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-limeAccent hover:underline"
-        >
-          Dodo Payments
-        </a>
-        {' '}· No card data stored on Azyra servers
-      </p>
+      <div className="flex items-center justify-center gap-2 text-[10px] text-textMuted/70 text-center">
+        <span>Cards · Apple Pay · Google Pay</span>
+        <span>•</span>
+        <span>Secured by Dodo Payments (PCI-DSS)</span>
+      </div>
     </div>
   );
 }

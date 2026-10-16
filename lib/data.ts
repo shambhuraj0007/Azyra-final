@@ -267,25 +267,24 @@ export function calculateRequiredBid({
   const targetIndex = targetRank - 1;
   const currentHolder = sortedProducts[targetIndex];
 
-  let targetSpendRequired = 5;
+  let targetSpendRequired = 1;
 
   if (targetRank === 1) {
     if (currentLeader) {
       const topSpend = board === 'all-time' ? currentLeader.allTimeSpend : currentLeader.todaySpend;
-      targetSpendRequired = topSpend + 5;
+      // To overtake Rank #1, you need exactly $1 more than the current leader
+      targetSpendRequired = topSpend + 1;
     } else {
-      targetSpendRequired = 5;
+      // Empty board: $1 secures Rank #1
+      targetSpendRequired = 1;
     }
+  } else if (currentHolder) {
+    // To overtake any occupied spot, you need exactly $1 more than the occupant
+    const holderSpend = board === 'all-time' ? currentHolder.allTimeSpend : currentHolder.todaySpend;
+    targetSpendRequired = holderSpend + 1;
   } else {
-    if (currentHolder) {
-      const holderSpend = board === 'all-time' ? currentHolder.allTimeSpend : currentHolder.todaySpend;
-      targetSpendRequired = holderSpend + 1;
-    } else {
-      const lastHolder = sortedProducts[sortedProducts.length - 1];
-      targetSpendRequired = lastHolder
-        ? (board === 'all-time' ? Math.max(5, lastHolder.allTimeSpend) : Math.max(5, lastHolder.todaySpend))
-        : 5;
-    }
+    // If targeting an open/bottom position beyond current listings, entry is just $1
+    targetSpendRequired = 1;
   }
 
   let existingSpend = 0;
@@ -301,7 +300,8 @@ export function calculateRequiredBid({
     }
   }
 
-  const netPayable = Math.max(targetRank === 1 ? 5 : 1, targetSpendRequired - existingSpend);
+  // Under the Bump Protocol rule: pay only the incremental delta (minimum $1)
+  const netPayable = Math.max(1, targetSpendRequired - existingSpend);
 
   return {
     targetSpendRequired,
@@ -309,7 +309,7 @@ export function calculateRequiredBid({
     netPayable,
     currentHolder,
     isExistingOwner,
-    minDeltaToBeat: targetRank === 1 ? 5 : 1,
+    minDeltaToBeat: 1,
   };
 }
 

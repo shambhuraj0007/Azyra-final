@@ -107,11 +107,17 @@ export default function CreateCampaignModal({ isOpen, onClose }: CreateCampaignM
   const [maxPayoutPerClip, setMaxPayoutPerClip] = useState<number>(300);
   const [minViewsThreshold, setMinViewsThreshold] = useState<number>(2500);
   const [platforms, setPlatforms] = useState<SocialPlatform[]>(['x', 'instagram', 'youtube_shorts']);
+  const [payoutStructure, setPayoutStructure] = useState<'cpm' | 'milestone' | 'hybrid'>('cpm');
+  const [successCriteria, setSuccessCriteria] = useState(
+    '1. Video must feature live product demonstration in the first 5 seconds.\n' +
+    '2. Must include official CTA and link in bio or pinned comment.\n' +
+    '3. Minimum view threshold of 2,500 views must be reached within 14 days.\n' +
+    '4. Content must be 100% original with organic reach (zero engagement pods or bot traffic).'
+  );
 
-  // Status & Escrow funding mode
+  // Status
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [escrowFundingType, setEscrowFundingType] = useState<'dodo' | 'direct'>('dodo');
 
   if (!isOpen) return null;
 
@@ -223,6 +229,8 @@ export default function CreateCampaignModal({ isOpen, onClose }: CreateCampaignM
         example_videos: parsedExamples,
         video_duration: videoDuration,
         target_audience: targetAudience,
+        success_criteria: successCriteria.trim(),
+        payout_structure: payoutStructure,
       },
       total_budget: totalBudget,
       remaining_budget: totalBudget,
@@ -313,7 +321,7 @@ export default function CreateCampaignModal({ isOpen, onClose }: CreateCampaignM
                   onClick={() => title && setStep(3)}
                   className={`transition ${step === 3 ? 'text-limeAccent' : 'text-textMuted hover:text-textMain'}`}
                 >
-                  3. Reward Model
+                  3. Reward & Success Model
                 </button>
                 <button
                   type="button"
@@ -666,16 +674,95 @@ export default function CreateCampaignModal({ isOpen, onClose }: CreateCampaignM
                     onClick={() => setStep(3)}
                     className="rounded-xl bg-limeAccent hover:brightness-110 text-[#0B0F10] font-heading font-bold px-6 py-2.5 text-xs flex items-center gap-1.5 transition active:scale-[0.98] shadow-md shadow-limeAccent/20"
                   >
-                    <span>Next: Reward Model (CPM)</span>
+                    <span>Next: Reward & Success Model</span>
                     <ArrowRight className="h-4 w-4" />
                   </button>
                 </div>
               </div>
             )}
 
-            {/* STEP 3: Reward Model */}
+            {/* STEP 3: Reward & Success Model */}
             {step === 3 && (
               <div className="space-y-5">
+                {/* Reward Structure Selector */}
+                <div>
+                  <label className="block text-xs font-bold uppercase text-textMain mb-2 font-heading">
+                    Reward & Compensation Structure
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    {[
+                      { id: 'cpm', label: 'Performance CPM', desc: 'Pay based on verified view tiers ($/1k views)' },
+                      { id: 'milestone', label: 'Milestone Rewards', desc: 'Bounties for hitting view milestones' },
+                      { id: 'hybrid', label: 'Hybrid Model', desc: 'Baseline quality payout + viral CPM bonus' },
+                    ].map((m) => (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() => setPayoutStructure(m.id as any)}
+                        className={`rounded-xl p-3 text-left border transition ${
+                          payoutStructure === m.id
+                            ? 'border-limeAccent bg-limeAccent/10 ring-1 ring-limeAccent'
+                            : 'border-borderMuted bg-surfaceElevated hover:border-textMuted'
+                        }`}
+                      >
+                        <strong className="block text-xs text-textMain font-heading">{m.label}</strong>
+                        <span className="text-[10px] text-textMuted leading-snug">{m.desc}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* CORE SUCCESS CRITERIA: Describe the success of the campaign for payout */}
+                <div className="rounded-2xl border border-emeraldAccent/30 bg-surfaceElevated/60 p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-bold uppercase text-emeraldAccent font-heading flex items-center gap-1.5">
+                      <Target className="h-4 w-4" />
+                      <span>Campaign Success Criteria for Payout *</span>
+                    </label>
+                    <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-500/30">
+                      Required for Escrow Release
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-textMuted leading-relaxed">
+                    Explicitly define what constitutes a successful creator submission to qualify for payout. Creators will be held to these exact standards before escrow funds unlock.
+                  </p>
+
+                  <textarea
+                    rows={4}
+                    required
+                    placeholder="Describe what makes a submission successful for payout (e.g. video retention, product demo, CTA link in bio, organic reach)..."
+                    value={successCriteria}
+                    onChange={(e) => setSuccessCriteria(e.target.value)}
+                    className="w-full rounded-xl bg-canvas border border-borderMuted px-3.5 py-2.5 text-xs text-textMain leading-relaxed focus:border-emeraldAccent outline-none font-mono"
+                  />
+
+                  {/* Quick criteria preset pills */}
+                  <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                    <span className="text-[10px] text-textMuted font-heading font-bold mr-1">Quick Add:</span>
+                    {[
+                      '30s+ Watch Retention',
+                      'Live Product Screen Demo in first 5s',
+                      'Pinned CTA Link in Comments/Bio',
+                      'Zero Bot Traffic / Organic Verified',
+                      '1080p High-Res Vertical (9:16)',
+                    ].map((pill) => (
+                      <button
+                        key={pill}
+                        type="button"
+                        onClick={() => {
+                          if (!successCriteria.includes(pill)) {
+                            setSuccessCriteria((prev) => (prev ? `${prev}\n• ${pill}` : `• ${pill}`));
+                          }
+                        }}
+                        className="px-2 py-0.5 rounded-md bg-canvas hover:bg-surface text-[10px] text-textMuted hover:text-emeraldAccent border border-borderMuted transition"
+                      >
+                        +{pill}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* CPM & Budget Parameters */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold uppercase text-textMain mb-1.5 font-heading">
@@ -735,7 +822,7 @@ export default function CreateCampaignModal({ isOpen, onClose }: CreateCampaignM
                       className="w-full rounded-xl bg-surfaceElevated border border-borderMuted px-3.5 py-2.5 text-xs text-textMain font-mono font-bold focus:border-limeAccent outline-none"
                     />
                     <span className="text-[10px] text-textMuted mt-1 block">
-                      Guarantees a single mega-viral video doesn't exhaust the full escrow
+                      Guarantees a single mega-viral video doesn&apos;t exhaust the full escrow
                     </span>
                   </div>
 
@@ -753,6 +840,36 @@ export default function CreateCampaignModal({ isOpen, onClose }: CreateCampaignM
                     <span className="text-[10px] text-textMuted mt-1 block">
                       Protects against low-effort spam clips with 10 views
                     </span>
+                  </div>
+                </div>
+
+                {/* Creator Success Tiers Preview */}
+                <div className="rounded-2xl bg-canvas border border-borderMuted p-4 space-y-2 font-mono">
+                  <span className="text-[10px] uppercase tracking-wider text-textMuted font-bold block">
+                    Creator Success Payout Progression (Preview)
+                  </span>
+                  <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                    <div className="rounded-xl bg-surfaceElevated p-2 border border-borderMuted">
+                      <span className="text-[10px] text-textMuted block font-heading">Tier 1: Min Unlock</span>
+                      <span className="text-textMain font-bold">{minViewsThreshold.toLocaleString()} views</span>
+                      <span className="text-emerald-400 font-bold block mt-0.5">
+                        ${((minViewsThreshold / 1000) * cpmRate).toFixed(2)}
+                      </span>
+                    </div>
+                    <div className="rounded-xl bg-surfaceElevated p-2 border border-borderMuted">
+                      <span className="text-[10px] text-textMuted block font-heading">Tier 2: Viral Growth</span>
+                      <span className="text-textMain font-bold">25,000 views</span>
+                      <span className="text-limeAccent font-bold block mt-0.5">
+                        ${Math.min(maxPayoutPerClip, 25 * cpmRate).toFixed(2)}
+                      </span>
+                    </div>
+                    <div className="rounded-xl bg-surfaceElevated p-2 border border-borderMuted">
+                      <span className="text-[10px] text-textMuted block font-heading">Tier 3: Mega Viral</span>
+                      <span className="text-textMain font-bold">100,000+ views</span>
+                      <span className="text-amber-400 font-bold block mt-0.5">
+                        ${maxPayoutPerClip} (Max Cap)
+                      </span>
+                    </div>
                   </div>
                 </div>
 
@@ -807,9 +924,9 @@ export default function CreateCampaignModal({ isOpen, onClose }: CreateCampaignM
               </div>
             )}
 
-            {/* STEP 4: Review & Confirm Escrow */}
+            {/* STEP 4: Review & Fund Escrow via Gateway (No Simulations) */}
             {step === 4 && (
-              <form onSubmit={handleSubmit} className="space-y-5">
+              <div className="space-y-5">
                 <div className="rounded-2xl bg-surfaceElevated border border-borderMuted p-5 space-y-4">
                   <div className="flex items-center justify-between pb-3 border-b border-borderMuted">
                     <div className="flex items-center gap-2.5">
@@ -845,6 +962,18 @@ export default function CreateCampaignModal({ isOpen, onClose }: CreateCampaignM
                     </div>
                   </div>
 
+                  {/* Success Criteria Summary in Step 4 */}
+                  {successCriteria && (
+                    <div className="rounded-xl bg-canvas p-3 border border-emerald-500/30 space-y-1">
+                      <span className="text-[10px] font-heading font-bold uppercase text-emerald-400 block">
+                        Defined Success & Payout Criteria:
+                      </span>
+                      <p className="text-xs text-textMuted leading-relaxed whitespace-pre-line font-mono">
+                        {successCriteria}
+                      </p>
+                    </div>
+                  )}
+
                   <div className="space-y-2 text-xs text-textMuted border-t border-borderMuted pt-3">
                     <div className="flex justify-between">
                       <span>Raw Footage & B-Roll:</span>
@@ -865,96 +994,47 @@ export default function CreateCampaignModal({ isOpen, onClose }: CreateCampaignM
                   </div>
                 </div>
 
-                {/* Escrow Payment Method Selector */}
-                <div className="space-y-3">
-                  <label className="block text-xs font-bold uppercase text-textMain font-heading">
-                    Escrow Funding Method
-                  </label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    <button
-                      type="button"
-                      onClick={() => setEscrowFundingType('dodo')}
-                      className={`rounded-xl p-3 text-left border transition flex items-start gap-3 ${
-                        escrowFundingType === 'dodo'
-                          ? 'border-limeAccent bg-limeAccent/10 ring-1 ring-limeAccent'
-                          : 'border-borderMuted bg-surfaceElevated hover:border-textMuted'
-                      }`}
-                    >
-                      <ShieldCheck className="h-5 w-5 text-limeAccent shrink-0 mt-0.5" />
-                      <div>
-                        <strong className="block text-xs text-textMain font-heading">Dodo Payments</strong>
-                        <span className="text-[10px] text-textMuted">Credit Cards, Apple Pay, Google Pay (PCI-DSS L1)</span>
-                      </div>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setEscrowFundingType('direct')}
-                      className={`rounded-xl p-3 text-left border transition flex items-start gap-3 ${
-                        escrowFundingType === 'direct'
-                          ? 'border-emeraldAccent bg-emeraldAccent/10 ring-1 ring-emeraldAccent'
-                          : 'border-borderMuted bg-surfaceElevated hover:border-textMuted'
-                      }`}
-                    >
-                      <Coins className="h-5 w-5 text-emeraldAccent shrink-0 mt-0.5" />
-                      <div>
-                        <strong className="block text-xs text-textMain font-heading">Direct Test Escrow</strong>
-                        <span className="text-[10px] text-textMuted">Simulated test environment deposit</span>
-                      </div>
-                    </button>
-                  </div>
-                </div>
-
-                {escrowFundingType === 'dodo' ? (
-                  <div className="rounded-2xl border border-limeAccent/30 bg-surfaceElevated/60 p-4 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-heading font-bold text-textMain">Fund Escrow via Dodo Payments</span>
-                      <span className="text-[10px] font-mono text-limeAccent">Secure Hosted Checkout</span>
+                {/* Real Payment Gateway Only - No Simulations */}
+                <div className="rounded-2xl border border-limeAccent/40 bg-surfaceElevated p-5 space-y-3 shadow-xl">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-sm font-heading font-bold text-textMain block">
+                        Fund Escrow via Dodo Payments
+                      </span>
+                      <span className="text-xs text-textMuted">
+                        Deposit ${totalBudget.toLocaleString()} USD into protected campaign escrow. Funds are locked and automatically disbursed to verified creators.
+                      </span>
                     </div>
-                    <DodoCheckout
-                      amountUsd={totalBudget}
-                      type="campaign_escrow"
-                      campaignTitle={title}
-                      onSuccess={(orderId) => {
-                        executeCampaignCreation(orderId);
-                      }}
-                      onError={(err) => {
-                        setErrorMsg(`Payment error: ${err}`);
-                        toast.error('Escrow Payment Failed', err);
-                      }}
-                    />
-                    <div className="pt-2 flex justify-start">
-                      <button
-                        type="button"
-                        onClick={() => setStep(3)}
-                        className="text-xs font-bold text-textMuted hover:text-textMain flex items-center gap-1 transition"
-                      >
-                        <ArrowLeft className="h-3.5 w-3.5" />
-                        <span>Back</span>
-                      </button>
-                    </div>
+                    <span className="text-[10px] font-mono text-limeAccent bg-limeAccent/10 px-2.5 py-1 rounded-full border border-limeAccent/30 hidden sm:inline">
+                      PCI-DSS Level 1
+                    </span>
                   </div>
-                ) : (
-                  <div className="pt-2 flex items-center justify-between">
+
+                  <DodoCheckout
+                    amountUsd={totalBudget}
+                    type="campaign_escrow"
+                    campaignTitle={title}
+                    onSuccess={(orderId) => {
+                      executeCampaignCreation(orderId);
+                    }}
+                    onError={(err) => {
+                      setErrorMsg(`Payment error: ${err}`);
+                      toast.error('Escrow Payment Failed', err);
+                    }}
+                  />
+
+                  <div className="pt-2 flex justify-start">
                     <button
                       type="button"
                       onClick={() => setStep(3)}
                       className="text-xs font-bold text-textMuted hover:text-textMain flex items-center gap-1 transition"
                     >
                       <ArrowLeft className="h-3.5 w-3.5" />
-                      <span>Back</span>
-                    </button>
-
-                    <button
-                      type="submit"
-                      className="rounded-2xl bg-limeAccent hover:brightness-110 text-[#0B0F10] font-heading font-bold px-7 py-3.5 text-xs flex items-center gap-2 shadow-xl shadow-limeAccent/20 transition active:scale-[0.98]"
-                    >
-                      <Coins className="h-4 w-4" />
-                      <span>Confirm Escrow Deposit & Launch Campaign</span>
+                      <span>Back to Reward Model</span>
                     </button>
                   </div>
-                )}
-              </form>
+                </div>
+              </div>
             )}
           </div>
         )}

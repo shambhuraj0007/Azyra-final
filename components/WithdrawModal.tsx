@@ -13,7 +13,7 @@ interface WithdrawModalProps {
 export default function WithdrawModal({ isOpen, onClose }: WithdrawModalProps) {
   const { currentUser, withdrawCreatorBalance } = useCampaigns();
   const [amount, setAmount] = useState<string>(currentUser.wallet_balance.toFixed(2));
-  const [payoutRail, setPayoutRail] = useState<'dodo_upi' | 'dodo_bank' | 'dodo_paypal' | 'standard'>('dodo_paypal');
+  const [payoutRail, setPayoutRail] = useState<'dodo_upi' | 'dodo_bank' | 'dodo_paypal'>('dodo_paypal');
   const [paypalEmail, setPaypalEmail] = useState(currentUser.email || '');
   const [upiId, setUpiId] = useState('creator@upi');
   const [bankAccount, setBankAccount] = useState('');
@@ -50,20 +50,6 @@ export default function WithdrawModal({ isOpen, onClose }: WithdrawModalProps) {
       const msg = `Cannot exceed available balance ($${currentUser.wallet_balance.toFixed(2)})`;
       setErrorMsg(msg);
       toast.warning('Insufficient Balance', msg);
-      return;
-    }
-
-    if (payoutRail === 'standard') {
-      const res = withdrawCreatorBalance(withdrawAmt);
-      if (res.success) {
-        setPaidOut(res.payoutAmount);
-        setSuccess(true);
-        toast.success('Payout Dispatched', `$${withdrawAmt.toFixed(2)} withdrawn to your connected balance.`);
-        setTimeout(() => {
-          onClose();
-          setSuccess(false);
-        }, 2000);
-      }
       return;
     }
 
@@ -249,7 +235,7 @@ export default function WithdrawModal({ isOpen, onClose }: WithdrawModalProps) {
                 <label className="block text-[11px] font-heading font-bold uppercase text-textMuted mb-1.5">
                   Payout Method (Global Rails)
                 </label>
-                <div className="grid grid-cols-4 gap-1.5">
+                <div className="grid grid-cols-3 gap-1.5">
                   <button
                     type="button"
                     onClick={() => setPayoutRail('dodo_paypal')}
@@ -287,19 +273,6 @@ export default function WithdrawModal({ isOpen, onClose }: WithdrawModalProps) {
                   >
                     <Building className="h-4 w-4" />
                     <span>Bank Transfer</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setPayoutRail('standard')}
-                    className={`rounded-lg py-2 px-1 text-[11px] font-heading font-bold border transition flex flex-col items-center gap-1 ${
-                      payoutRail === 'standard'
-                        ? 'border-emeraldAccent bg-emeraldAccent/15 text-emeraldAccent'
-                        : 'border-borderMuted bg-surfaceElevated text-textMuted hover:text-textMain'
-                    }`}
-                  >
-                    <Wallet className="h-4 w-4" />
-                    <span>In-App</span>
                   </button>
                 </div>
               </div>
@@ -387,18 +360,6 @@ export default function WithdrawModal({ isOpen, onClose }: WithdrawModalProps) {
                       />
                     </div>
                   </div>
-                </div>
-              )}
-
-              {payoutRail === 'standard' && (
-                <div className="rounded-xl bg-surfaceElevated p-3 border border-borderMuted flex items-center justify-between text-xs text-textMuted">
-                  <div className="flex items-center gap-2">
-                    <Building className="h-4 w-4 text-emeraldAccent" />
-                    <span className="truncate max-w-[220px]">
-                      {currentUser?.payoutMethod?.accountIdentifier || 'Registered Account'}
-                    </span>
-                  </div>
-                  <span className="text-emeraldAccent font-mono font-bold shrink-0">Instant</span>
                 </div>
               )}
 

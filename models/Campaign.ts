@@ -17,6 +17,8 @@ export interface ICampaign extends Document {
     forbidden_audio: string[];
     requirements: string[];
     notes: string;
+    success_criteria?: string;
+    payout_structure?: string;
   };
   total_budget: number;
   remaining_budget: number;
@@ -49,6 +51,8 @@ const CampaignSchema = new Schema<ICampaign>(
       forbidden_audio: { type: [String], default: [] },
       requirements: { type: [String], default: [] },
       notes: { type: String, default: '' },
+      success_criteria: { type: String, default: '' },
+      payout_structure: { type: String, default: 'cpm' },
     },
     total_budget: { type: Number, required: true },
     remaining_budget: { type: Number, required: true },

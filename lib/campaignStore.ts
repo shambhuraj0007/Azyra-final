@@ -91,6 +91,7 @@ export const INITIAL_MARKETPLACE_CAMPAIGNS: Campaign[] = [
       ],
       video_duration: '20 - 45 seconds (9:16 vertical)',
       target_audience: 'Software developers, computer science students, AI builders, and indie hackers',
+      success_criteria: '1. Live demonstration of code generation in first 5s.\n2. Official link pinned in bio or comments.\n3. Verified 2,500+ organic views (anti-bot checked).',
     },
     total_budget: 10000,
     remaining_budget: 6840,

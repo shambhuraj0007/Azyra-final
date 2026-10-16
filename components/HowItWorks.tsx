@@ -17,8 +17,8 @@ export default function HowItWorks() {
       icon: ArrowUpRight,
       color: 'emerald',
       description:
-        'Every entry on the leaderboard displays a direct call-to-action showing the exact bid required to overtake it. To claim #1, you must outbid the top spot by at least $5. When bumping an existing listing, you only pay the difference!',
-      example: 'To overtake $1,000 spot: Pay $1,001. If you already spent $400, you pay only +$601!',
+        'Every entry on the leaderboard displays a direct call-to-action showing the exact bid required to overtake it. New listings can enter at the bottom for just $1. To claim any rank, you only need to outbid its current occupant by at least $1. When bumping an existing listing, you only pay the incremental delta!',
+      example: 'To overtake a $450 spot: Pay $451. If you already listed at $1, you pay only +$450 to claim Rank #3!',
     },
     {
       step: '03',
