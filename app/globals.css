@@ -20,11 +20,18 @@
   --foreground: #F3F7F6;
 }
 
+html {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
 body {
   background-color: #0B0F10;
   color: #F3F7F6;
   font-family: var(--font-plus-jakarta), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   overflow-x: hidden;
+  max-width: 100vw;
+  width: 100%;
 }
 
 /* Obsidian & Electric Lime mesh gradients */

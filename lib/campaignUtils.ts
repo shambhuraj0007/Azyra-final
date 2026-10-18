@@ -8,9 +8,7 @@ export interface ParseResult {
   error?: string;
 }
 
-/**
- * Validates and parses video URLs across X (Twitter), Instagram Reels, and YouTube Shorts using regex
- */
+
 export function parseSocialUrl(rawUrl: string): ParseResult {
   if (!rawUrl || typeof rawUrl !== 'string') {
     return { isValid: false, error: 'Please enter a video URL.' };

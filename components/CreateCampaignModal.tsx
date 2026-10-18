@@ -305,10 +305,10 @@ export default function CreateCampaignModal({ isOpen, onClose }: CreateCampaignM
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-canvas/85 backdrop-blur-md overflow-y-auto">
-      <div className="relative w-full max-w-3xl rounded-3xl border border-borderMuted bg-surface shadow-2xl p-6 sm:p-8 my-8 max-h-[90vh] overflow-y-auto">
+      <div className="relative w-full max-w-3xl rounded-3xl border border-borderMuted bg-surface shadow-2xl p-4 sm:p-8 my-4 sm:my-8 max-h-[92dvh] overflow-y-auto">
         <button
           onClick={onClose}
-          className="absolute right-5 top-5 rounded-xl p-1.5 text-textMuted hover:bg-surfaceElevated hover:text-textMain transition"
+          className="absolute right-4 sm:right-5 top-4 sm:top-5 rounded-xl p-1.5 text-textMuted hover:bg-surfaceElevated hover:text-textMain transition"
         >
           <X className="h-5 w-5" />
         </button>
@@ -328,48 +328,52 @@ export default function CreateCampaignModal({ isOpen, onClose }: CreateCampaignM
             {/* Header & Steps */}
             <div className="mb-6">
               <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-limeAccent text-[#0B0F10] font-heading font-bold shadow-lg shadow-limeAccent/20">
-                  <Building2 className="h-6 w-6" />
+                <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-2xl bg-limeAccent text-[#0B0F10] font-heading font-bold shadow-lg shadow-limeAccent/20 shrink-0">
+                  <Building2 className="h-5 w-5 sm:h-6 sm:w-6" />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-heading font-bold text-textMain">
+                  <h2 className="text-xl sm:text-2xl font-heading font-bold text-textMain">
                     Launch Creator Campaign
                   </h2>
-                  <p className="text-xs text-textMuted">
+                  <p className="text-xs text-textMuted line-clamp-1 sm:line-clamp-none">
                     Set up escrow rewards, viral hook briefs, raw video footage, and payout criteria for creators
                   </p>
                 </div>
               </div>
 
               {/* Step indicator */}
-              <div className="grid grid-cols-4 gap-2 border-y border-borderMuted py-3 text-xs font-heading font-bold text-center">
+              <div className="grid grid-cols-4 gap-1 sm:gap-2 border-y border-borderMuted py-2.5 sm:py-3 text-[11px] sm:text-xs font-heading font-bold text-center">
                 <button
                   type="button"
                   onClick={() => setStep(1)}
-                  className={`transition ${step === 1 ? 'text-limeAccent' : 'text-textMuted hover:text-textMain'}`}
+                  className={`transition py-1 rounded-lg ${step === 1 ? 'text-limeAccent bg-surfaceElevated/70' : 'text-textMuted hover:text-textMain'}`}
                 >
-                  1. Brand & Brief
+                  <span className="sm:hidden">1. Brief</span>
+                  <span className="hidden sm:inline">1. Brand & Brief</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => title && setStep(2)}
-                  className={`transition ${step === 2 ? 'text-limeAccent' : 'text-textMuted hover:text-textMain'}`}
+                  className={`transition py-1 rounded-lg ${step === 2 ? 'text-limeAccent bg-surfaceElevated/70' : 'text-textMuted hover:text-textMain'}`}
                 >
-                  2. Creator Toolkit
+                  <span className="sm:hidden">2. Toolkit</span>
+                  <span className="hidden sm:inline">2. Creator Toolkit</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => title && setStep(3)}
-                  className={`transition ${step === 3 ? 'text-limeAccent' : 'text-textMuted hover:text-textMain'}`}
+                  className={`transition py-1 rounded-lg ${step === 3 ? 'text-limeAccent bg-surfaceElevated/70' : 'text-textMuted hover:text-textMain'}`}
                 >
-                  3. Reward & Success Model
+                  <span className="sm:hidden">3. Rewards</span>
+                  <span className="hidden sm:inline">3. Reward & Success Model</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => title && setStep(4)}
-                  className={`transition ${step === 4 ? 'text-limeAccent' : 'text-textMuted hover:text-textMain'}`}
+                  className={`transition py-1 rounded-lg ${step === 4 ? 'text-limeAccent bg-surfaceElevated/70' : 'text-textMuted hover:text-textMain'}`}
                 >
-                  4. Review & Launch
+                  <span className="sm:hidden">4. Review</span>
+                  <span className="hidden sm:inline">4. Review & Launch</span>
                 </button>
               </div>
             </div>
@@ -761,8 +765,9 @@ export default function CreateCampaignModal({ isOpen, onClose }: CreateCampaignM
                         : 'text-textMuted hover:text-textMain hover:bg-surfaceElevated'
                         }`}
                     >
-                      <Coins className="h-4 w-4" />
-                      <span>1K Per View Money (CPM)</span>
+                      <Coins className="h-4 w-4 shrink-0" />
+                      <span className="sm:hidden">1K View Money (CPM)</span>
+                      <span className="hidden sm:inline">1K Per View Money (CPM)</span>
                     </button>
 
                     <button
@@ -779,13 +784,14 @@ export default function CreateCampaignModal({ isOpen, onClose }: CreateCampaignM
                           );
                         }
                       }}
-                      className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs sm:text-sm font-heading font-bold transition-all ${rewardModel === 'custom_bounty'
+                      className={`flex items-center justify-center gap-2 py-2.5 sm:py-3 px-3 sm:px-4 rounded-xl text-xs sm:text-sm font-heading font-bold transition-all ${rewardModel === 'custom_bounty'
                         ? 'bg-limeAccent text-[#0B0F10] shadow-md shadow-limeAccent/20 scale-[1.01]'
                         : 'text-textMuted hover:text-textMain hover:bg-surfaceElevated'
                         }`}
                     >
-                      <Sparkles className="h-4 w-4" />
-                      <span>Custom Success / Bounties (Azyra Protocol)</span>
+                      <Sparkles className="h-4 w-4 shrink-0" />
+                      <span className="sm:hidden">Custom Bounties</span>
+                      <span className="hidden sm:inline">Custom Success / Bounties (Azyra Protocol)</span>
                     </button>
                   </div>
                   <p className="text-[11px] text-textMuted mt-1.5 leading-relaxed font-sans">
@@ -1229,6 +1235,14 @@ export default function CreateCampaignModal({ isOpen, onClose }: CreateCampaignM
                     amountUsd={totalBudget}
                     type="campaign_escrow"
                     campaignTitle={title}
+                    redirectUrl="/campaigns?escrow_success=1"
+                    metadata={{
+                      campaign_title: title,
+                      total_budget: totalBudget,
+                      reward_model: rewardModel,
+                      cpm_rate: rewardModel === 'cpm' ? cpmRate : bountyAmount,
+                      custom_bounty_type: rewardModel === 'custom_bounty' ? customBountyType : undefined,
+                    }}
                     onSuccess={(orderId) => {
                       executeCampaignCreation(orderId);
                     }}

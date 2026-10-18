@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Invalid request body' }, { status: 400 });
     }
 
-    const { amount_usd, type, campaign_id } = body;
+    const { amount_usd, type, campaign_id, redirect_url, metadata } = body;
 
     // Strict type validation
     if (typeof amount_usd !== 'number' || !Number.isFinite(amount_usd) || amount_usd < 1) {
@@ -84,7 +84,8 @@ export async function POST(req: NextRequest) {
     const host = req.headers.get('x-forwarded-host') || req.headers.get('host');
     const proto = req.headers.get('x-forwarded-proto') || 'https';
     const appOrigin = host ? `${proto}://${host}` : (process.env.NEXTAUTH_URL || 'http://localhost:3000');
-    const returnUrl = `${appOrigin}/payments/result?order_id=${orderId}`;
+    const safeRedirect = typeof redirect_url === 'string' && redirect_url.startsWith('/') ? redirect_url : '';
+    const returnUrl = `${appOrigin}/payments/result?order_id=${orderId}&type=${type}${safeRedirect ? `&redirect_to=${encodeURIComponent(safeRedirect)}` : ''}`;
 
     const productId = process.env.DODO_PRODUCT_ID;
     if (!productId) {
@@ -127,6 +128,8 @@ export async function POST(req: NextRequest) {
         type,
         campaign_id: campaign_id || '',
         user_email: session.user.email,
+        redirect_to: safeRedirect,
+        ...(metadata && typeof metadata === 'object' ? metadata : {}),
       },
     };
 
@@ -192,6 +195,8 @@ export async function POST(req: NextRequest) {
       amount: amount_usd,
       currency: 'USD',
       status: 'PENDING',
+      redirect_url: safeRedirect || undefined,
+      metadata: metadata || undefined,
     });
 
     // ── STEP 7: Return ONLY the checkout URL — never credentials ────────────

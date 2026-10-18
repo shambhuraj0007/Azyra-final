@@ -32,7 +32,11 @@ import {
   Palette,
   Film,
   Lightbulb,
-  Trash2
+  Trash2,
+  XCircle,
+  CheckCheck,
+  FileText,
+  AlertTriangle
 } from 'lucide-react';
 import Navbar from '../../../components/Navbar';
 import WithdrawModal from '../../../components/WithdrawModal';
@@ -60,28 +64,72 @@ function CampaignWorkspaceContent({ params }: PageProps) {
     joinCampaign,
     openSetupModal,
     submitClip,
-    simulateViewGrowth,
-    checkViews,
+    verifySubmission,
     cancelSubmission,
     toggleCampaignStatus
   } = useCampaigns();
 
   const [copiedTag, setCopiedTag] = useState<string | null>(null);
   const [videoUrl, setVideoUrl] = useState('');
-  const [initialViews, setInitialViews] = useState<number>(0);
+  const [reportedViews, setReportedViews] = useState<number>(0);
+  const [proofNotes, setProofNotes] = useState('');
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
+  // Sponsor Verification Hub State
+  const [verificationFilter, setVerificationFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
+  const [selectedSubToApprove, setSelectedSubToApprove] = useState<any | null>(null);
+  const [customVerifiedViews, setCustomVerifiedViews] = useState<number>(0);
+  const [customApprovedPayout, setCustomApprovedPayout] = useState<number>(0);
+  const [isVerifying, setIsVerifying] = useState(false);
+
+  const [selectedSubToReject, setSelectedSubToReject] = useState<any | null>(null);
+  const [rejectionReason, setRejectionReason] = useState<string>('');
+  const [isRejecting, setIsRejecting] = useState(false);
+
   const campaign = campaigns.find((c) => c.id === campaignId);
+
+  // Determine if current user is the campaign creator/sponsor
+  const isCampaignOwner = Boolean(
+    currentUser?.isLoggedIn && campaign && (
+      (campaign.brand_id && (campaign.brand_id === currentUser.id || campaign.brand_id === currentUser.email)) ||
+      (campaign.brand_name && currentUser.name && campaign.brand_name.toLowerCase() === currentUser.name.toLowerCase()) ||
+      currentUser.role === 'brand'
+    )
+  );
+
+  // All submissions for this campaign (used by campaign sponsor)
+  const allCampaignSubmissions = useMemo(() => {
+    return submissions.filter((s) => s.campaign_id === campaignId);
+  }, [submissions, campaignId]);
+
+  // Filtered submissions for sponsor verification tab
+  const filteredCampaignSubmissions = useMemo(() => {
+    if (verificationFilter === 'pending') {
+      return allCampaignSubmissions.filter((s) => s.verification_status === 'pending_review' || s.verification_status === 'verifying');
+    }
+    if (verificationFilter === 'approved') {
+      return allCampaignSubmissions.filter((s) => s.verification_status === 'approved' || s.verification_status === 'paid' || s.verification_status === 'active');
+    }
+    if (verificationFilter === 'rejected') {
+      return allCampaignSubmissions.filter((s) => s.verification_status === 'rejected');
+    }
+    return allCampaignSubmissions;
+  }, [allCampaignSubmissions, verificationFilter]);
+
+  const pendingCount = allCampaignSubmissions.filter((s) => s.verification_status === 'pending_review' || s.verification_status === 'verifying').length;
+  const approvedCount = allCampaignSubmissions.filter((s) => s.verification_status === 'approved' || s.verification_status === 'paid' || s.verification_status === 'active').length;
+  const rejectedCount = allCampaignSubmissions.filter((s) => s.verification_status === 'rejected').length;
 
   // Filter submissions by this creator for this campaign
   const myCampaignSubmissions = useMemo(() => {
     return submissions.filter(
-      (s) => s.campaign_id === campaignId && s.creator_id === currentUser.id
+      (s) => s.campaign_id === campaignId && (s.creator_id === currentUser.id || (currentUser.email && s.creator_id === currentUser.email))
     );
-  }, [submissions, campaignId, currentUser.id]);
+  }, [submissions, campaignId, currentUser.id, currentUser.email]);
 
   // Total views and earnings from this campaign by creator
   const totalEarnedInCampaign = myCampaignSubmissions.reduce(
@@ -89,7 +137,7 @@ function CampaignWorkspaceContent({ params }: PageProps) {
     0
   );
   const totalViewsInCampaign = myCampaignSubmissions.reduce(
-    (acc, s) => acc + s.current_view_count,
+    (acc, s) => acc + (s.current_view_count || s.reported_views || 0),
     0
   );
 
@@ -114,7 +162,7 @@ function CampaignWorkspaceContent({ params }: PageProps) {
   }
 
   const joined = isJoined(campaign.id);
-  const isBrandOwner = currentUser.role === 'brand' && campaign.brand_id === currentUser.id;
+  const isBrandOwner = isCampaignOwner;
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -131,11 +179,15 @@ function CampaignWorkspaceContent({ params }: PageProps) {
       return;
     }
 
+    setIsSubmitting(true);
     const res = await submitClip({
       campaignId: campaign.id,
       videoUrl,
-      initialViews: Number(initialViews) || 0,
+      initialViews: 0,
+      reportedViews: Number(reportedViews) || 0,
+      proofNotes: proofNotes.trim(),
     });
+    setIsSubmitting(false);
 
     if (!res.success) {
       const err = res.error || 'Submission failed';
@@ -144,11 +196,86 @@ function CampaignWorkspaceContent({ params }: PageProps) {
       return;
     }
 
-    toast.success('Clip Submitted!', 'Your video has been logged and queued for automated tracking.');
+    toast.success('Clip Submitted!', 'Your video has been submitted for sponsor review & escrow verification.');
     setSubmitSuccess(true);
     setVideoUrl('');
-    setInitialViews(0);
-    setTimeout(() => setSubmitSuccess(false), 2500);
+    setReportedViews(0);
+    setProofNotes('');
+    setTimeout(() => setSubmitSuccess(false), 3000);
+  };
+
+  // Open approval modal and pre-calculate payout suggestion
+  const openApproveModal = (sub: any) => {
+    setSelectedSubToApprove(sub);
+    const suggestedViews = sub.reported_views && sub.reported_views > 0
+      ? sub.reported_views
+      : (sub.current_view_count > 0 ? sub.current_view_count : 1000);
+    setCustomVerifiedViews(suggestedViews);
+
+    const netViews = Math.max(0, suggestedViews - (sub.initial_view_count || 0));
+    const rawPayout = Number(((netViews / 1000) * campaign.cpm_rate).toFixed(2));
+    const cappedPayout = Math.min(
+      rawPayout,
+      campaign.max_payout_per_clip,
+      campaign.remaining_budget + (sub.earned_amount || 0)
+    );
+    setCustomApprovedPayout(cappedPayout);
+  };
+
+  const handleVerifiedViewsChange = (views: number) => {
+    setCustomVerifiedViews(views);
+    if (selectedSubToApprove) {
+      const netViews = Math.max(0, views - (selectedSubToApprove.initial_view_count || 0));
+      const rawPayout = Number(((netViews / 1000) * campaign.cpm_rate).toFixed(2));
+      const cappedPayout = Math.min(
+        rawPayout,
+        campaign.max_payout_per_clip,
+        campaign.remaining_budget + (selectedSubToApprove.earned_amount || 0)
+      );
+      setCustomApprovedPayout(cappedPayout);
+    }
+  };
+
+  const handleConfirmApproval = async () => {
+    if (!selectedSubToApprove) return;
+    setIsVerifying(true);
+    const res = await verifySubmission({
+      submissionId: selectedSubToApprove.id,
+      action: 'approve',
+      verifiedViews: customVerifiedViews,
+      approvedPayout: customApprovedPayout,
+    });
+    setIsVerifying(false);
+
+    if (!res.success) {
+      toast.error('Verification Failed', res.error || 'Failed to approve submission');
+      return;
+    }
+
+    const feeAmt = Number((customApprovedPayout * 0.07).toFixed(2));
+    const netAmt = Number((customApprovedPayout - feeAmt).toFixed(2));
+    toast.success('Submission Approved & Paid', `$${customApprovedPayout.toFixed(2)} bounty released ($${netAmt.toFixed(2)} net to creator after 7% fee).`);
+    setSelectedSubToApprove(null);
+  };
+
+  const handleConfirmRejection = async () => {
+    if (!selectedSubToReject) return;
+    setIsRejecting(true);
+    const res = await verifySubmission({
+      submissionId: selectedSubToReject.id,
+      action: 'reject',
+      rejectionReason: rejectionReason.trim() || 'Submission does not meet campaign brief or guidelines',
+    });
+    setIsRejecting(false);
+
+    if (!res.success) {
+      toast.error('Rejection Failed', res.error || 'Failed to reject submission');
+      return;
+    }
+
+    toast.info('Submission Rejected', 'Status updated to rejected.');
+    setSelectedSubToReject(null);
+    setRejectionReason('');
   };
 
   return (
@@ -676,18 +803,316 @@ function CampaignWorkspaceContent({ params }: PageProps) {
           </div>
         </div>
 
-        {/* SUBMIT CLIP DRAWER / FORM (Section 2C) */}
-        <div className="rounded-xl border border-borderMuted bg-surface p-6 sm:p-8 space-y-5">
+        {/* SPONSOR VERIFICATION HUB (For Campaign Owner / Sponsor) */}
+        {isCampaignOwner && (
+          <div className="rounded-2xl border-2 border-limeAccent/30 bg-surface p-6 sm:p-8 space-y-6 shadow-2xl backdrop-blur-xl relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-96 h-96 bg-limeAccent/5 rounded-full blur-3xl pointer-events-none" />
+
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-borderMuted pb-6">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-limeAccent/15 border border-limeAccent/30 text-limeAccent font-heading font-bold">
+                    <ShieldCheck className="h-4 w-4" />
+                  </span>
+                  <span className="rounded-full bg-limeAccent/10 px-2.5 py-0.5 text-[11px] font-mono font-bold uppercase tracking-wider text-limeAccent border border-limeAccent/30">
+                    Sponsor Management
+                  </span>
+                </div>
+                <h3 className="text-xl sm:text-2xl font-heading font-bold text-textMain tracking-tight">
+                  Creator Submissions & Verification Hub
+                </h3>
+                <p className="text-xs sm:text-sm text-textMuted max-w-2xl">
+                  As the campaign owner, inspect submitted creator links, verify view counts & guidelines, and release escrow bounty payouts.
+                </p>
+              </div>
+
+              {/* Escrow summary pills */}
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="rounded-xl bg-surfaceElevated border border-borderMuted p-3 min-w-[140px]">
+                  <span className="text-[10px] uppercase font-heading font-bold text-textMuted block">
+                    Escrow Remaining
+                  </span>
+                  <div className="text-lg font-mono font-bold text-limeAccent">
+                    ${campaign.remaining_budget.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </div>
+                </div>
+
+                <div className="rounded-xl bg-surfaceElevated border border-borderMuted p-3 min-w-[130px]">
+                  <span className="text-[10px] uppercase font-heading font-bold text-textMuted block">
+                    Total Paid Out
+                  </span>
+                  <div className="text-lg font-mono font-bold text-emeraldAccent">
+                    ${(campaign.total_paid_out || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </div>
+                </div>
+
+                <div className="rounded-xl bg-surfaceElevated border border-borderMuted p-3 min-w-[120px]">
+                  <span className="text-[10px] uppercase font-heading font-bold text-textMuted block">
+                    Pending Review
+                  </span>
+                  <div className="text-lg font-mono font-bold text-amber-400 flex items-center gap-1.5">
+                    {pendingCount > 0 && <span className="h-2 w-2 rounded-full bg-amber-400 animate-ping inline-block" />}
+                    <span>{pendingCount}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Filter Tabs */}
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={() => setVerificationFilter('all')}
+                className={`rounded-xl px-3.5 py-2 text-xs font-heading font-bold transition flex items-center gap-2 ${
+                  verificationFilter === 'all'
+                    ? 'bg-limeAccent text-[#0B0F10] shadow-md shadow-limeAccent/20'
+                    : 'bg-surfaceElevated text-textMuted hover:text-textMain border border-borderMuted'
+                }`}
+              >
+                <span>All Submissions</span>
+                <span className="rounded-full px-1.5 py-0.2 bg-black/20 text-[10px] font-mono">
+                  {allCampaignSubmissions.length}
+                </span>
+              </button>
+
+              <button
+                onClick={() => setVerificationFilter('pending')}
+                className={`rounded-xl px-3.5 py-2 text-xs font-heading font-bold transition flex items-center gap-2 ${
+                  verificationFilter === 'pending'
+                    ? 'bg-amber-400 text-black shadow-md shadow-amber-400/20'
+                    : 'bg-surfaceElevated text-textMuted hover:text-textMain border border-borderMuted'
+                }`}
+              >
+                <span>Pending Review</span>
+                <span className={`rounded-full px-1.5 py-0.2 text-[10px] font-mono ${pendingCount > 0 ? 'bg-amber-500/30 text-amber-300 font-bold' : 'bg-black/20'}`}>
+                  {pendingCount}
+                </span>
+              </button>
+
+              <button
+                onClick={() => setVerificationFilter('approved')}
+                className={`rounded-xl px-3.5 py-2 text-xs font-heading font-bold transition flex items-center gap-2 ${
+                  verificationFilter === 'approved'
+                    ? 'bg-emeraldAccent text-[#0B0F10] shadow-md shadow-emeraldAccent/20'
+                    : 'bg-surfaceElevated text-textMuted hover:text-textMain border border-borderMuted'
+                }`}
+              >
+                <span>Verified & Paid</span>
+                <span className="rounded-full px-1.5 py-0.2 bg-black/20 text-[10px] font-mono">
+                  {approvedCount}
+                </span>
+              </button>
+
+              <button
+                onClick={() => setVerificationFilter('rejected')}
+                className={`rounded-xl px-3.5 py-2 text-xs font-heading font-bold transition flex items-center gap-2 ${
+                  verificationFilter === 'rejected'
+                    ? 'bg-rose-500 text-white shadow-md shadow-rose-500/20'
+                    : 'bg-surfaceElevated text-textMuted hover:text-textMain border border-borderMuted'
+                }`}
+              >
+                <span>Rejected</span>
+                <span className="rounded-full px-1.5 py-0.2 bg-black/20 text-[10px] font-mono">
+                  {rejectedCount}
+                </span>
+              </button>
+            </div>
+
+            {/* Submissions List for Sponsor */}
+            {filteredCampaignSubmissions.length === 0 ? (
+              <div className="py-12 text-center text-textMuted border border-dashed border-borderMuted rounded-2xl bg-surfaceElevated/40">
+                <ShieldCheck className="h-10 w-10 mx-auto mb-2 opacity-30 text-limeAccent" />
+                <p className="text-xs font-semibold text-textMain">
+                  {verificationFilter === 'pending'
+                    ? 'No submissions pending review! All caught up.'
+                    : `No submissions found in ${verificationFilter} filter.`}
+                </p>
+                <p className="text-[11px] text-textMuted mt-1">
+                  When creators submit their live video clips, they will appear here for verification.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {filteredCampaignSubmissions.map((sub) => {
+                  const platMeta = formatPlatform(sub.platform);
+                  const isPending = sub.verification_status === 'pending_review' || sub.verification_status === 'verifying';
+                  const isApproved = sub.verification_status === 'approved' || sub.verification_status === 'paid' || sub.verification_status === 'active';
+                  const isRejected = sub.verification_status === 'rejected';
+
+                  const reported = sub.reported_views || sub.current_view_count || 0;
+                  const netViews = Math.max(0, reported - (sub.initial_view_count || 0));
+                  const estimatedPayout = Math.min(
+                    Number(((netViews / 1000) * campaign.cpm_rate).toFixed(2)),
+                    campaign.max_payout_per_clip,
+                    campaign.remaining_budget + (sub.earned_amount || 0)
+                  );
+
+                  return (
+                    <div
+                      key={sub.id}
+                      className="rounded-2xl border border-borderMuted bg-surfaceElevated/70 p-5 sm:p-6 transition hover:border-limeAccent/40 space-y-4"
+                    >
+                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        {/* Creator & Clip Details */}
+                        <div className="space-y-1.5 max-w-xl">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="font-heading font-bold text-sm text-textMain">
+                              {sub.creator_name || 'Creator'}
+                            </span>
+                            {sub.creator_handle && (
+                              <span className="text-xs font-mono text-limeAccent">
+                                {sub.creator_handle.startsWith('@') ? sub.creator_handle : `@${sub.creator_handle}`}
+                              </span>
+                            )}
+                            <span className={`rounded-full px-2 py-0.5 text-[10px] font-mono font-bold border ${platMeta.badgeBg}`}>
+                              {platMeta.label}
+                            </span>
+                            <span className="text-[11px] font-mono text-textMuted">
+                              • Submitted {new Date(sub.submitted_at).toLocaleDateString()}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-2 text-xs">
+                            <a
+                              href={sub.video_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-textMuted hover:text-limeAccent underline underline-offset-2 flex items-center gap-1 font-mono truncate max-w-md transition"
+                            >
+                              <span>{sub.video_url}</span>
+                              <ExternalLink className="h-3 w-3 shrink-0" />
+                            </a>
+                            <a
+                              href={sub.video_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="shrink-0 rounded-lg bg-surface hover:bg-canvas border border-borderMuted px-2.5 py-1 text-[11px] font-bold text-textMain hover:text-limeAccent flex items-center gap-1 transition shadow-sm"
+                            >
+                              <span>Watch Clip</span>
+                              <ExternalLink className="h-3 w-3" />
+                            </a>
+                          </div>
+
+                          {/* Proof Notes if provided */}
+                          {sub.proof_notes && (
+                            <div className="rounded-xl bg-canvas/70 border border-borderMuted/80 p-2.5 text-xs text-textMuted flex items-start gap-2">
+                              <FileText className="h-3.5 w-3.5 text-limeAccent shrink-0 mt-0.5" />
+                              <div className="leading-relaxed">
+                                <strong className="text-textMain font-heading">Creator Notes:</strong> {sub.proof_notes}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Rejection reason if rejected */}
+                          {isRejected && sub.rejection_reason && (
+                            <div className="rounded-xl bg-red-950/40 border border-red-500/30 p-2.5 text-xs text-rose-300 flex items-start gap-2">
+                              <AlertCircle className="h-3.5 w-3.5 text-rose-400 shrink-0 mt-0.5" />
+                              <div>
+                                <strong className="font-heading font-bold">Rejection Reason:</strong> {sub.rejection_reason}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Metrics and Action Buttons */}
+                        <div className="flex flex-wrap md:flex-col items-end gap-3 shrink-0">
+                          <div className="flex items-center gap-4 text-right">
+                            <div>
+                              <span className="text-[10px] uppercase font-heading font-bold text-textMuted block">
+                                Reported Views
+                              </span>
+                              <span className="text-base font-mono font-bold text-textMain">
+                                {reported.toLocaleString()}
+                              </span>
+                            </div>
+
+                            <div className="border-l border-borderMuted pl-4">
+                              <span className="text-[10px] uppercase font-heading font-bold text-textMuted block">
+                                {isApproved ? 'Gross Bounty' : 'Est. Bounty'}
+                              </span>
+                              <span className={`text-base font-mono font-bold ${isApproved ? 'text-emeraldAccent' : 'text-limeAccent'}`}>
+                                ${isApproved ? sub.earned_amount.toFixed(2) : estimatedPayout.toFixed(2)}
+                              </span>
+                              <span className="text-[10px] font-mono text-textMuted block">
+                                Net: ${((isApproved ? (sub.net_payout || (sub.earned_amount * 0.93)) : (estimatedPayout * 0.93))).toFixed(2)} (7% fee)
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Status Badge */}
+                          <div className="w-full flex justify-end">
+                            {isPending && (
+                              <span className="rounded-full bg-amber-400/15 text-amber-300 border border-amber-400/30 px-3 py-1 text-xs font-heading font-bold flex items-center gap-1.5">
+                                <Clock className="h-3.5 w-3.5" />
+                                <span>Pending Your Review</span>
+                              </span>
+                            )}
+                            {isApproved && (
+                              <span className="rounded-full bg-emeraldAccent/15 text-emeraldAccent border border-emeraldAccent/30 px-3 py-1 text-xs font-heading font-bold flex items-center gap-1.5">
+                                <CheckCheck className="h-3.5 w-3.5" />
+                                <span>Verified & Escrow Released (${sub.earned_amount.toFixed(2)})</span>
+                              </span>
+                            )}
+                            {isRejected && (
+                              <span className="rounded-full bg-rose-500/15 text-rose-400 border border-rose-500/30 px-3 py-1 text-xs font-heading font-bold flex items-center gap-1.5">
+                                <XCircle className="h-3.5 w-3.5" />
+                                <span>Rejected</span>
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Verification Actions */}
+                          <div className="flex items-center gap-2 pt-1">
+                            {isPending ? (
+                              <>
+                                <button
+                                  onClick={() => openApproveModal(sub)}
+                                  className="rounded-xl bg-limeAccent hover:brightness-110 text-[#0B0F10] font-heading font-bold px-4 py-2 text-xs flex items-center gap-1.5 shadow-md shadow-limeAccent/20 transition active:scale-[0.98]"
+                                >
+                                  <CheckCircle2 className="h-3.5 w-3.5" />
+                                  <span>Verify & Release Payout</span>
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setSelectedSubToReject(sub);
+                                    setRejectionReason('');
+                                  }}
+                                  className="rounded-xl bg-surface hover:bg-canvas text-rose-400 hover:text-rose-300 border border-borderMuted hover:border-rose-500/40 px-3 py-2 text-xs font-heading font-bold flex items-center gap-1 transition"
+                                >
+                                  <XCircle className="h-3.5 w-3.5" />
+                                  <span>Reject</span>
+                                </button>
+                              </>
+                            ) : (
+                              <button
+                                onClick={() => openApproveModal(sub)}
+                                className="rounded-xl bg-surface hover:bg-canvas text-textMuted hover:text-textMain border border-borderMuted px-3 py-1.5 text-xs font-mono font-bold transition"
+                              >
+                                Re-evaluate / Adjust
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* SUBMIT CLIP FORM (For Creators) */}
+        <div className="rounded-2xl border border-borderMuted bg-surface p-6 sm:p-8 space-y-5 shadow-xl backdrop-blur-xl">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-limeAccent text-[#0B0F10] font-heading font-bold shadow-md shadow-limeAccent/20">
               <Video className="h-5 w-5" />
             </div>
             <div>
               <h3 className="text-lg font-heading font-bold text-textMain">
-                Submit Published Clip Link
+                Submit Published Clip for Sponsor Verification
               </h3>
               <p className="text-xs text-textMuted">
-                Paste your live X (Twitter), Instagram Reel, or YouTube Shorts link for automated view tracking & payouts
+                Paste your live Instagram Reel, YouTube Shorts, or X link along with your view count. The campaign sponsor will review your clip and disburse the bounty payout.
               </p>
             </div>
           </div>
@@ -703,7 +1128,7 @@ function CampaignWorkspaceContent({ params }: PageProps) {
             <div className="rounded-xl bg-surfaceElevated border border-emeraldAccent/40 p-3 text-xs text-emeraldAccent flex items-center gap-2">
               <CheckCircle2 className="h-4 w-4 shrink-0 text-emeraldAccent" />
               <span>
-                Clip successfully submitted! Tracking automation has been initialized.
+                Clip successfully submitted! The campaign sponsor has been queued to verify your video and release the escrow payout.
               </span>
             </div>
           )}
@@ -717,7 +1142,7 @@ function CampaignWorkspaceContent({ params }: PageProps) {
                 <input
                   type="text"
                   required
-                  placeholder="https://x.com/username/status/12345678 or https://instagram.com/reel/..."
+                  placeholder="https://instagram.com/reel/... or https://youtube.com/shorts/... or https://x.com/..."
                   value={videoUrl}
                   onChange={(e) => setVideoUrl(e.target.value)}
                   className="w-full rounded-xl bg-surfaceElevated border border-borderMuted px-3.5 py-2.5 text-xs text-textMain placeholder-textMuted/50 focus:border-limeAccent outline-none font-mono"
@@ -742,46 +1167,64 @@ function CampaignWorkspaceContent({ params }: PageProps) {
 
               <div>
                 <label className="block text-xs font-heading font-bold uppercase tracking-wider text-textMain mb-1">
-                  Initial View Count
+                  Current View Count *
                 </label>
                 <input
                   type="number"
                   min="0"
-                  value={initialViews}
-                  onChange={(e) => setInitialViews(parseInt(e.target.value) || 0)}
+                  required
+                  placeholder="e.g. 5000"
+                  value={reportedViews || ''}
+                  onChange={(e) => setReportedViews(parseInt(e.target.value) || 0)}
                   className="w-full rounded-xl bg-surfaceElevated border border-borderMuted px-3.5 py-2.5 text-xs text-textMain font-mono focus:border-limeAccent outline-none"
                 />
                 <span className="text-[10px] text-textMuted mt-1 block font-mono">
-                  Current views on link when submitted
+                  Current views on your video post
                 </span>
               </div>
             </div>
 
+            <div className="space-y-1">
+              <label className="block text-xs font-heading font-bold uppercase tracking-wider text-textMain">
+                Proof & Context Notes (Optional)
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. Pinned comment included, reached 25k views, insights screenshot ready on request"
+                value={proofNotes}
+                onChange={(e) => setProofNotes(e.target.value)}
+                className="w-full rounded-xl bg-surfaceElevated border border-borderMuted px-3.5 py-2.5 text-xs text-textMain placeholder-textMuted/50 focus:border-limeAccent outline-none font-sans"
+              />
+              <span className="text-[10px] text-textMuted block">
+                Provide any notes or proof details for the sponsor to expedite your verification.
+              </span>
+            </div>
+
             <button
               type="submit"
-              disabled={!joined}
-              className="rounded-xl bg-limeAccent hover:brightness-110 text-[#0B0F10] font-heading font-bold px-6 py-3 text-xs flex items-center gap-2 transition active:scale-[0.98] disabled:opacity-40"
+              disabled={!joined || isSubmitting}
+              className="rounded-xl bg-limeAccent hover:brightness-110 text-[#0B0F10] font-heading font-bold px-6 py-3 text-xs flex items-center gap-2 transition active:scale-[0.98] disabled:opacity-40 shadow-lg shadow-limeAccent/20"
             >
               <Send className="h-3.5 w-3.5" />
               <span>
-                {joined ? 'Submit Clip for Verification & Tracking' : 'Join Campaign First to Submit'}
+                {isSubmitting ? 'Submitting Clip...' : joined ? 'Submit Clip for Sponsor Verification' : 'Join Campaign First to Submit'}
               </span>
             </button>
           </form>
         </div>
 
-        {/* PERSONAL EARNINGS & CLIPS DASHBOARD (Section 2C & Section 3) */}
-        <div className="rounded-xl border border-borderMuted bg-surface p-6 sm:p-8 space-y-6">
+        {/* CREATOR'S SUBMITTED CLIPS & STATUS */}
+        <div className="rounded-2xl border border-borderMuted bg-surface p-6 sm:p-8 space-y-6 shadow-xl backdrop-blur-xl">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <div className="flex items-center gap-2">
                 <BarChart3 className="h-5 w-5 text-limeAccent" />
                 <h3 className="text-lg font-heading font-bold text-textMain">
-                  Your Submitted Clips & Live View Tracking
+                  Your Submitted Clips & Status
                 </h3>
               </div>
               <p className="text-xs text-textMuted">
-                Automated background worker polls views and calculates CPM payouts
+                Review your submitted clips and track verification & escrow payouts from the campaign sponsor
               </p>
             </div>
 
@@ -789,7 +1232,7 @@ function CampaignWorkspaceContent({ params }: PageProps) {
             <div className="flex items-center gap-3">
               <div className="rounded-xl bg-surfaceElevated border border-borderMuted px-3 py-1.5 text-right">
                 <span className="text-[10px] uppercase font-heading font-bold text-textMuted">
-                  Views on this Campaign
+                  Reported Views
                 </span>
                 <div className="text-sm font-mono font-bold text-textMain">
                   {totalViewsInCampaign.toLocaleString()}
@@ -798,7 +1241,7 @@ function CampaignWorkspaceContent({ params }: PageProps) {
 
               <div className="rounded-xl bg-surfaceElevated border border-borderMuted px-3 py-1.5 text-right">
                 <span className="text-[10px] uppercase font-heading font-bold text-textMuted">
-                  Accrued Earnings
+                  Verified & Earned
                 </span>
                 <div className="text-sm font-mono font-bold text-emeraldAccent">
                   ${totalEarnedInCampaign.toFixed(2)}
@@ -818,30 +1261,32 @@ function CampaignWorkspaceContent({ params }: PageProps) {
 
           {/* Submissions List */}
           {myCampaignSubmissions.length === 0 ? (
-            <div className="py-12 text-center text-textMuted border border-dashed border-borderMuted rounded-xl">
+            <div className="py-12 text-center text-textMuted border border-dashed border-borderMuted rounded-2xl bg-surfaceElevated/30">
               <Video className="h-8 w-8 mx-auto mb-2 opacity-40 text-textMuted" />
-              <p className="text-xs font-semibold">
+              <p className="text-xs font-semibold text-textMain">
                 You haven't submitted any clips for this campaign yet.
               </p>
-              <p className="text-[11px] text-textMuted/70 mt-1">
-                Download the raw footage above, edit a 30s short, publish it, and submit the link!
+              <p className="text-[11px] text-textMuted mt-1">
+                Download the raw footage above, edit a 30s short, publish it, and submit the link with your view count!
               </p>
             </div>
           ) : (
             <div className="divide-y divide-borderMuted">
               {myCampaignSubmissions.map((sub) => {
                 const platMeta = formatPlatform(sub.platform);
-                const netViews = Math.max(0, sub.current_view_count - sub.initial_view_count);
+                const isPending = sub.verification_status === 'pending_review' || sub.verification_status === 'verifying';
+                const isApproved = sub.verification_status === 'approved' || sub.verification_status === 'paid' || sub.verification_status === 'active';
+                const isRejected = sub.verification_status === 'rejected';
 
                 return (
                   <div
                     key={sub.id}
-                    className="py-4 flex flex-col md:flex-row md:items-center justify-between gap-4"
+                    className="py-5 flex flex-col md:flex-row md:items-center justify-between gap-4"
                   >
-                    <div className="space-y-1 max-w-lg">
+                    <div className="space-y-2 max-w-xl">
                       <div className="flex items-center gap-2">
                         <span
-                          className={`rounded px-2 py-0.5 text-[10px] font-mono font-bold border ${platMeta.badgeBg}`}
+                          className={`rounded-full px-2.5 py-0.5 text-[10px] font-mono font-bold border ${platMeta.badgeBg}`}
                         >
                           {platMeta.label}
                         </span>
@@ -852,76 +1297,87 @@ function CampaignWorkspaceContent({ params }: PageProps) {
                           href={sub.video_url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-textMuted hover:text-textMain"
+                          className="text-textMuted hover:text-limeAccent transition"
                         >
-                          <ExternalLink className="h-3 w-3" />
+                          <ExternalLink className="h-3.5 w-3.5" />
                         </a>
                       </div>
 
-                      <div className="flex items-center gap-3 text-[11px] text-textMuted">
+                      <div className="flex flex-wrap items-center gap-3 text-xs text-textMuted">
                         <span>
-                          Current Views:{' '}
+                          Reported Views:{' '}
                           <strong className="text-textMain font-mono">
-                            {sub.current_view_count.toLocaleString()}
+                            {(sub.reported_views || sub.current_view_count).toLocaleString()}
                           </strong>
                         </span>
                         <span>•</span>
                         <span>
-                          Initial: {sub.initial_view_count.toLocaleString()}
+                          Submitted: {new Date(sub.submitted_at).toLocaleDateString()}
                         </span>
-                        <span>•</span>
-                        <span>
-                          Net Eligible: <strong className="text-emeraldAccent font-mono">+{netViews.toLocaleString()}</strong>
-                        </span>
+                      </div>
+
+                      {/* Verification Status Banner */}
+                      <div>
+                        {isPending && (
+                          <div className="inline-flex items-center gap-1.5 rounded-xl bg-amber-400/10 border border-amber-400/30 px-3 py-1.5 text-xs text-amber-300">
+                            <Clock className="h-3.5 w-3.5 text-amber-400 animate-pulse" />
+                            <span>Pending Sponsor Review — The campaign creator will verify your video views to disburse bounty payout.</span>
+                          </div>
+                        )}
+                        {isApproved && (
+                          <div className="inline-flex items-center gap-1.5 rounded-xl bg-emeraldAccent/10 border border-emeraldAccent/30 px-3 py-1.5 text-xs text-emeraldAccent">
+                            <CheckCheck className="h-3.5 w-3.5 text-emeraldAccent" />
+                            <span>Verified & Paid! <strong>${(sub.net_payout || (sub.earned_amount * 0.93)).toFixed(2)}</strong> credited to your wallet (${sub.earned_amount.toFixed(2)} gross minus 7% platform fee).</span>
+                          </div>
+                        )}
+                        {isRejected && (
+                          <div className="inline-flex items-center gap-1.5 rounded-xl bg-rose-500/10 border border-rose-500/30 px-3 py-1.5 text-xs text-rose-300">
+                            <XCircle className="h-3.5 w-3.5 text-rose-400" />
+                            <span>Rejected: {sub.rejection_reason || 'Did not meet campaign brief or guidelines'}</span>
+                          </div>
+                        )}
                       </div>
                     </div>
 
                     <div className="flex items-center gap-4">
-                      {/* Accrued payout */}
+                      {/* Payout Display */}
                       <div className="text-right">
                         <div className="text-[10px] font-heading font-bold uppercase text-textMuted">
-                          Accrued Payout
+                          {isApproved ? 'Net Earned' : 'Est. Net Payout'}
                         </div>
-                        <div className="text-base font-mono font-bold text-emeraldAccent">
-                          ${sub.earned_amount.toFixed(2)}
+                        <div className={`text-base font-mono font-bold ${isApproved ? 'text-emeraldAccent' : 'text-textMuted'}`}>
+                          ${(isApproved ? (sub.net_payout || (sub.earned_amount * 0.93)) : (
+                            Math.min(
+                              ((Math.max(0, (sub.reported_views || sub.current_view_count) - sub.initial_view_count) / 1000) * campaign.cpm_rate),
+                              campaign.max_payout_per_clip
+                            ) * 0.93
+                          )).toFixed(2)}
                         </div>
+                        <span className="text-[10px] font-mono text-textMuted block">
+                          after 7% fee
+                        </span>
                       </div>
 
-                      {/* Real Live Views Button */}
-                      <button
-                        onClick={async () => {
-                          const res = await checkViews(sub.id);
-                          if (!res.success) {
-                            toast.error('Views Update Failed', res.error || 'Could not fetch views');
-                          } else {
-                            toast.success('Live Views Polled', `Total tracked views: ${(res.views || 0).toLocaleString()}`);
-                          }
-                        }}
-                        title="Check real live views from platform"
-                        className="rounded-xl bg-surfaceElevated hover:bg-surface text-textMain border border-borderMuted px-3 py-2 text-xs font-mono font-bold flex items-center gap-1.5 transition active:scale-[0.98] hover:border-limeAccent"
-                      >
-                        <RefreshCw className="h-3.5 w-3.5 text-limeAccent" />
-                        <span>Check Views</span>
-                      </button>
-
-
-                      {/* Cancel Submission Button */}
-                      <button
-                        onClick={async () => {
-                          if (confirm('Are you sure you want to cancel this submission?')) {
-                            const res = await cancelSubmission(sub.id);
-                            if (!res.success) {
-                              toast.error('Cancel Failed', res.error || 'Could not cancel submission');
-                            } else {
-                              toast.info('Submission Cancelled', 'The video submission has been removed.');
+                      {/* Cancel Submission Button (if pending) */}
+                      {isPending && (
+                        <button
+                          onClick={async () => {
+                            if (confirm('Are you sure you want to cancel this submission?')) {
+                              const res = await cancelSubmission(sub.id);
+                              if (!res.success) {
+                                toast.error('Cancel Failed', res.error || 'Could not cancel submission');
+                              } else {
+                                toast.info('Submission Cancelled', 'The video submission has been removed.');
+                              }
                             }
-                          }
-                        }}
-                        title="Cancel Submission"
-                        className="rounded-xl bg-red-950/20 hover:bg-red-950/40 text-red-400 border border-red-900/40 px-3 py-2 text-xs font-mono font-bold flex items-center gap-1.5 transition active:scale-[0.98] hover:border-red-500/50"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
+                          }}
+                          title="Cancel Submission"
+                          className="rounded-xl bg-red-950/20 hover:bg-red-950/40 text-red-400 border border-red-900/40 px-3 py-2 text-xs font-mono font-bold flex items-center gap-1.5 transition active:scale-[0.98] hover:border-red-500/50"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                          <span>Cancel</span>
+                        </button>
+                      )}
                     </div>
                   </div>
                 );
@@ -929,6 +1385,239 @@ function CampaignWorkspaceContent({ params }: PageProps) {
             </div>
           )}
         </div>
+
+        {/* SPONSOR APPROVAL MODAL */}
+        {selectedSubToApprove && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+            <div className="w-full max-w-lg rounded-2xl bg-surface border-2 border-limeAccent/30 p-6 sm:p-8 space-y-6 shadow-2xl">
+              <div className="flex items-center justify-between border-b border-borderMuted pb-4">
+                <div className="flex items-center gap-2.5">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-limeAccent/20 text-limeAccent">
+                    <ShieldCheck className="h-5 w-5" />
+                  </span>
+                  <div>
+                    <h3 className="text-lg font-heading font-bold text-textMain">
+                      Verify & Release Bounty Escrow
+                    </h3>
+                    <p className="text-xs text-textMuted">
+                      Confirm views and disburse payout to creator
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setSelectedSubToApprove(null)}
+                  className="text-textMuted hover:text-textMain p-1 rounded-lg"
+                >
+                  <XCircle className="h-5 w-5" />
+                </button>
+              </div>
+
+              {/* Clip preview summary */}
+              <div className="rounded-xl bg-surfaceElevated border border-borderMuted p-4 space-y-2 text-xs">
+                <div className="flex justify-between">
+                  <span className="text-textMuted">Creator:</span>
+                  <span className="font-heading font-bold text-textMain">
+                    {selectedSubToApprove.creator_name} {selectedSubToApprove.creator_handle && `(${selectedSubToApprove.creator_handle})`}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-textMuted">Video Clip:</span>
+                  <a
+                    href={selectedSubToApprove.video_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-limeAccent underline font-mono flex items-center gap-1"
+                  >
+                    <span>Open Live Video</span>
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                </div>
+                {selectedSubToApprove.proof_notes && (
+                  <div className="pt-1 text-[11px] text-textMuted border-t border-borderMuted/60">
+                    <strong className="text-textMain">Notes:</strong> {selectedSubToApprove.proof_notes}
+                  </div>
+                )}
+              </div>
+
+              {/* Editable verification fields */}
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-heading font-bold uppercase tracking-wider text-textMain mb-1">
+                    Verified View Count
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={customVerifiedViews}
+                    onChange={(e) => handleVerifiedViewsChange(parseInt(e.target.value) || 0)}
+                    className="w-full rounded-xl bg-surfaceElevated border border-borderMuted px-3.5 py-2.5 text-sm text-textMain font-mono focus:border-limeAccent outline-none"
+                  />
+                  <span className="text-[10px] text-textMuted mt-1 block font-mono">
+                    Reported by creator: {(selectedSubToApprove.reported_views || selectedSubToApprove.current_view_count || 0).toLocaleString()} views
+                  </span>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-heading font-bold uppercase tracking-wider text-textMain mb-1">
+                    Approved Bounty Payout ($ USD)
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3.5 top-2.5 text-textMuted font-mono text-sm">$</span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max={campaign.remaining_budget + (selectedSubToApprove.earned_amount || 0)}
+                      value={customApprovedPayout}
+                      onChange={(e) => setCustomApprovedPayout(parseFloat(e.target.value) || 0)}
+                      className="w-full rounded-xl bg-surfaceElevated border border-borderMuted pl-8 pr-3.5 py-2.5 text-sm text-emeraldAccent font-mono font-bold focus:border-emeraldAccent outline-none"
+                    />
+                  </div>
+                  <span className="text-[10px] text-textMuted mt-1 block font-mono">
+                    Based on campaign rate: ${campaign.cpm_rate}/1k views (cap: ${campaign.max_payout_per_clip})
+                  </span>
+                </div>
+              </div>
+
+              {/* 7% Fee Breakdown */}
+              <div className="rounded-xl bg-surfaceElevated border border-borderMuted p-3.5 space-y-2 text-xs">
+                <div className="flex justify-between text-textMuted">
+                  <span>Gross Bounty Payout (from Escrow):</span>
+                  <span className="font-mono font-bold text-textMain">${customApprovedPayout.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-amber-400">
+                  <span className="flex items-center gap-1">
+                    <span>Azyra Platform Fee (7%):</span>
+                  </span>
+                  <span className="font-mono font-bold">-${(customApprovedPayout * 0.07).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between border-t border-borderMuted pt-2 text-emeraldAccent">
+                  <span className="font-heading font-bold">Net Credited to Creator:</span>
+                  <span className="font-mono font-bold text-sm">${(customApprovedPayout * 0.93).toFixed(2)}</span>
+                </div>
+              </div>
+
+              <div className="rounded-xl bg-emeraldAccent/10 border border-emeraldAccent/30 p-3 text-xs text-emeraldAccent flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 shrink-0" />
+                <span>
+                  Confirming will deduct <strong>${customApprovedPayout.toFixed(2)}</strong> from escrow and credit <strong>${(customApprovedPayout * 0.93).toFixed(2)}</strong> directly to the creator's wallet (after 7% platform fee).
+                </span>
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setSelectedSubToApprove(null)}
+                  className="rounded-xl bg-surfaceElevated hover:bg-surface text-textMuted hover:text-textMain border border-borderMuted px-4 py-2.5 text-xs font-heading font-bold transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={isVerifying || customApprovedPayout < 0}
+                  onClick={handleConfirmApproval}
+                  className="rounded-xl bg-limeAccent hover:brightness-110 text-[#0B0F10] font-heading font-bold px-5 py-2.5 text-xs flex items-center gap-2 shadow-lg shadow-limeAccent/20 transition active:scale-[0.98] disabled:opacity-40"
+                >
+                  <CheckCheck className="h-4 w-4" />
+                  <span>{isVerifying ? 'Releasing Funds...' : `Confirm & Release $${customApprovedPayout.toFixed(2)} ($${(customApprovedPayout * 0.93).toFixed(2)} Net)`}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* SPONSOR REJECTION MODAL */}
+        {selectedSubToReject && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+            <div className="w-full max-w-lg rounded-2xl bg-surface border-2 border-rose-500/30 p-6 sm:p-8 space-y-6 shadow-2xl">
+              <div className="flex items-center justify-between border-b border-borderMuted pb-4">
+                <div className="flex items-center gap-2.5">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-500/20 text-rose-400">
+                    <XCircle className="h-5 w-5" />
+                  </span>
+                  <div>
+                    <h3 className="text-lg font-heading font-bold text-textMain">
+                      Reject Clip Submission
+                    </h3>
+                    <p className="text-xs text-textMuted">
+                      Specify reason for rejection so creator can adjust
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setSelectedSubToReject(null)}
+                  className="text-textMuted hover:text-textMain p-1 rounded-lg"
+                >
+                  <XCircle className="h-5 w-5" />
+                </button>
+              </div>
+
+              {/* Quick Select Reasons */}
+              <div className="space-y-2">
+                <label className="block text-xs font-heading font-bold uppercase tracking-wider text-textMuted">
+                  Quick Select Reason
+                </label>
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    'Did not meet campaign talking points',
+                    'Missing required hashtag or account tag',
+                    'Video is deleted or private',
+                    'Low resolution / poor audio quality',
+                    'Copyrighted music used',
+                    'Artificial / unauthentic view spike',
+                  ].map((preset) => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => setRejectionReason(preset)}
+                      className={`rounded-lg px-2.5 py-1 text-xs transition border ${
+                        rejectionReason === preset
+                          ? 'bg-rose-500/20 text-rose-300 border-rose-500/50 font-bold'
+                          : 'bg-surfaceElevated text-textMuted hover:text-textMain border-borderMuted'
+                      }`}
+                    >
+                      {preset}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="block text-xs font-heading font-bold uppercase tracking-wider text-textMain">
+                  Detailed Reason / Feedback
+                </label>
+                <textarea
+                  rows={3}
+                  placeholder="Explain why this submission was rejected..."
+                  value={rejectionReason}
+                  onChange={(e) => setRejectionReason(e.target.value)}
+                  className="w-full rounded-xl bg-surfaceElevated border border-borderMuted px-3.5 py-2.5 text-xs text-textMain placeholder-textMuted/50 focus:border-rose-500 outline-none font-sans"
+                />
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setSelectedSubToReject(null)}
+                  className="rounded-xl bg-surfaceElevated hover:bg-surface text-textMuted hover:text-textMain border border-borderMuted px-4 py-2.5 text-xs font-heading font-bold transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={isRejecting}
+                  onClick={handleConfirmRejection}
+                  className="rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-heading font-bold px-5 py-2.5 text-xs flex items-center gap-2 shadow-lg shadow-rose-500/20 transition active:scale-[0.98] disabled:opacity-40"
+                >
+                  <XCircle className="h-4 w-4" />
+                  <span>{isRejecting ? 'Rejecting...' : 'Confirm Rejection'}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
 
       {/* FOOTER */}

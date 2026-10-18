@@ -147,8 +147,8 @@ export default function WithdrawModal({ isOpen, onClose }: WithdrawModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-canvas/80 backdrop-blur-md">
-      <div className="relative w-full max-w-md rounded-2xl border border-borderMuted bg-surface p-6 shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-canvas/80 backdrop-blur-md overflow-y-auto">
+      <div className="relative w-full max-w-md rounded-2xl border border-borderMuted bg-surface p-4 sm:p-6 shadow-2xl max-h-[92dvh] overflow-y-auto my-auto">
         <button
           onClick={onClose}
           className="absolute right-4 top-4 rounded-lg p-1.5 text-textMuted hover:bg-surfaceElevated hover:text-textMain transition"
@@ -188,7 +188,7 @@ export default function WithdrawModal({ isOpen, onClose }: WithdrawModalProps) {
               </div>
               <div>
                 <h3 className="text-lg font-heading font-bold text-textMain">Withdraw Creator Balance</h3>
-                <p className="text-xs text-textMuted">Dodo Payments Transfers · 0% Platform Commission</p>
+                <p className="text-xs text-textMuted">Dodo Payments Transfers · Instant Global Payouts</p>
               </div>
             </div>
 

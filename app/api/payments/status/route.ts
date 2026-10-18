@@ -44,6 +44,11 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({
         success: true,
         status: paymentRecord.status,
+        type: paymentRecord.type,
+        amount: paymentRecord.amount,
+        redirect_url: paymentRecord.redirect_url || null,
+        metadata: paymentRecord.metadata || null,
+        campaign_id: paymentRecord.campaign_id || null,
         webhook_verified: paymentRecord.webhook_verified,
       });
     }
@@ -86,6 +91,11 @@ export async function GET(req: NextRequest) {
             success: true,
             status: mappedStatus,
             dodo_status: dodoStatus,
+            type: paymentRecord.type,
+            amount: paymentRecord.amount,
+            redirect_url: paymentRecord.redirect_url || null,
+            metadata: paymentRecord.metadata || null,
+            campaign_id: paymentRecord.campaign_id || null,
             webhook_verified: paymentRecord.webhook_verified,
           });
         }
@@ -98,6 +108,11 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       success: true,
       status: paymentRecord.status,
+      type: paymentRecord.type,
+      amount: paymentRecord.amount,
+      redirect_url: paymentRecord.redirect_url || null,
+      metadata: paymentRecord.metadata || null,
+      campaign_id: paymentRecord.campaign_id || null,
       webhook_verified: paymentRecord.webhook_verified,
     });
   } catch (err: any) {

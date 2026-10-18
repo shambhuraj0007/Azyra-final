@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   X,
   Sparkles,
@@ -12,7 +12,10 @@ import {
   CreditCard,
   AtSign,
   Globe,
-  Share2
+  Share2,
+  Camera,
+  Loader2,
+  Upload
 } from 'lucide-react';
 import { useCampaigns } from '../lib/CampaignContext';
 import { SocialPlatform } from '../lib/types';
@@ -26,7 +29,8 @@ export default function CreatorSetupModal() {
     pendingCampaignId,
     saveProfile,
     login,
-    campaigns
+    campaigns,
+    updateUserAvatar,
   } = useCampaigns();
 
   const [step, setStep] = useState<'login' | 'setup'>('login');
@@ -34,6 +38,9 @@ export default function CreatorSetupModal() {
   const [name, setName] = useState('');
   const [handle, setHandle] = useState('');
   const [bio, setBio] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState('');
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const photoInputRef = useRef<HTMLInputElement>(null);
   const [primaryPlatform, setPrimaryPlatform] = useState<SocialPlatform>('x');
   const [xLink, setXLink] = useState('');
   const [instagramLink, setInstagramLink] = useState('');
@@ -56,6 +63,7 @@ export default function CreatorSetupModal() {
         setName(currentUser.name || 'Alex Rivera');
         setHandle(currentUser.handle?.replace('@', '') || 'alex_edits');
         setBio(currentUser.bio || 'Viral tech demo clippers & product walkthrough creator.');
+        setAvatarUrl(currentUser.avatar || '');
         setPrimaryPlatform(currentUser.primaryPlatform || 'x');
         setXLink(currentUser.socialLinks?.x || 'https://x.com/alex_edits');
         setInstagramLink(currentUser.socialLinks?.instagram || '');
@@ -66,6 +74,7 @@ export default function CreatorSetupModal() {
         setStep('login');
         setEmail(currentUser?.email || '');
         setName(currentUser?.name || '');
+        setAvatarUrl('');
       }
     }
   }, [isSetupModalOpen, currentUser]);
@@ -73,6 +82,44 @@ export default function CreatorSetupModal() {
   if (!isSetupModalOpen) return null;
 
   const targetCampaign = campaigns.find((c) => c.id === pendingCampaignId);
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      setErrorMsg('Image size exceeds maximum limit of 5MB.');
+      return;
+    }
+
+    setIsUploadingPhoto(true);
+    setErrorMsg(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch('/api/user/upload-avatar', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed to upload photo to Cloudinary.');
+      }
+
+      setAvatarUrl(data.url);
+      updateUserAvatar(data.url);
+      setSuccessMsg('Photo uploaded to Cloudinary!');
+      setTimeout(() => setSuccessMsg(null), 3000);
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Error uploading photo.');
+    } finally {
+      setIsUploadingPhoto(false);
+      if (photoInputRef.current) photoInputRef.current.value = '';
+    }
+  };
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -97,6 +144,7 @@ export default function CreatorSetupModal() {
     if (res.user) {
       setName(res.user.name || name);
       setHandle(res.user.handle?.replace('@', '') || email.split('@')[0]);
+      if (res.user.avatar) setAvatarUrl(res.user.avatar);
     }
   };
 
@@ -121,6 +169,7 @@ export default function CreatorSetupModal() {
       name: name.trim(),
       handle: cleanHandle,
       bio: bio.trim(),
+      avatar: avatarUrl || currentUser.avatar || '🎬',
       primaryPlatform,
       socialLinks: {
         x: xLink.trim(),
@@ -152,11 +201,11 @@ export default function CreatorSetupModal() {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-canvas/85 backdrop-blur-md overflow-y-auto">
-      <div className="relative w-full max-w-xl rounded-2xl border border-borderMuted bg-surface shadow-2xl p-6 sm:p-8 my-8">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-canvas/85 backdrop-blur-md overflow-y-auto">
+      <div className="relative w-full max-w-xl rounded-2xl border border-borderMuted bg-surface shadow-2xl p-4 sm:p-8 my-4 sm:my-8 max-h-[92dvh] overflow-y-auto">
         <button
           onClick={closeSetupModal}
-          className="absolute right-5 top-5 rounded-lg p-1.5 text-textMuted hover:bg-surfaceElevated hover:text-textMain transition"
+          className="absolute right-4 sm:right-5 top-4 sm:top-5 rounded-lg p-1.5 text-textMuted hover:bg-surfaceElevated hover:text-textMain transition"
         >
           <X className="h-5 w-5" />
         </button>
@@ -296,6 +345,66 @@ export default function CreatorSetupModal() {
             <p className="text-xs text-textMuted leading-relaxed">
               Complete your creator profile so sponsors and campaigns can verify your clips and distribute payouts.
             </p>
+
+            {/* Profile Photo (Cloudinary) */}
+            <div className="rounded-xl bg-surfaceElevated border border-borderMuted p-3 flex items-center justify-between gap-3">
+              <input
+                type="file"
+                ref={photoInputRef}
+                accept="image/png,image/jpeg,image/webp,image/gif"
+                className="hidden"
+                onChange={handlePhotoUpload}
+              />
+              <div className="flex items-center gap-3">
+                <div
+                  onClick={() => photoInputRef.current?.click()}
+                  className="relative h-12 w-12 rounded-xl overflow-hidden border border-borderMuted bg-surface shrink-0 flex items-center justify-center text-xl cursor-pointer group shadow-inner"
+                  title="Upload profile picture (Cloudinary)"
+                >
+                  {avatarUrl?.startsWith('http') ? (
+                    <img src={avatarUrl} alt="Creator Photo" className="h-full w-full object-cover" />
+                  ) : (
+                    avatarUrl || currentUser?.avatar || '🎬'
+                  )}
+                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition text-white">
+                    <Camera className="h-4 w-4 text-limeAccent" />
+                  </div>
+                  {isUploadingPhoto && (
+                    <div className="absolute inset-0 bg-black/80 flex items-center justify-center z-10">
+                      <Loader2 className="h-4 w-4 animate-spin text-limeAccent" />
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-heading font-bold text-textMain">Profile Picture</span>
+                    <span className="text-[9px] font-mono font-bold text-limeAccent bg-limeAccent/10 px-2 py-0.5 rounded-full border border-limeAccent/30">
+                      Cloudinary
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-textMuted">JPG, PNG, or WEBP up to 5MB</p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                disabled={isUploadingPhoto}
+                onClick={() => photoInputRef.current?.click()}
+                className="rounded-lg bg-surface border border-borderMuted hover:border-limeAccent/50 px-3 py-1.5 text-xs font-heading font-bold text-textMain hover:text-limeAccent transition flex items-center gap-1.5 shrink-0 disabled:opacity-50"
+              >
+                {isUploadingPhoto ? (
+                  <>
+                    <Loader2 className="h-3 w-3 animate-spin text-limeAccent" />
+                    <span>Uploading...</span>
+                  </>
+                ) : (
+                  <>
+                    <Upload className="h-3 w-3 text-limeAccent" />
+                    <span>Upload</span>
+                  </>
+                )}
+              </button>
+            </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>

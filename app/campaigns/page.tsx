@@ -36,6 +36,7 @@ import { useCampaigns } from '../../lib/CampaignContext';
 import { SocialPlatform, Campaign } from '../../lib/types';
 import { formatPlatform } from '../../lib/campaignUtils';
 import AzyraLogo from '../../components/AzyraLogo';
+import { toast } from '@/lib/toast';
 
 export default function CampaignsMarketplacePage() {
   const router = useRouter();
@@ -68,12 +69,15 @@ export default function CampaignsMarketplacePage() {
     setIsCreateModalOpen(true);
   };
 
-  // If redirected back from login with action=create and user is logged in, auto-open modal
+  // If redirected back from login or payment return
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       if (params.get('action') === 'create' && currentUser?.isLoggedIn) {
         setIsCreateModalOpen(true);
+        window.history.replaceState({}, '', '/campaigns');
+      } else if (params.get('escrow_success') === '1' || params.get('created') === '1') {
+        toast.success('Campaign Live', 'Your campaign escrow is funded and accepting creator submissions.');
         window.history.replaceState({}, '', '/campaigns');
       }
     }
@@ -172,16 +176,16 @@ export default function CampaignsMarketplacePage() {
             </p>
 
             {/* Quick Action Bar in Hero */}
-            <div className="pt-2 flex flex-wrap items-center gap-3">
+            <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
               <button
                 onClick={handleOpenCreateCampaign}
-                className="rounded-xl bg-limeAccent hover:brightness-110 text-[#0B0F10] font-heading font-bold px-5 py-3 text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-limeAccent/20 transition active:scale-[0.98]"
+                className="rounded-xl bg-limeAccent hover:brightness-110 text-[#0B0F10] font-heading font-bold px-5 py-3 text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-limeAccent/20 transition active:scale-[0.98] w-full sm:w-auto"
               >
                 <Plus className="h-4 w-4 stroke-[3]" />
                 <span>Create Campaign</span>
               </button>
 
-              <div className="flex items-center gap-4 text-xs font-mono text-textMuted bg-surfaceElevated border border-borderMuted rounded-xl px-4 py-2.5">
+              <div className="flex items-center justify-around sm:justify-start gap-4 text-xs font-mono text-textMuted bg-surfaceElevated border border-borderMuted rounded-xl px-4 py-2.5 w-full sm:w-auto">
                 <div>
                   <span className="text-textMuted block text-[10px] uppercase">Active Escrow</span>
                   <strong className="text-emeraldAccent font-bold">${totalEscrowPool.toLocaleString()}</strong>
@@ -216,11 +220,11 @@ export default function CampaignsMarketplacePage() {
             </div>
 
             {/* Sort, Search, and Add Campaign Button */}
-            <div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full md:w-auto">
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as any)}
-                className="rounded-xl bg-surface border border-borderMuted px-3 py-2 text-xs text-textMain focus:border-limeAccent outline-none"
+                className="rounded-xl bg-surface border border-borderMuted px-3 py-2 text-xs text-textMain focus:border-limeAccent outline-none w-full sm:w-auto"
               >
                 <option value="highest_cpm">Sort: Highest CPM</option>
                 <option value="budget_left">Sort: Most Budget Left</option>
@@ -233,12 +237,12 @@ export default function CampaignsMarketplacePage() {
                 placeholder="Search campaigns, brands..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="rounded-xl bg-surface border border-borderMuted px-3 py-2 text-xs text-textMain placeholder-textMuted/50 focus:border-limeAccent outline-none min-w-[180px]"
+                className="rounded-xl bg-surface border border-borderMuted px-3 py-2 text-xs text-textMain placeholder-textMuted/50 focus:border-limeAccent outline-none w-full sm:min-w-[180px]"
               />
 
               <button
                 onClick={handleOpenCreateCampaign}
-                className="rounded-xl bg-limeAccent hover:brightness-110 text-[#0B0F10] font-heading font-bold px-3.5 py-2 text-xs flex items-center gap-1.5 shadow-md shadow-limeAccent/20 transition shrink-0 active:scale-[0.98]"
+                className="rounded-xl bg-limeAccent hover:brightness-110 text-[#0B0F10] font-heading font-bold px-3.5 py-2 text-xs flex items-center justify-center gap-1.5 shadow-md shadow-limeAccent/20 transition shrink-0 active:scale-[0.98] w-full sm:w-auto"
               >
                 <Plus className="h-3.5 w-3.5 stroke-[3]" />
                 <span>Add Campaign</span>

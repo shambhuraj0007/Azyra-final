@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import {
   User,
@@ -28,7 +28,10 @@ import {
   Building,
   Check,
   ChevronRight,
-  AlertTriangle
+  AlertTriangle,
+  Camera,
+  Loader2,
+  Upload
 } from 'lucide-react';
 import Navbar from '../../components/Navbar';
 import WithdrawModal from '../../components/WithdrawModal';
@@ -46,11 +49,14 @@ export default function ProfilePage() {
     saveProfile,
     login,
     logout,
-    openSetupModal
+    openSetupModal,
+    updateUserAvatar,
   } = useCampaigns();
 
   const [activeTab, setActiveTab] = useState<'details' | 'campaigns' | 'clips' | 'wallet'>('details');
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Form states for profile editing
   const [name, setName] = useState(currentUser?.name || '');
@@ -133,6 +139,25 @@ export default function ProfilePage() {
     }
   }, [currentUser]);
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get('tab');
+      if (tabParam === 'wallet' || tabParam === 'campaigns' || tabParam === 'clips' || tabParam === 'details') {
+        setActiveTab(tabParam as any);
+      }
+      if (params.get('payout_success') === '1') {
+        setActiveTab('wallet');
+        setFeedbackMsg({
+          type: 'success',
+          text: 'Creator payout successfully dispatched! Your balance has been updated.',
+        });
+        window.history.replaceState({}, '', '/profile?tab=wallet');
+        setTimeout(() => setFeedbackMsg(null), 5000);
+      }
+    }
+  }, []);
+
   const isPending = currentUser?.creatorStatus === 'pending';
   const isApproved = currentUser?.creatorStatus === 'approved';
   const isLocked = isPending || (isApproved && !isUnlockedForEditing);
@@ -146,6 +171,54 @@ export default function ProfilePage() {
 
   // User's submissions
   const userSubmissions = submissions.filter((s) => s.creator_id === currentUser.id);
+
+  // Upload profile photo directly to Cloudinary and update database
+  const handleAvatarFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      setFeedbackMsg({
+        type: 'error',
+        text: 'Image exceeds maximum file size limit of 5MB.',
+      });
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+    setFeedbackMsg(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch('/api/user/upload-avatar', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed to upload photo to Cloudinary.');
+      }
+
+      updateUserAvatar(data.url);
+      setFeedbackMsg({
+        type: 'success',
+        text: 'Profile picture successfully uploaded to Cloudinary and saved to database!',
+      });
+      setTimeout(() => setFeedbackMsg(null), 5000);
+    } catch (err: any) {
+      console.error('[Cloudinary upload error]', err);
+      setFeedbackMsg({
+        type: 'error',
+        text: err.message || 'Error uploading profile picture to Cloudinary.',
+      });
+    } finally {
+      setIsUploadingAvatar(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
 
   // Profile save handler
   const handleProfileSave = async (e: React.FormEvent) => {
@@ -362,28 +435,59 @@ export default function ProfilePage() {
         <div className="rounded-2xl border border-borderMuted bg-surface p-6 sm:p-8 space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
             <div className="flex items-center gap-4 sm:gap-5">
-              <div className="relative">
-                <div className="flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-2xl bg-surfaceElevated border border-borderMuted text-3xl sm:text-4xl shadow-inner overflow-hidden">
+              <div
+                className="relative group cursor-pointer"
+                onClick={() => fileInputRef.current?.click()}
+                title="Click to change profile picture (Cloudinary)"
+              >
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  accept="image/png,image/jpeg,image/webp,image/gif"
+                  className="hidden"
+                  onChange={handleAvatarFileChange}
+                />
+                <div className="flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-2xl bg-surfaceElevated border border-borderMuted text-3xl sm:text-4xl shadow-inner overflow-hidden relative">
                   {currentUser?.avatar?.startsWith('http') ? (
                     <img src={currentUser.avatar} alt="Profile Avatar" className="h-full w-full object-cover" />
                   ) : (
                     currentUser?.avatar || '🎬'
                   )}
+
+                  {/* Cloudinary Upload Hover Overlay */}
+                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center transition text-white">
+                    <Camera className="h-5 w-5 text-limeAccent mb-0.5" />
+                    <span className="text-[9px] font-mono font-bold text-white/90">Change</span>
+                  </div>
+
+                  {isUploadingAvatar && (
+                    <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center gap-1 z-20">
+                      <Loader2 className="h-6 w-6 animate-spin text-limeAccent" />
+                      <span className="text-[8px] font-mono text-limeAccent font-bold">Uploading...</span>
+                    </div>
+                  )}
                 </div>
-                {isApproved && (
+
+                {isApproved ? (
                   <div
                     className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-limeAccent text-[#0B0F10] ring-4 ring-surface"
                     title="Verified Creator Profile"
                   >
                     <CheckCircle2 className="h-4 w-4" />
                   </div>
-                )}
-                {isPending && (
+                ) : isPending ? (
                   <div
                     className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-amber-500 text-black ring-4 ring-surface"
                     title="Verification Pending"
                   >
                     <Clock className="h-3.5 w-3.5" />
+                  </div>
+                ) : (
+                  <div
+                    className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-surfaceElevated border border-borderMuted text-limeAccent group-hover:bg-limeAccent group-hover:text-black transition shadow-sm ring-2 ring-surface"
+                    title="Change Photo (Cloudinary)"
+                  >
+                    <Camera className="h-3 w-3" />
                   </div>
                 )}
               </div>
@@ -420,12 +524,6 @@ export default function ProfilePage() {
 
             {/* Quick Actions */}
             <div className="flex flex-wrap items-center gap-2 self-start sm:self-center">
-              <button
-                onClick={() => switchRole(currentUser?.role === 'creator' ? 'brand' : 'creator')}
-                className="rounded-xl border border-borderMuted bg-surfaceElevated px-3 py-2 text-xs font-heading text-textMuted hover:text-textMain transition"
-              >
-                Switch to {currentUser?.role === 'creator' ? 'Brand Mode' : 'Creator Mode'}
-              </button>
 
               {currentUser?.isLoggedIn ? (
                 <button
@@ -510,27 +608,29 @@ export default function ProfilePage() {
         </div>
 
         {/* TABS NAVIGATION */}
-        <div className="flex border-b border-borderMuted gap-2 overflow-x-auto">
+        <div className="flex border-b border-borderMuted gap-1 sm:gap-2 overflow-x-auto pb-0.5">
           <button
             onClick={() => setActiveTab('details')}
-            className={`flex items-center gap-2 pb-3 px-3 text-xs sm:text-sm font-heading font-bold border-b-2 transition whitespace-nowrap ${activeTab === 'details'
+            className={`flex items-center gap-1.5 sm:gap-2 pb-2.5 sm:pb-3 px-2.5 sm:px-3 text-xs sm:text-sm font-heading font-bold border-b-2 transition whitespace-nowrap ${activeTab === 'details'
               ? 'border-limeAccent text-limeAccent'
               : 'border-transparent text-textMuted hover:text-textMain'
               }`}
           >
-            <Settings className="h-4 w-4" />
-            <span>Profile & Social Settings</span>
+            <Settings className="h-4 w-4 shrink-0" />
+            <span className="sm:hidden">Settings</span>
+            <span className="hidden sm:inline">Profile & Social Settings</span>
           </button>
 
           <button
             onClick={() => setActiveTab('wallet')}
-            className={`flex items-center gap-2 pb-3 px-3 text-xs sm:text-sm font-heading font-bold border-b-2 transition whitespace-nowrap ${activeTab === 'wallet'
+            className={`flex items-center gap-1.5 sm:gap-2 pb-2.5 sm:pb-3 px-2.5 sm:px-3 text-xs sm:text-sm font-heading font-bold border-b-2 transition whitespace-nowrap ${activeTab === 'wallet'
               ? 'border-limeAccent text-limeAccent'
               : 'border-transparent text-textMuted hover:text-textMain'
               }`}
           >
-            <CreditCard className="h-4 w-4" />
-            <span>Payout & Withdrawals</span>
+            <CreditCard className="h-4 w-4 shrink-0" />
+            <span className="sm:hidden">Payouts</span>
+            <span className="hidden sm:inline">Payout & Withdrawals</span>
             {hasVerifiedPayout ? (
               <span className="h-2 w-2 rounded-full bg-emeraldAccent animate-pulse" />
             ) : (
@@ -542,24 +642,26 @@ export default function ProfilePage() {
 
           <button
             onClick={() => setActiveTab('campaigns')}
-            className={`flex items-center gap-2 pb-3 px-3 text-xs sm:text-sm font-heading font-bold border-b-2 transition whitespace-nowrap ${activeTab === 'campaigns'
+            className={`flex items-center gap-1.5 sm:gap-2 pb-2.5 sm:pb-3 px-2.5 sm:px-3 text-xs sm:text-sm font-heading font-bold border-b-2 transition whitespace-nowrap ${activeTab === 'campaigns'
               ? 'border-limeAccent text-limeAccent'
               : 'border-transparent text-textMuted hover:text-textMain'
               }`}
           >
-            <Layers className="h-4 w-4" />
-            <span>My Joined Campaigns ({joinedCampaignsList.length})</span>
+            <Layers className="h-4 w-4 shrink-0" />
+            <span className="sm:hidden">Campaigns ({joinedCampaignsList.length})</span>
+            <span className="hidden sm:inline">My Joined Campaigns ({joinedCampaignsList.length})</span>
           </button>
 
           <button
             onClick={() => setActiveTab('clips')}
-            className={`flex items-center gap-2 pb-3 px-3 text-xs sm:text-sm font-heading font-bold border-b-2 transition whitespace-nowrap ${activeTab === 'clips'
+            className={`flex items-center gap-1.5 sm:gap-2 pb-2.5 sm:pb-3 px-2.5 sm:px-3 text-xs sm:text-sm font-heading font-bold border-b-2 transition whitespace-nowrap ${activeTab === 'clips'
               ? 'border-limeAccent text-limeAccent'
               : 'border-transparent text-textMuted hover:text-textMain'
               }`}
           >
-            <Video className="h-4 w-4" />
-            <span>Submitted Clips ({userSubmissions.length})</span>
+            <Video className="h-4 w-4 shrink-0" />
+            <span className="sm:hidden">Clips ({userSubmissions.length})</span>
+            <span className="hidden sm:inline">Submitted Clips ({userSubmissions.length})</span>
           </button>
         </div>
 
@@ -684,6 +786,56 @@ export default function ProfilePage() {
             )}
 
             <form onSubmit={handleProfileSave} className="space-y-6">
+              {/* Cloudinary Profile Photo Card */}
+              <div className="rounded-2xl bg-surfaceElevated border border-borderMuted p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3.5">
+                  <div className="relative h-14 w-14 rounded-2xl overflow-hidden border border-borderMuted bg-surface shrink-0 flex items-center justify-center text-2xl shadow-inner">
+                    {currentUser?.avatar?.startsWith('http') ? (
+                      <img src={currentUser.avatar} alt="Profile Photo" className="h-full w-full object-cover" />
+                    ) : (
+                      currentUser?.avatar || '🎬'
+                    )}
+                    {isUploadingAvatar && (
+                      <div className="absolute inset-0 bg-black/75 flex items-center justify-center">
+                        <Loader2 className="h-5 w-5 animate-spin text-limeAccent" />
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h4 className="text-xs font-heading font-bold text-textMain uppercase tracking-wider">
+                        Profile Picture
+                      </h4>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-mono text-limeAccent bg-limeAccent/10 border border-limeAccent/30">
+                        Cloudinary Storage
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-textMuted mt-0.5">
+                      JPG, PNG, WEBP up to 5MB. Face-centered crop & optimized delivery.
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  disabled={isUploadingAvatar}
+                  onClick={() => fileInputRef.current?.click()}
+                  className="rounded-xl bg-surface border border-borderMuted hover:border-limeAccent/50 px-4 py-2 text-xs font-heading font-bold text-textMain hover:text-limeAccent transition flex items-center gap-2 shrink-0 disabled:opacity-50"
+                >
+                  {isUploadingAvatar ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 animate-spin text-limeAccent" />
+                      <span>Uploading to Cloudinary...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="h-3.5 w-3.5 text-limeAccent" />
+                      <span>Upload New Photo</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-xs font-heading font-bold uppercase tracking-wider text-textMain mb-1">
@@ -921,9 +1073,7 @@ export default function ProfilePage() {
               </div>
 
               <div className="pt-4 flex items-center justify-between border-t border-borderMuted">
-                <span className="text-[11px] text-textMuted font-mono">
-                  Database: MongoDB Cluster0 • Collection: users
-                </span>
+
 
                 {isPending ? (
                   <button
@@ -948,8 +1098,8 @@ export default function ProfilePage() {
                     type="submit"
                     disabled={isSaving}
                     className={`rounded-xl font-heading font-bold px-6 py-2.5 text-xs flex items-center gap-2 transition disabled:opacity-50 active:scale-[0.98] ${isApproved
-                        ? 'bg-amber-500 hover:bg-amber-400 text-[#0B0F10] shadow-md shadow-amber-500/20'
-                        : 'bg-limeAccent hover:brightness-110 text-[#0B0F10] shadow-md shadow-limeAccent/20'
+                      ? 'bg-amber-500 hover:bg-amber-400 text-[#0B0F10] shadow-md shadow-amber-500/20'
+                      : 'bg-limeAccent hover:brightness-110 text-[#0B0F10] shadow-md shadow-limeAccent/20'
                       }`}
                   >
                     <Save className="h-4 w-4" />

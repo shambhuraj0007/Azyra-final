@@ -45,13 +45,24 @@ interface CampaignContextType {
     campaignId: string;
     videoUrl: string;
     initialViews?: number;
+    reportedViews?: number;
+    proofNotes?: string;
   }) => Promise<{ success: boolean; error?: string; submission?: ClipSubmission }>;
+  verifySubmission: (payload: {
+    submissionId: string;
+    action: 'approve' | 'reject';
+    verifiedViews?: number;
+    approvedPayout?: number;
+    rejectionReason?: string;
+    notes?: string;
+  }) => Promise<{ success: boolean; error?: string; submission?: ClipSubmission; payoutDelta?: number }>;
   simulateViewGrowth: (submissionId: string, additionalViews: number) => Promise<void>;
   checkViews: (submissionId: string) => Promise<{ success: boolean; views?: number; error?: string }>;
   cancelSubmission: (submissionId: string) => Promise<{ success: boolean; error?: string }>;
   createCampaign: (data: Omit<Campaign, 'id' | 'created_at' | 'participants_count' | 'total_views_tracked' | 'total_paid_out'>) => Promise<{ success: boolean; error?: string; campaign?: Campaign }>;
   toggleCampaignStatus: (campaignId: string, newStatus: Campaign['status']) => void;
   withdrawCreatorBalance: (amount?: number) => { success: boolean; payoutAmount: number };
+  updateUserAvatar: (newAvatarUrl: string) => void;
 }
 
 const CampaignContext = createContext<CampaignContextType | null>(null);
@@ -125,7 +136,8 @@ export function CampaignProvider({ children }: { children: React.ReactNode }) {
               email: dbUser.email,
               name: dbUser.profile?.displayName || dbUser.name || session.user.name || '',
               handle: normalizedHandle,
-              avatar: dbUser.image || session.user.image || '🎬',
+              avatar: dbUser.avatar || dbUser.image || session.user.image || '🎬',
+              image: dbUser.image || dbUser.avatar || session.user.image || undefined,
               bio: dbUser.profile?.bio || dbUser.bio || '',
               role: dbUser.role || 'brand',
               creatorStatus: dbUser.creatorStatus || 'none',
@@ -411,10 +423,14 @@ export function CampaignProvider({ children }: { children: React.ReactNode }) {
     campaignId,
     videoUrl,
     initialViews = 0,
+    reportedViews = 0,
+    proofNotes = '',
   }: {
     campaignId: string;
     videoUrl: string;
     initialViews?: number;
+    reportedViews?: number;
+    proofNotes?: string;
   }) => {
     const campaign = campaigns.find((c) => c.id === campaignId);
     if (!campaign) {
@@ -444,20 +460,25 @@ export function CampaignProvider({ children }: { children: React.ReactNode }) {
       return { success: false, error: 'This video clip link has already been submitted.' };
     }
 
+    const finalReportedViews = reportedViews > 0 ? reportedViews : initialViews;
+
     const newSubmission: ClipSubmission = {
       id: `sub-${Date.now()}`,
       campaign_id: campaignId,
       campaign_title: campaign.title,
       creator_id: currentUser.id || currentUser.email || 'creator',
       creator_name: `${currentUser.name || 'Creator'} (${currentUser.handle || '@creator'})`,
+      creator_handle: currentUser.handle || '',
       video_url: videoUrl,
       platform: parseRes.platform,
       video_external_id: parseRes.externalId || `ext-${Date.now()}`,
       submitted_at: Date.now(),
       initial_view_count: initialViews,
-      current_view_count: initialViews,
+      reported_views: finalReportedViews,
+      current_view_count: finalReportedViews,
+      proof_notes: proofNotes,
       earned_amount: 0,
-      verification_status: 'active',
+      verification_status: 'pending_review',
       last_polled_at: Date.now(),
     };
 
@@ -478,6 +499,104 @@ export function CampaignProvider({ children }: { children: React.ReactNode }) {
     }
 
     return { success: true, submission: newSubmission };
+  };
+
+  const verifySubmission = async ({
+    submissionId,
+    action,
+    verifiedViews,
+    approvedPayout,
+    rejectionReason,
+    notes,
+  }: {
+    submissionId: string;
+    action: 'approve' | 'reject';
+    verifiedViews?: number;
+    approvedPayout?: number;
+    rejectionReason?: string;
+    notes?: string;
+  }) => {
+    try {
+      const res = await fetch('/api/submissions/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          submissionId,
+          action,
+          verifiedViews,
+          approvedPayout,
+          rejectionReason,
+          notes,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        return { success: false, error: data.error || 'Failed to verify submission' };
+      }
+
+      // Update submissions state
+      const updatedSubmissions = submissions.map((s) => {
+        if (s.id === submissionId || (s as any)._id === submissionId) {
+          return {
+            ...s,
+            ...(data.submission || {}),
+            verification_status: data.submission?.verification_status || (action === 'approve' ? 'approved' : 'rejected'),
+          };
+        }
+        return s;
+      });
+
+      // Update campaigns state if payoutDelta occurred
+      let updatedCampaigns = campaigns;
+      if (data.payoutDelta && data.payoutDelta > 0) {
+        const sub = submissions.find((s) => s.id === submissionId || (s as any)._id === submissionId);
+        if (sub) {
+          updatedCampaigns = campaigns.map((c) => {
+            if (c.id === sub.campaign_id) {
+              const newRem = Math.max(0, c.remaining_budget - data.payoutDelta);
+              return {
+                ...c,
+                remaining_budget: newRem,
+                total_paid_out: (c.total_paid_out || 0) + data.payoutDelta,
+                total_views_tracked: (c.total_views_tracked || 0) + (verifiedViews || 0),
+                status: newRem <= 0 ? ('budget_exhausted' as const) : c.status,
+              };
+            }
+            return c;
+          });
+        }
+      }
+
+      let updatedUser = currentUser;
+      if (data.netCreatorCredit && data.netCreatorCredit > 0) {
+        const sub = submissions.find((s) => s.id === submissionId || (s as any)._id === submissionId);
+        if (sub && (sub.creator_id === currentUser.id || sub.creator_id === currentUser.email)) {
+          updatedUser = {
+            ...currentUser,
+            wallet_balance: Number((currentUser.wallet_balance + data.netCreatorCredit).toFixed(2)),
+            total_earned: Number(((currentUser.total_earned || 0) + data.netCreatorCredit).toFixed(2)),
+          };
+          setCurrentUser(updatedUser);
+        }
+      }
+
+      setSubmissions(updatedSubmissions);
+      setCampaigns(updatedCampaigns);
+      saveStorage(updatedUser, updatedCampaigns, updatedSubmissions, participants);
+      triggerConfetti();
+
+      return {
+        success: true,
+        submission: data.submission,
+        payoutDelta: data.payoutDelta,
+        netCreatorCredit: data.netCreatorCredit,
+        platformFeeDelta: data.platformFeeDelta,
+      };
+    } catch (err: any) {
+      console.error('verifySubmission error:', err);
+      return { success: false, error: err.message || 'Network error verifying submission' };
+    }
   };
 
   const simulateViewGrowth = async (submissionId: string, additionalViews: number) => {
@@ -682,6 +801,22 @@ export function CampaignProvider({ children }: { children: React.ReactNode }) {
     return { success: true, payoutAmount };
   };
 
+  const updateUserAvatar = (newAvatarUrl: string) => {
+    setCurrentUser((prev) => {
+      const updated = {
+        ...prev,
+        avatar: newAvatarUrl,
+        image: newAvatarUrl,
+      };
+      try {
+        localStorage.setItem('azyra_current_user', JSON.stringify(updated));
+      } catch (e) {
+        console.error(e);
+      }
+      return updated;
+    });
+  };
+
   return (
     <CampaignContext.Provider
       value={{
@@ -700,12 +835,14 @@ export function CampaignProvider({ children }: { children: React.ReactNode }) {
         logout,
         saveProfile,
         submitClip,
+        verifySubmission,
         simulateViewGrowth,
         checkViews,
         cancelSubmission,
         createCampaign,
         toggleCampaignStatus,
         withdrawCreatorBalance,
+        updateUserAvatar,
       }}
     >
       {children}

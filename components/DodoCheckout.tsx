@@ -10,7 +10,7 @@
  * - Polls /api/payments/status for final server-verified confirmation.
  * - Never trusts return_url query params for fulfillment.
  */
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { ShieldCheck, Loader2, CheckCircle2, XCircle, CreditCard, ExternalLink } from 'lucide-react';
 import { toast, handleUnauthorized } from '@/lib/toast';
 
@@ -19,6 +19,8 @@ interface DodoCheckoutProps {
   type: 'campaign_escrow' | 'creator_payout' | 'rank_outbid';
   campaignId?: string;
   campaignTitle?: string;
+  redirectUrl?: string;
+  metadata?: Record<string, any>;
   compact?: boolean;
   buttonLabel?: string;
   onSuccess: (orderId: string) => void;
@@ -32,6 +34,8 @@ export default function DodoCheckout({
   type,
   campaignId,
   campaignTitle,
+  redirectUrl,
+  metadata,
   compact = false,
   buttonLabel,
   onSuccess,
@@ -40,6 +44,16 @@ export default function DodoCheckout({
   const [state, setState] = useState<CheckoutState>('idle');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [orderId, setOrderId] = useState<string | null>(null);
+  const [countdown, setCountdown] = useState<number>(3);
+
+  // Compute where user left off
+  const resolvedRedirectUrl =
+    redirectUrl ||
+    (typeof window !== 'undefined'
+      ? type === 'rank_outbid' && metadata?.target_rank
+        ? `/?rank=${metadata.target_rank}&outbid_success=1#rank-${metadata.target_rank}`
+        : window.location.pathname + window.location.search
+      : '/');
 
   const pollPaymentStatus = useCallback(async (oid: string, retries = 15): Promise<void> => {
     if (retries <= 0) {
@@ -73,6 +87,24 @@ export default function DodoCheckout({
     }
   }, [onSuccess, onError]);
 
+  // Auto-redirect timer when payment succeeds
+  useEffect(() => {
+    if (state !== 'success') return;
+
+    const timer = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          window.location.href = resolvedRedirectUrl;
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [state, resolvedRedirectUrl]);
+
   const handlePay = async () => {
     setState('loading');
     setErrorMsg(null);
@@ -86,6 +118,11 @@ export default function DodoCheckout({
           amount_usd: amountUsd,
           type,
           campaign_id: campaignId,
+          redirect_url: resolvedRedirectUrl,
+          metadata: {
+            ...metadata,
+            campaign_title: campaignTitle,
+          },
         }),
       });
 
@@ -135,23 +172,156 @@ export default function DodoCheckout({
     }
   };
 
+  // Distinct Success View based on Payment Type
   if (state === 'success') {
-    return (
-      <div className="flex flex-col items-center gap-3 py-6 text-center">
-        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-emeraldAccent/15 text-emeraldAccent ring-2 ring-emeraldAccent/30 animate-bounce">
-          <CheckCircle2 className="h-8 w-8" />
+    if (type === 'rank_outbid') {
+      const targetRank = metadata?.target_rank || 1;
+      const productName = metadata?.product_name || campaignTitle || 'Startup Listing';
+
+      return (
+        <div className="flex flex-col items-center gap-3.5 py-4 text-center animate-in fade-in zoom-in-95 duration-200">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-limeAccent/15 text-limeAccent ring-2 ring-limeAccent/30 shadow-lg shadow-limeAccent/10 animate-bounce">
+            <span className="text-2xl">👑</span>
+          </div>
+          <div>
+            <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold text-limeAccent bg-limeAccent/10 border border-limeAccent/30 mb-1.5">
+              Rank #{targetRank} Claimed
+            </span>
+            <h4 className="text-lg font-heading font-bold text-textMain">Spot Secured on Leaderboard!</h4>
+            <p className="text-xs text-textMuted mt-0.5">
+              <strong className="text-white">{productName}</strong> is now locked at Rank #{targetRank}.
+            </p>
+          </div>
+
+          {/* Receipt Breakdown */}
+          <div className="w-full rounded-xl bg-surfaceElevated border border-borderMuted p-3 text-left space-y-1.5 text-xs font-mono">
+            <div className="flex justify-between items-center text-textMuted">
+              <span>Target Rank:</span>
+              <span className="text-limeAccent font-bold">#{targetRank}</span>
+            </div>
+            <div className="flex justify-between items-center text-textMuted">
+              <span>Settlement Paid:</span>
+              <span className="text-textMain font-bold">${amountUsd.toFixed(2)} USD</span>
+            </div>
+            <div className="flex justify-between items-center text-textMuted">
+              <span>Displacement:</span>
+              <span className="text-emeraldAccent text-[11px]">Previous #{targetRank} shifted down</span>
+            </div>
+            {orderId && (
+              <div className="flex justify-between items-center text-[10px] text-textMuted/70 border-t border-borderMuted/60 pt-1">
+                <span>Ref:</span>
+                <span className="truncate max-w-[140px]">{orderId}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Redirect indicator & action */}
+          <div className="w-full space-y-2 pt-1">
+            <a
+              href={resolvedRedirectUrl}
+              className="w-full rounded-xl bg-limeAccent hover:brightness-110 text-[#0B0F10] font-heading font-bold py-2.5 text-xs flex items-center justify-center gap-2 shadow-md shadow-limeAccent/20 transition"
+            >
+              <span>Return to Rank #{targetRank} Now</span>
+              <ExternalLink className="h-3.5 w-3.5" />
+            </a>
+            <p className="text-[11px] font-mono text-textMuted">
+              Redirecting to where you left off in{' '}
+              <strong className="text-limeAccent font-bold">{countdown}s</strong>...
+            </p>
+          </div>
         </div>
-        <h4 className="text-lg font-heading font-bold text-textMain">Payment Confirmed!</h4>
-        <p className="text-xs text-textMuted">
-          {type === 'campaign_escrow'
-            ? `$${amountUsd.toFixed(2)} escrow deposited. Your campaign is now live.`
-            : type === 'rank_outbid'
-            ? `$${amountUsd.toFixed(2)} rank settlement paid. Your leaderboard position is secured.`
-            : `$${amountUsd.toFixed(2)} payout initiated.`}
-        </p>
+      );
+    }
+
+    if (type === 'campaign_escrow') {
+      const title = campaignTitle || metadata?.campaign_title || 'Creator Campaign';
+
+      return (
+        <div className="flex flex-col items-center gap-3.5 py-4 text-center animate-in fade-in zoom-in-95 duration-200">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emeraldAccent/15 text-emeraldAccent ring-2 ring-emeraldAccent/30 shadow-lg shadow-emeraldAccent/10 animate-bounce">
+            <CheckCircle2 className="h-8 w-8 text-emeraldAccent" />
+          </div>
+          <div>
+            <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold text-emeraldAccent bg-emeraldAccent/10 border border-emeraldAccent/30 mb-1.5">
+              Escrow Vault Active
+            </span>
+            <h4 className="text-lg font-heading font-bold text-textMain">Campaign Escrow Funded!</h4>
+            <p className="text-xs text-textMuted mt-0.5">
+              <strong className="text-white">{title}</strong> is now live on the marketplace.
+            </p>
+          </div>
+
+          {/* Escrow Receipt Breakdown */}
+          <div className="w-full rounded-xl bg-surfaceElevated border border-borderMuted p-3 text-left space-y-1.5 text-xs font-mono">
+            <div className="flex justify-between items-center text-textMuted">
+              <span>Escrow Deposit:</span>
+              <span className="text-emeraldAccent font-bold">${amountUsd.toFixed(2)} USD</span>
+            </div>
+            <div className="flex justify-between items-center text-textMuted">
+              <span>Payout Security:</span>
+              <span className="text-textMain text-[11px]">Auto-escrow protected</span>
+            </div>
+            <div className="flex justify-between items-center text-textMuted">
+              <span>Creator Submissions:</span>
+              <span className="text-limeAccent text-[11px]">Open & Active</span>
+            </div>
+            {orderId && (
+              <div className="flex justify-between items-center text-[10px] text-textMuted/70 border-t border-borderMuted/60 pt-1">
+                <span>Ref:</span>
+                <span className="truncate max-w-[140px]">{orderId}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Redirect indicator & action */}
+          <div className="w-full space-y-2 pt-1">
+            <a
+              href={resolvedRedirectUrl}
+              className="w-full rounded-xl bg-limeAccent hover:brightness-110 text-[#0B0F10] font-heading font-bold py-2.5 text-xs flex items-center justify-center gap-2 shadow-md shadow-limeAccent/20 transition"
+            >
+              <span>View Campaigns Now</span>
+              <ExternalLink className="h-3.5 w-3.5" />
+            </a>
+            <p className="text-[11px] font-mono text-textMuted">
+              Redirecting back to campaigns in{' '}
+              <strong className="text-limeAccent font-bold">{countdown}s</strong>...
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    // Default / creator_payout
+    return (
+      <div className="flex flex-col items-center gap-3.5 py-4 text-center animate-in fade-in zoom-in-95 duration-200">
+        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emeraldAccent/15 text-emeraldAccent ring-2 ring-emeraldAccent/30 animate-bounce">
+          <CheckCircle2 className="h-8 w-8 text-emeraldAccent" />
+        </div>
+        <div>
+          <h4 className="text-lg font-heading font-bold text-textMain">Payout Dispatched!</h4>
+          <p className="text-xs text-textMuted mt-0.5">
+            <strong className="text-emeraldAccent">${amountUsd.toFixed(2)}</strong> transferred with 0% platform fee.
+          </p>
+        </div>
+
         {orderId && (
-          <span className="font-mono text-[10px] text-textMuted">Ref: {orderId}</span>
+          <span className="font-mono text-[10px] text-textMuted bg-surfaceElevated px-3 py-1 rounded-lg border border-borderMuted">
+            Ref: {orderId}
+          </span>
         )}
+
+        <div className="w-full space-y-2 pt-1">
+          <a
+            href={resolvedRedirectUrl}
+            className="w-full rounded-xl bg-limeAccent hover:brightness-110 text-[#0B0F10] font-heading font-bold py-2.5 text-xs flex items-center justify-center gap-2 shadow-md shadow-limeAccent/20 transition"
+          >
+            <span>Return to Wallet</span>
+          </a>
+          <p className="text-[11px] font-mono text-textMuted">
+            Returning to where you left off in{' '}
+            <strong className="text-limeAccent font-bold">{countdown}s</strong>...
+          </p>
+        </div>
       </div>
     );
   }

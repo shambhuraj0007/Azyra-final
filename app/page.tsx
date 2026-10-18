@@ -50,9 +50,28 @@ export default function Home() {
         setUserStartupUrls(JSON.parse(savedStartups));
       }
 
-      if (typeof window !== 'undefined' && window.location.search.includes('claim=1')) {
-        setIsModalOpen(true);
-        setModalTargetRank(1);
+      if (typeof window !== 'undefined') {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('claim') === '1') {
+          setIsModalOpen(true);
+          setModalTargetRank(1);
+        } else if (urlParams.get('outbid_success') === '1' || urlParams.get('rank')) {
+          const targetRankNum = parseInt(urlParams.get('rank') || '1', 10);
+          setTimeout(() => {
+            const targetEl = document.getElementById(`rank-${targetRankNum}`);
+            if (targetEl) {
+              targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            triggerConfetti();
+          }, 350);
+        } else if (window.location.hash && window.location.hash.startsWith('#rank-')) {
+          setTimeout(() => {
+            const targetEl = document.querySelector(window.location.hash);
+            if (targetEl) {
+              targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+          }, 350);
+        }
       }
     } catch (e) {
       console.error(e);

@@ -20,6 +20,8 @@ export interface IPayment extends Document {
     ifsc?: string;
     upi_id?: string;
   };
+  redirect_url?: string;
+  metadata?: Record<string, any>;
   created_at: number;
   updated_at: number;
 }
@@ -49,6 +51,8 @@ const PaymentSchema = new Schema<IPayment>(
       ifsc: String,
       upi_id: String,
     },
+    redirect_url: { type: String },
+    metadata: { type: Schema.Types.Mixed },
     created_at: { type: Number, default: () => Date.now() },
     updated_at: { type: Number, default: () => Date.now() },
   },

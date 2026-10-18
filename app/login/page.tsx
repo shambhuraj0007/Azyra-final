@@ -299,8 +299,15 @@ function AuthContent() {
       </div>
 
       {/* RIGHT PANEL */}
-      <div className="flex-1 flex items-center justify-center p-6">
+      <div className="flex-1 flex items-center justify-center p-4 sm:p-6">
         <div className="w-full" style={{ maxWidth: '420px' }}>
+
+          {/* Mobile Logo Branding */}
+          <div className="lg:hidden mb-6 flex justify-center">
+            <Link href="/" className="inline-block">
+              <AzyraLogo size="md" />
+            </Link>
+          </div>
 
           {/* Campaign referral badge */}
           {joinCampaignId && (

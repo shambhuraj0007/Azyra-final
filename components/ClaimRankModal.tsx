@@ -189,7 +189,13 @@ export default function ClaimRankModal({
     setSubmitted(true);
     setTimeout(() => {
       onClose();
-    }, 1200);
+      if (typeof window !== 'undefined') {
+        const el = document.getElementById(`rank-${targetRank}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }
+    }, 1800);
   };
 
   const handleQuickAdd = (delta: number) => {
@@ -200,11 +206,11 @@ export default function ClaimRankModal({
   return (
     <div
       onClick={onClose}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200 overflow-y-auto"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-md rounded-2xl border border-white/10 bg-[#0F1416] p-6 shadow-2xl space-y-5 text-textMain"
+        className="relative w-full max-w-md rounded-2xl border border-white/10 bg-[#0F1416] p-4 sm:p-6 shadow-2xl space-y-4 sm:space-y-5 text-textMain max-h-[92dvh] overflow-y-auto my-auto"
       >
         {/* Close Button */}
         <button
@@ -217,13 +223,37 @@ export default function ClaimRankModal({
         </button>
 
         {submitted ? (
-          <div className="py-10 text-center space-y-3">
-            <CheckCircle className="h-12 w-12 text-limeAccent mx-auto animate-bounce" />
-            <h3 className="text-xl font-heading font-bold text-textMain">
-              Spot #{targetRank} Secured!
-            </h3>
-            <p className="text-xs text-textMuted">
-              <strong className="text-white">{name}</strong> is now live on the leaderboard.
+          <div className="py-8 text-center space-y-3.5 animate-in fade-in zoom-in-95 duration-200">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-limeAccent/15 text-limeAccent ring-2 ring-limeAccent/30 shadow-lg shadow-limeAccent/10 animate-bounce">
+              <Crown className="h-8 w-8 fill-limeAccent/20 text-limeAccent" />
+            </div>
+            <div className="space-y-1">
+              <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold text-limeAccent bg-limeAccent/10 border border-limeAccent/30">
+                Rank #{targetRank} Secured
+              </span>
+              <h3 className="text-xl font-heading font-bold text-textMain">
+                Leaderboard Position Claimed!
+              </h3>
+              <p className="text-xs text-textMuted">
+                <strong className="text-white">{name}</strong> is now live at Rank #{targetRank}.
+              </p>
+            </div>
+            <div className="rounded-xl bg-surfaceElevated border border-borderMuted p-3 text-left space-y-1.5 text-xs font-mono">
+              <div className="flex justify-between items-center text-textMuted">
+                <span>Secured Rank:</span>
+                <span className="text-limeAccent font-bold">#{targetRank}</span>
+              </div>
+              <div className="flex justify-between items-center text-textMuted">
+                <span>Total Capital:</span>
+                <span className="text-textMain font-bold">${(bidCalculation.existingSpend + enteredAmount).toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between items-center text-textMuted">
+                <span>Outbid Status:</span>
+                <span className="text-emeraldAccent text-[11px]">Displaced prior rank #{targetRank}</span>
+              </div>
+            </div>
+            <p className="text-[11px] font-mono text-textMuted">
+              Returning you to Rank #{targetRank} on the leaderboard...
             </p>
           </div>
         ) : (
@@ -268,7 +298,7 @@ export default function ClaimRankModal({
                     setTargetRank(rk);
                     setCustomBid('');
                   }}
-                  className={`py-1.5 px-3 rounded-lg text-xs font-mono font-bold transition border ${
+                  className={`py-1.5 px-2.5 sm:px-3 rounded-lg text-xs font-mono font-bold transition border ${
                     targetRank === rk
                       ? 'bg-limeAccent text-[#0B0F10] border-limeAccent shadow-sm'
                       : 'bg-white/5 text-textMuted border-white/10 hover:text-white hover:border-white/20'
@@ -291,7 +321,7 @@ export default function ClaimRankModal({
               >
                 Bottom (#{products.length + 1}) · $1
               </button>
-              <div className="flex items-center bg-white/5 px-2 py-1.5 rounded-lg border border-white/10 ml-auto">
+              <div className="flex items-center bg-white/5 px-2 py-1.5 rounded-lg border border-white/10">
                 <span className="text-xs text-textMuted font-mono mr-1">#</span>
                 <input
                   type="number"
@@ -302,7 +332,7 @@ export default function ClaimRankModal({
                     setTargetRank(Math.max(1, parseInt(e.target.value) || 1));
                     setCustomBid('');
                   }}
-                  className="w-7 bg-transparent text-xs text-white font-mono font-bold text-center focus:outline-none"
+                  className="w-8 sm:w-10 bg-transparent text-xs text-white font-mono font-bold text-center focus:outline-none"
                 />
               </div>
             </div>
@@ -374,19 +404,19 @@ export default function ClaimRankModal({
                 )}
 
                 {!existingProduct && (
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     <input
                       type="text"
                       required
                       placeholder="Product Name"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      className="col-span-2 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder:text-textMuted/50 focus:border-limeAccent outline-none"
+                      className="sm:col-span-2 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder:text-textMuted/50 focus:border-limeAccent outline-none"
                     />
                     <select
                       value={category}
                       onChange={(e) => setCategory(e.target.value as any)}
-                      className="bg-white/5 border border-white/10 rounded-xl px-2 py-2 text-xs text-white focus:border-limeAccent outline-none"
+                      className="sm:col-span-1 bg-white/5 border border-white/10 rounded-xl px-2 py-2 text-xs text-white focus:border-limeAccent outline-none"
                     >
                       <option value="AI & ML">AI & ML</option>
                       <option value="DevTools">DevTools</option>
@@ -468,6 +498,17 @@ export default function ClaimRankModal({
                 amountUsd={enteredAmount}
                 type="rank_outbid"
                 campaignTitle={`Claim Rank #${targetRank}: ${name || 'Product'}`}
+                redirectUrl={
+                  typeof window !== 'undefined'
+                    ? `${window.location.pathname}${window.location.search || ''}#rank-${targetRank}`
+                    : '/'
+                }
+                metadata={{
+                  target_rank: targetRank,
+                  product_name: name || inferStartupName(url) || 'My Startup',
+                  product_url: url,
+                  category,
+                }}
                 buttonLabel={`Pay $${enteredAmount.toLocaleString(undefined, {
                   minimumFractionDigits: enteredAmount % 1 === 0 ? 0 : 2,
                   maximumFractionDigits: 2,

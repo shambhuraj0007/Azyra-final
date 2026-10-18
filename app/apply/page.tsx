@@ -123,13 +123,13 @@ export default function CreatorApply() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0B0F10] text-gray-100 py-12 px-4 font-sans selection:bg-[#D9F950] selection:text-black">
-      <div className="max-w-6xl mx-auto flex flex-col lg:flex-row gap-12 items-start">
+    <div className="min-h-screen bg-[#0B0F10] text-gray-100 py-8 sm:py-12 px-3.5 sm:px-4 font-sans selection:bg-[#D9F950] selection:text-black">
+      <div className="max-w-6xl mx-auto flex flex-col lg:flex-row gap-8 lg:gap-12 items-start">
 
         {/* LEFT COLUMN: SUPERSTAR ID CARD */}
-        <div className="w-full lg:w-[400px] xl:w-[420px] lg:sticky lg:top-12 flex flex-col items-center perspective-1000">
-          <h3 className="text-sm font-mono text-gray-500 uppercase tracking-widest mb-6 flex items-center gap-2">
-            <Sparkles className="w-4 h-4" /> VIP Access Pass
+        <div className="w-full lg:w-[400px] xl:w-[420px] lg:sticky lg:top-12 flex flex-col items-center perspective-1000 order-2 lg:order-1">
+          <h3 className="text-sm font-mono text-gray-500 uppercase tracking-widest mb-4 sm:mb-6 flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-limeAccent" /> Live VIP Access Pass Preview
           </h3>
 
           {/* THE PHYSICAL BADGE DESIGN */}
@@ -205,10 +205,10 @@ export default function CreatorApply() {
         </div>
 
         {/* RIGHT COLUMN: THE FORM */}
-        <div className="flex-1 bg-[#121619] p-8 rounded-3xl border border-gray-800 shadow-2xl z-10 w-full">
-          <div className="mb-8 border-b border-gray-800 pb-6">
-            <h1 className="text-3xl font-bold mb-2">Claim Your Pass</h1>
-            <p className="text-gray-400 text-sm">Join the Azyra Creator Marketplace. Fill out the details below to generate your VIP profile. All profiles are manually verified by our team.</p>
+        <div className="flex-1 bg-[#121619] p-4 sm:p-8 rounded-3xl border border-gray-800 shadow-2xl z-10 w-full order-1 lg:order-2">
+          <div className="mb-6 sm:mb-8 border-b border-gray-800 pb-4 sm:pb-6">
+            <h1 className="text-2xl sm:text-3xl font-bold mb-2">Claim Your Pass</h1>
+            <p className="text-gray-400 text-xs sm:text-sm">Join the Azyra Creator Marketplace. Fill out the details below to generate your VIP profile. All profiles are manually verified by our team.</p>
           </div>
 
           {error && <div className="mb-6 p-4 bg-red-900/20 text-red-400 border border-red-900/50 rounded-xl text-sm font-mono">{error}</div>}

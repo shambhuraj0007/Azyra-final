@@ -42,6 +42,7 @@ export interface UserProfile {
   handle: string;
   role: UserRole;
   avatar: string;
+  image?: string;
   bio?: string;
   isLoggedIn?: boolean;
   isProfileSetup?: boolean;
@@ -136,14 +137,22 @@ export interface ClipSubmission {
   campaign_title: string;
   creator_id: string;
   creator_name: string;
+  creator_handle?: string;
   video_url: string;
   platform: SocialPlatform;
   video_external_id: string;
   initial_view_count: number;
+  reported_views?: number;
   current_view_count: number;
   earned_amount: number;
-  verification_status: 'verifying' | 'active' | 'flagged_bot' | 'paid';
+  verification_status: 'pending_review' | 'approved' | 'rejected' | 'verifying' | 'active' | 'flagged_bot' | 'paid';
   submitted_at: number;
   last_polled_at: number;
   bot_velocity_score?: number; // 0-100 score, >80 = flagged
+  proof_notes?: string;
+  rejection_reason?: string;
+  reviewed_at?: number;
+  reviewed_by?: string;
+  platform_fee?: number;
+  net_payout?: number;
 }
