@@ -47,11 +47,12 @@ export default function HowItWorks() {
           <Zap className="h-3.5 w-3.5 text-limeAccent" />
           <span>The Protocol Rules</span>
         </div>
-        <h2 className="text-3xl font-heading font-bold text-textMain tracking-tight sm:text-4xl">
-          How the Leaderboard Operates
+        <h2 className="text-3xl sm:text-4xl font-heading font-extrabold text-textMain tracking-tight">
+          Four principles.<br />
+          <span className="font-serif italic font-normal text-limeAccent">One transparent protocol.</span>
         </h2>
-        <p className="mt-2 text-sm text-textMuted">
-          Built on radical transparency for Azyra. Pure financial bidding, zero editorial curation, zero gatekeepers.
+        <p className="mt-2 text-sm text-textMuted max-w-lg mx-auto">
+          Built on radical transparency. Pure financial bidding, zero editorial black-boxes, zero gatekeepers.
         </p>
       </div>
 
@@ -61,31 +62,40 @@ export default function HowItWorks() {
           return (
             <div
               key={item.step}
-              className="relative rounded-xl border border-borderMuted bg-surface p-6 backdrop-blur-sm transition-all hover:border-limeAccent/40 hover:bg-surfaceElevated/70"
+              className="card-craft relative rounded-2xl p-6 sm:p-7 flex flex-col justify-between"
             >
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-surfaceElevated text-limeAccent font-bold border border-borderMuted">
-                    <Icon className="h-5 w-5" />
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-surfaceElevated text-limeAccent font-bold border border-borderMuted shadow-inner">
+                      <Icon className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-limeAccent">
+                        Rule {item.step}
+                      </span>
+                      <h3 className="text-base font-heading font-bold text-textMain">
+                        {item.title}
+                      </h3>
+                    </div>
                   </div>
-                  <div>
-                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-textMuted">
-                      Rule {item.step}
-                    </span>
-                    <h3 className="text-base font-heading font-bold text-textMain">
-                      {item.title}
-                    </h3>
+
+                  {/* Sleek craft window dot indicators */}
+                  <div className="flex items-center gap-1.5 opacity-40">
+                    <span className="h-2 w-2 rounded-full bg-borderMuted" />
+                    <span className="h-2 w-2 rounded-full bg-borderMuted" />
+                    <span className="h-2 w-2 rounded-full bg-limeAccent/60" />
                   </div>
                 </div>
+
+                <p className="text-xs text-textMuted leading-relaxed">
+                  {item.description}
+                </p>
               </div>
 
-              <p className="text-xs text-textMuted leading-relaxed">
-                {item.description}
-              </p>
-
-              <div className="mt-4 rounded-lg bg-canvas p-3 border border-borderMuted text-[11px] font-mono text-limeAccent flex items-center gap-2">
+              <div className="mt-5 rounded-xl bg-canvas/90 p-3 border border-borderMuted text-[11px] font-mono text-limeAccent flex items-center gap-2">
                 <span className="text-textMuted font-sans font-medium">Example:</span>
-                <span>{item.example}</span>
+                <span className="truncate">{item.example}</span>
               </div>
             </div>
           );

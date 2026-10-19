@@ -19,7 +19,7 @@ export default function Navbar({ onOpenBidModal, totalVolume, totalProducts }: N
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-borderMuted bg-surface/85 backdrop-blur-xl">
+    <header className="sticky top-0 z-40 border-b border-borderMuted bg-canvas/80 backdrop-blur-xl transition-all duration-200">
       {/* Main navigation bar */}
       <div className="mx-auto flex max-w-7xl items-center justify-between px-3.5 py-2.5 sm:px-6 sm:py-3">
         <div className="flex items-center gap-4 sm:gap-8">
@@ -82,9 +82,9 @@ export default function Navbar({ onOpenBidModal, totalVolume, totalProducts }: N
           {currentUser?.isLoggedIn ? (
             <Link
               href="/profile"
-              className="flex items-center gap-1.5 sm:gap-2 rounded-xl bg-surfaceElevated border border-borderMuted hover:border-limeAccent/50 px-2 sm:px-3 py-1.5 text-xs transition"
+              className="flex items-center gap-1.5 sm:gap-2 rounded-full bg-surfaceElevated border border-borderMuted hover:border-limeAccent/50 px-2 sm:px-3.5 py-1.5 text-xs transition"
             >
-              <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-surface text-xs border border-borderMuted overflow-hidden shrink-0">
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-surface text-xs border border-borderMuted overflow-hidden shrink-0">
                 {currentUser.avatar?.startsWith('http') ? (
                   <img src={currentUser.avatar} alt="Avatar" className="h-full w-full object-cover" />
                 ) : (
@@ -95,7 +95,7 @@ export default function Navbar({ onOpenBidModal, totalVolume, totalProducts }: N
                 {currentUser.handle || currentUser.name || 'User'}
               </span>
               {!currentUser.isProfileSetup && currentUser.role !== 'creator' && (
-                <span className="text-[10px] bg-limeAccent/20 text-limeAccent px-1.5 py-0.2 rounded font-mono hidden xs:inline">
+                <span className="text-[10px] bg-limeAccent/20 text-limeAccent px-1.5 py-0.2 rounded-full font-mono hidden xs:inline">
                   Apply
                 </span>
               )}
@@ -103,7 +103,7 @@ export default function Navbar({ onOpenBidModal, totalVolume, totalProducts }: N
           ) : (
             <Link
               href="/login"
-              className="flex items-center gap-1.5 rounded-xl bg-surfaceElevated border border-borderMuted hover:border-limeAccent/50 px-2.5 sm:px-3 py-1.5 text-xs font-heading text-textMain transition hover:text-limeAccent"
+              className="flex items-center gap-1.5 rounded-full bg-surfaceElevated border border-borderMuted hover:border-limeAccent/50 px-3 py-1.5 text-xs font-heading text-textMain transition hover:text-limeAccent"
             >
               <User className="h-3.5 w-3.5 text-limeAccent shrink-0" />
               <span className="hidden xs:inline">Sign In</span>
@@ -117,18 +117,18 @@ export default function Navbar({ onOpenBidModal, totalVolume, totalProducts }: N
                 onOpenBidModal(1);
                 setMobileMenuOpen(false);
               }}
-              className="group relative inline-flex items-center gap-1.5 sm:gap-2 overflow-hidden rounded-xl bg-limeAccent px-2.5 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-heading font-bold text-[#0B0F10] shadow-md shadow-limeAccent/20 transition-all hover:brightness-110 active:scale-[0.98] shrink-0"
+              className="group relative inline-flex items-center gap-1.5 sm:gap-2 overflow-hidden rounded-full bg-limeAccent px-3 sm:px-5 py-1.5 sm:py-2 text-xs sm:text-sm font-heading font-bold text-[#070B0C] shadow-lg shadow-limeAccent/20 transition-all hover:brightness-110 active:scale-[0.98] shrink-0"
             >
-              <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-[#0B0F10]" />
+              <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4 fill-[#070B0C]" />
               <span className="hidden sm:inline">Outbid & Claim Rank</span>
               <span className="sm:hidden">Outbid</span>
             </button>
           ) : (
             <Link
               href="/?claim=1"
-              className="group relative inline-flex items-center gap-1.5 sm:gap-2 overflow-hidden rounded-xl bg-limeAccent px-2.5 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-heading font-bold text-[#0B0F10] shadow-md shadow-limeAccent/20 transition-all hover:brightness-110 active:scale-[0.98] shrink-0"
+              className="group relative inline-flex items-center gap-1.5 sm:gap-2 overflow-hidden rounded-full bg-limeAccent px-3 sm:px-5 py-1.5 sm:py-2 text-xs sm:text-sm font-heading font-bold text-[#070B0C] shadow-lg shadow-limeAccent/20 transition-all hover:brightness-110 active:scale-[0.98] shrink-0"
             >
-              <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-[#0B0F10]" />
+              <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4 fill-[#070B0C]" />
               <span className="hidden sm:inline">Outbid & Claim Rank</span>
               <span className="sm:hidden">Outbid</span>
             </Link>

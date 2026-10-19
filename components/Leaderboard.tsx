@@ -251,19 +251,19 @@ export default function Leaderboard({
   return (
     <div className="space-y-8">
       {/* Board Selector Tabs & Daily UTC Countdown Header */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 rounded-2xl bg-surface p-2.5 border border-borderMuted shadow-md">
+      <div className="card-craft flex flex-col sm:flex-row items-center justify-between gap-4 rounded-2xl p-2.5 shadow-xl">
         <div className="flex w-full sm:w-auto items-center gap-1.5 p-1 bg-surfaceElevated rounded-xl border border-borderMuted">
           <button
             onClick={() => setBoard('all-time')}
             className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 sm:gap-2 rounded-lg px-2.5 sm:px-4 py-2 text-xs sm:text-sm font-heading font-bold transition-all ${board === 'all-time'
-              ? 'bg-limeAccent text-[#0B0F10] shadow-md shadow-limeAccent/20'
+              ? 'bg-limeAccent text-[#070B0C] shadow-md shadow-limeAccent/20'
               : 'text-textMuted hover:text-textMain hover:bg-surface'
               }`}
           >
             <Trophy className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
             <span className="sm:hidden">All-Time</span>
             <span className="hidden sm:inline">All-Time Board</span>
-            <span className="rounded-full bg-[#0B0F10]/20 px-1.5 py-0.2 text-[9px] sm:text-[10px] font-mono hidden xs:inline">
+            <span className="rounded-full bg-[#070B0C]/20 px-1.5 py-0.2 text-[9px] sm:text-[10px] font-mono hidden xs:inline">
               Permanent
             </span>
           </button>
@@ -271,14 +271,14 @@ export default function Leaderboard({
           <button
             onClick={() => setBoard('daily')}
             className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 sm:gap-2 rounded-lg px-2.5 sm:px-4 py-2 text-xs sm:text-sm font-heading font-bold transition-all ${board === 'daily'
-              ? 'bg-limeAccent text-[#0B0F10] shadow-md shadow-limeAccent/20'
+              ? 'bg-limeAccent text-[#070B0C] shadow-md shadow-limeAccent/20'
               : 'text-textMuted hover:text-textMain hover:bg-surface'
               }`}
           >
             <Flame className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
             <span className="sm:hidden">Daily 24h</span>
             <span className="hidden sm:inline">Today's Board (Daily)</span>
-            <span className="rounded-full bg-[#0B0F10]/20 px-1.5 py-0.2 text-[9px] sm:text-[10px] font-mono hidden xs:inline">
+            <span className="rounded-full bg-[#070B0C]/20 px-1.5 py-0.2 text-[9px] sm:text-[10px] font-mono hidden xs:inline">
               UTC
             </span>
           </button>
@@ -310,7 +310,7 @@ export default function Leaderboard({
                 <div className="p-2 rounded-2xl bg-surfaceElevated border border-limeAccent/40 shadow-inner">
                   <FaviconImage url={userListing.url} fallback={userListing.logo} className="w-9 h-9 rounded-xl" size={128} />
                 </div>
-                <span className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-limeAccent text-[#0B0F10] text-[10px] font-black">
+                <span className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-limeAccent text-[#070B0C] text-[10px] font-black">
                   ★
                 </span>
               </div>
@@ -319,8 +319,8 @@ export default function Leaderboard({
                   <span className="text-base sm:text-lg font-heading font-black text-textMain">
                     {userListing.name}
                   </span>
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-limeAccent text-[#0B0F10] text-[10px] font-heading font-black uppercase tracking-wider shadow-sm">
-                    <Sparkles className="h-3 w-3 fill-[#0B0F10]" />
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-limeAccent text-[#070B0C] text-[10px] font-heading font-black uppercase tracking-wider shadow-sm">
+                    <Sparkles className="h-3 w-3 fill-[#070B0C]" />
                     YOUR ACTIVE LISTING
                   </span>
                   <span className="rounded bg-surfaceElevated px-2 py-0.5 text-[10px] font-mono text-textMuted border border-borderMuted">
@@ -344,9 +344,9 @@ export default function Leaderboard({
             <div className="flex items-center gap-2.5 w-full md:w-auto">
               <button
                 onClick={() => onClaimRank(userListingRank, userListing.url, userListing.name)}
-                className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 rounded-xl bg-limeAccent hover:brightness-110 text-[#0B0F10] font-heading font-black py-2.5 px-4 text-xs shadow-lg shadow-limeAccent/25 transition active:scale-[0.98]"
+                className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 rounded-xl bg-limeAccent hover:brightness-110 text-[#070B0C] font-heading font-black py-2.5 px-4 text-xs shadow-lg shadow-limeAccent/25 transition active:scale-[0.98]"
               >
-                <ShieldCheck className="h-4 w-4 text-[#0B0F10]" />
+                <ShieldCheck className="h-4 w-4 text-[#070B0C]" />
                 <span>Defend / Boost Rank (#{userListingRank})</span>
               </button>
               <button
@@ -362,17 +362,15 @@ export default function Leaderboard({
         </div>
       )}
 
-
-
       {/* TOP 3 PODIUM / SPOTLIGHT SHOWCASE */}
       {searchTerm === '' && selectedCategory === 'All' && sortedProducts.length >= 3 && (
         <div className="pt-4 pb-2">
           <div className="text-center mb-6">
-            <span className="text-xs font-mono font-bold uppercase tracking-widest text-limeAccent">
+            <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-limeAccent bg-limeAccent/10 px-2.5 py-0.5 rounded-full border border-limeAccent/20">
               The Sovereign Heights
             </span>
-            <h2 className="text-2xl sm:text-3xl font-heading font-black text-textMain tracking-tight mt-1">
-              Top 3 Financial Contenders
+            <h2 className="text-2xl sm:text-3xl font-heading font-black text-textMain tracking-tight mt-2">
+              Top three. <span className="font-serif italic font-normal text-limeAccent">Pure capital.</span>
             </h2>
             <p className="text-xs text-textMuted mt-1 max-w-md mx-auto">
               Holding the most valuable product real estate on the internet through pure capital allocation.
@@ -383,9 +381,9 @@ export default function Leaderboard({
             {/* Rank 2 (Silver) */}
             {top2 && (
               <div
-                className={`order-2 md:order-1 relative rounded-2xl border bg-surface p-5 shadow-xl transition-all hover:-translate-y-1 ${isUserStartup(top2.url)
+                className={`order-2 md:order-1 card-craft relative rounded-2xl p-5 shadow-xl transition-all hover:-translate-y-1 ${isUserStartup(top2.url)
                   ? 'border-limeAccent ring-2 ring-limeAccent/70 shadow-[0_0_35px_rgba(209,250,77,0.2)] bg-gradient-to-b from-limeAccent/10 via-surface to-surface'
-                  : 'border-borderMuted hover:border-limeAccent/40'
+                  : ''
                   }`}
               >
                 {/* YOUR LISTING BADGE IF APPLICABLE */}
@@ -820,7 +818,7 @@ export default function Leaderboard({
       </div>
 
       {/* FULL LEADERBOARD TABLE / CARD LIST */}
-      <div className="rounded-2xl border border-borderMuted bg-surface overflow-hidden shadow-2xl">
+      <div className="card-craft rounded-2xl overflow-hidden shadow-2xl">
         {/* Table header bar */}
         <div className="hidden md:grid grid-cols-12 gap-4 px-6 py-3.5 bg-surfaceElevated/70 border-b border-borderMuted text-[11px] font-mono font-bold uppercase tracking-wider text-textMuted">
           <div className="col-span-1 text-center">Rank</div>
