@@ -239,14 +239,7 @@ export default function Home() {
           <div className="pointer-events-none absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 h-[320px] w-[560px] rounded-full bg-limeAccent/[0.08] blur-[110px]" />
 
           <div className="relative z-10 mx-auto max-w-3xl text-center flex flex-col items-center gap-6">
-            {/* ReleaseStack-inspired live status pill */}
-            <div className="inline-flex items-center gap-2 rounded-full border border-borderMuted bg-surfaceElevated/80 px-3.5 py-1 text-xs font-mono backdrop-blur-md">
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-limeAccent opacity-75"></span>
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-limeAccent"></span>
-              </span>
-              <span className="text-textMuted tracking-wider uppercase text-[11px]">Real-Time Financial Discovery</span>
-            </div>
+
 
             {/* Editorial Serif Contrast Headline */}
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-heading font-extrabold tracking-tight text-textMain leading-[1.12]">

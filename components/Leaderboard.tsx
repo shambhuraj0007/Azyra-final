@@ -364,97 +364,104 @@ export default function Leaderboard({
 
       {/* TOP 3 PODIUM / SPOTLIGHT SHOWCASE */}
       {searchTerm === '' && selectedCategory === 'All' && sortedProducts.length >= 3 && (
-        <div className="pt-4 pb-2">
-          <div className="text-center mb-6">
-            <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-limeAccent bg-limeAccent/10 px-2.5 py-0.5 rounded-full border border-limeAccent/20">
+        <div className="pt-6 pb-4">
+          {/* Section Header */}
+          <div className="text-center mb-10">
+            <span className="inline-flex items-center gap-1.5 text-[10px] font-mono font-bold uppercase tracking-widest text-limeAccent bg-limeAccent/10 px-3 py-1 rounded-full border border-limeAccent/20 backdrop-blur-md shadow-sm">
               The Sovereign Heights
             </span>
-            <h2 className="text-2xl sm:text-3xl font-heading font-black text-textMain tracking-tight mt-2">
+            <h2 className="text-3xl sm:text-4xl font-heading font-black text-textMain tracking-tight mt-3">
               Top three. <span className="font-serif italic font-normal text-limeAccent">Pure capital.</span>
             </h2>
-            <p className="text-xs text-textMuted mt-1 max-w-md mx-auto">
+            <p className="text-xs text-textMuted/80 mt-2 max-w-md mx-auto leading-relaxed">
               Holding the most valuable product real estate on the internet through pure capital allocation.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-6 items-end">
-            {/* Rank 2 (Silver) */}
+          {/* Podium Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 items-end">
+
+            {/* ----------------- RANK 2 (SILVER GLASS) ----------------- */}
             {top2 && (
               <div
-                className={`order-2 md:order-1 card-craft relative rounded-2xl p-5 shadow-xl transition-all hover:-translate-y-1 ${isUserStartup(top2.url)
-                  ? 'border-limeAccent ring-2 ring-limeAccent/70 shadow-[0_0_35px_rgba(209,250,77,0.2)] bg-gradient-to-b from-limeAccent/10 via-surface to-surface'
-                  : ''
+                className={`order-2 md:order-1 relative rounded-3xl p-6 transition-all duration-300 hover:-translate-y-2 backdrop-blur-xl border bg-gradient-to-b from-white/[0.07] to-white/[0.02] shadow-[0_8px_32px_0_rgba(0,0,0,0.36)] ${isUserStartup(top2.url)
+                  ? 'border-limeAccent ring-2 ring-limeAccent/50 shadow-[0_0_40px_rgba(209,250,77,0.2)]'
+                  : 'border-white/10 hover:border-slate-300/30'
                   }`}
               >
-                {/* YOUR LISTING BADGE IF APPLICABLE */}
+                {/* User Badge */}
                 {isUserStartup(top2.url) && (
-                  <div className="absolute -top-3.5 right-4 z-20 flex items-center gap-1.5 rounded-full bg-limeAccent px-3 py-1 text-[10px] font-heading font-black text-[#0B0F10] shadow-lg shadow-limeAccent/40 animate-pulse">
+                  <div className="absolute -top-3.5 right-6 z-20 flex items-center gap-1.5 rounded-full bg-limeAccent px-3 py-1 text-[10px] font-heading font-black text-[#0B0F10] shadow-lg shadow-limeAccent/30 animate-pulse">
                     <Sparkles className="h-3 w-3 fill-[#0B0F10]" />
                     <span>YOUR STARTUP</span>
                   </div>
                 )}
 
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-surfaceElevated font-mono font-black text-textMain text-sm ring-1 ring-borderMuted">
+                {/* Header Row */}
+                <div className="flex items-center justify-between mb-5">
+                  <div className="flex items-center gap-2.5">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-white/5 font-mono font-black text-textMain text-sm border border-white/10 backdrop-blur-md shadow-inner">
                       #2
                     </span>
-                    <span className="text-xs font-heading font-bold uppercase tracking-wider text-textMuted">
+                    <span className="text-xs font-heading font-bold uppercase tracking-widest text-slate-300/80">
                       Silver
                     </span>
                   </div>
-                  <span className="rounded bg-surfaceElevated px-2 py-0.5 text-[11px] font-mono font-semibold text-textMuted border border-borderMuted">
+                  <span className="rounded-full bg-white/5 px-2.5 py-0.5 text-[10px] font-mono font-semibold text-textMuted border border-white/10 backdrop-blur-sm">
                     {top2.category}
                   </span>
                 </div>
 
-                <div className="flex items-start gap-3 mb-3">
-                  <div className="p-2 rounded-xl bg-surfaceElevated border border-borderMuted shrink-0">
-                    <FaviconImage url={top2.url} fallback={top2.logo} className="w-8 h-8 rounded-lg" size={128} />
+                {/* Product Details */}
+                <div className="flex items-start gap-3.5 mb-4">
+                  <div className="p-2.5 rounded-2xl bg-white/5 border border-white/10 shrink-0 shadow-inner backdrop-blur-md">
+                    <FaviconImage url={top2.url} fallback={top2.logo} className="w-8 h-8 rounded-xl" size={128} />
                   </div>
-                  <div>
-                    <h3 className="text-lg font-heading font-black text-textMain hover:text-limeAccent transition">
-                      <a href={top2.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1">
+                  <div className="min-w-0">
+                    <h3 className="text-lg font-heading font-black text-textMain hover:text-limeAccent transition truncate">
+                      <a href={top2.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5">
                         {top2.name}
-                        <ExternalLink className="h-3.5 w-3.5 opacity-60" />
+                        <ExternalLink className="h-3.5 w-3.5 opacity-50 shrink-0" />
                       </a>
                     </h3>
-                    <p className="text-xs text-textMuted line-clamp-2 mt-0.5">
+                    <p className="text-xs text-textMuted line-clamp-2 mt-0.5 leading-relaxed">
                       {top2.tagline}
                     </p>
                   </div>
                 </div>
 
-                <div className="my-4 rounded-xl bg-surfaceElevated p-3 border border-borderMuted flex justify-between items-center">
+                {/* Stats Box */}
+                <div className="my-5 rounded-2xl bg-black/20 p-3.5 border border-white/5 backdrop-blur-md flex justify-between items-center shadow-inner">
                   <div>
-                    <span className="text-[10px] uppercase font-mono font-semibold text-textMuted">
+                    <span className="text-[9px] uppercase font-mono tracking-wider font-semibold text-textMuted/70 block mb-0.5">
                       {board === 'all-time' ? 'Total Contributed' : 'Today Spent'}
                     </span>
-                    <div className="text-xl font-mono font-black text-textMain">
+                    <div className="text-xl font-mono font-black text-textMain tracking-tight">
                       ${(board === 'all-time' ? top2.allTimeSpend : top2.todaySpend).toLocaleString()}
                     </div>
                   </div>
-                  <div className="text-right text-xs text-textMuted">
-                    <div className="font-mono">{top2.clicks?.toLocaleString() || 0} clicks</div>
-                    <div className="text-[10px] text-emeraldAccent font-semibold">Active</div>
+                  <div className="text-right text-xs">
+                    <div className="font-mono text-textMuted font-medium">{top2.clicks?.toLocaleString() || 0} clicks</div>
+                    <div className="text-[10px] text-emerald-400 font-semibold mt-0.5">Active</div>
                   </div>
                 </div>
 
+                {/* Action Button */}
                 <button
                   onClick={() => onClaimRank(2, top2.url, top2.name)}
-                  className={`w-full rounded-xl font-heading font-bold py-2.5 px-3 text-xs flex items-center justify-center gap-2 border shadow-md transition active:scale-[0.98] ${isUserStartup(top2.url)
-                    ? 'bg-limeAccent text-[#0B0F10] border-limeAccent hover:brightness-110 font-black'
-                    : 'bg-surfaceElevated hover:bg-surface text-textMain hover:border-limeAccent border-borderMuted'
+                  className={`w-full rounded-2xl font-heading font-bold py-3 px-4 text-xs flex items-center justify-center gap-2 border transition-all duration-200 active:scale-[0.98] ${isUserStartup(top2.url)
+                    ? 'bg-limeAccent text-[#0B0F10] border-limeAccent hover:brightness-110 font-black shadow-lg shadow-limeAccent/20'
+                    : 'bg-white/5 hover:bg-white/10 text-textMain border-white/10 hover:border-limeAccent/50 backdrop-blur-md shadow-sm'
                     }`}
                 >
                   {isUserStartup(top2.url) ? (
                     <>
-                      <ShieldCheck className="h-3.5 w-3.5 text-[#0B0F10]" />
+                      <ShieldCheck className="h-4 w-4 text-[#0B0F10]" />
                       <span>Defend Your Rank #2 (${getOvertakeCost(2).toLocaleString()})</span>
                     </>
                   ) : (
                     <>
-                      <Coins className="h-3.5 w-3.5 text-textMuted" />
+                      <Coins className="h-4 w-4 text-textMuted" />
                       <span>Claim #2 (${getOvertakeCost(2).toLocaleString()})</span>
                     </>
                   )}
@@ -462,47 +469,50 @@ export default function Leaderboard({
               </div>
             )}
 
-            {/* Rank 1 (Electric Lime Monarch) - Elevated Podium */}
+            {/* ----------------- RANK 1 (ELECTRIC LIME MONARCH) ----------------- */}
             {top1 && (
               <div
-                className={`order-1 md:order-2 relative rounded-3xl border-2 bg-gradient-to-b from-limeAccent/10 via-surface to-surface p-6 shadow-2xl glow-lime transition-all hover:scale-[1.02] -translate-y-2 ${isUserStartup(top1.url)
-                  ? 'border-limeAccent ring-4 ring-limeAccent/60 shadow-[0_0_45px_rgba(209,250,77,0.3)]'
-                  : 'border-limeAccent'
+                className={`order-1 md:order-2 relative rounded-[2rem] p-7 transition-all duration-300 hover:scale-[1.02] -translate-y-3 backdrop-blur-2xl border-2 bg-gradient-to-b from-limeAccent/15 via-white/[0.05] to-black/40 shadow-[0_0_50px_rgba(209,250,77,0.2)] ${isUserStartup(top1.url)
+                  ? 'border-limeAccent ring-4 ring-limeAccent/40 shadow-[0_0_60px_rgba(209,250,77,0.35)]'
+                  : 'border-limeAccent/80'
                   }`}
               >
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5 rounded-full bg-limeAccent px-4 py-1 text-xs font-heading font-black text-[#0B0F10] shadow-lg shadow-limeAccent/40">
-                  <Crown className="h-3.5 w-3.5 fill-[#0B0F10]" />
+                {/* King Crown Badge */}
+                <div className="absolute -top-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5 rounded-full bg-limeAccent px-4 py-1.5 text-xs font-heading font-black text-[#0B0F10] shadow-xl shadow-limeAccent/40 border border-limeAccent">
+                  <Crown className="h-4 w-4 fill-[#0B0F10]" />
                   <span>{isUserStartup(top1.url) ? 'YOUR REIGNING #1 LISTING' : 'REIGNING #1 KING'}</span>
                 </div>
 
-                <div className="flex items-center justify-between mb-4 pt-2">
-                  <div className="flex items-center gap-2">
-                    <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-limeAccent font-heading font-black text-[#0B0F10] text-base shadow-md shadow-limeAccent/30">
+                {/* Header Row */}
+                <div className="flex items-center justify-between mb-5 pt-3">
+                  <div className="flex items-center gap-2.5">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-limeAccent font-heading font-black text-[#0B0F10] text-lg shadow-lg shadow-limeAccent/30">
                       #1
                     </span>
                     <div>
-                      <span className="text-xs font-heading font-extrabold uppercase tracking-wider text-limeAccent flex items-center gap-1">
+                      <span className="text-xs font-heading font-black uppercase tracking-wider text-limeAccent flex items-center gap-1">
                         Lime Monarch
                       </span>
-                      <span className="text-[10px] text-textMuted font-mono">
+                      <span className="text-[10px] text-textMuted font-mono block">
                         Overtake requires +$5 min
                       </span>
                     </div>
                   </div>
-                  <span className="rounded-full bg-limeAccent/15 px-2.5 py-0.5 text-xs font-mono font-bold text-limeAccent border border-limeAccent/30">
+                  <span className="rounded-full bg-limeAccent/20 px-3 py-1 text-xs font-mono font-bold text-limeAccent border border-limeAccent/30 backdrop-blur-md">
                     {top1.category}
                   </span>
                 </div>
 
-                <div className="flex items-start gap-3.5 mb-4">
-                  <div className="p-2.5 rounded-2xl bg-surfaceElevated border border-limeAccent/40 shadow-inner shrink-0">
+                {/* Product Details */}
+                <div className="flex items-start gap-4 mb-5">
+                  <div className="p-3 rounded-2xl bg-black/40 border border-limeAccent/40 shadow-inner shrink-0 backdrop-blur-md">
                     <FaviconImage url={top1.url} fallback={top1.logo} className="w-10 h-10 rounded-xl" size={128} />
                   </div>
-                  <div>
-                    <h3 className="text-xl font-heading font-black text-textMain hover:text-limeAccent transition">
-                      <a href={top1.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5">
+                  <div className="min-w-0">
+                    <h3 className="text-2xl font-heading font-black text-textMain hover:text-limeAccent transition truncate">
+                      <a href={top1.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2">
                         {top1.name}
-                        <ExternalLink className="h-4 w-4 text-limeAccent opacity-80" />
+                        <ExternalLink className="h-4 w-4 text-limeAccent opacity-80 shrink-0" />
                       </a>
                     </h3>
                     <p className="text-xs text-textMuted line-clamp-2 mt-1 leading-relaxed">
@@ -511,29 +521,31 @@ export default function Leaderboard({
                   </div>
                 </div>
 
-                <div className="my-4 rounded-2xl bg-surfaceElevated p-3.5 border border-limeAccent/30 flex justify-between items-center">
+                {/* Highlight Stats Box */}
+                <div className="my-5 rounded-2xl bg-black/30 p-4 border border-limeAccent/30 flex justify-between items-center shadow-inner backdrop-blur-md">
                   <div>
-                    <span className="text-[10px] uppercase font-mono font-bold text-limeAccent/90">
+                    <span className="text-[9px] uppercase font-mono tracking-widest font-bold text-limeAccent/90 block mb-0.5">
                       {board === 'all-time' ? 'Dominant Capital Spent' : 'Today Spent'}
                     </span>
-                    <div className="text-2xl font-mono font-black text-limeAccent">
+                    <div className="text-2xl font-mono font-black text-limeAccent tracking-tight">
                       ${(board === 'all-time' ? top1.allTimeSpend : top1.todaySpend).toLocaleString()}
                     </div>
                   </div>
-                  <div className="text-right text-xs text-textMuted">
-                    <div className="font-mono font-semibold text-textMain">
+                  <div className="text-right text-xs">
+                    <div className="font-mono font-bold text-textMain">
                       {top1.clicks?.toLocaleString() || 0} clicks
                     </div>
-                    <div className="text-[10px] text-emeraldAccent font-mono font-bold flex items-center gap-1 justify-end">
-                      <span className="h-1.5 w-1.5 rounded-full bg-emeraldAccent animate-pulse"></span>
+                    <div className="text-[10px] text-emerald-400 font-mono font-bold flex items-center gap-1.5 justify-end mt-1">
+                      <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
                       Prime Spot
                     </div>
                   </div>
                 </div>
 
+                {/* CTA Button */}
                 <button
                   onClick={() => onClaimRank(1, top1.url, top1.name)}
-                  className="w-full rounded-2xl bg-limeAccent hover:brightness-110 text-[#0B0F10] font-heading font-black py-3 px-4 text-sm flex items-center justify-center gap-2 shadow-lg shadow-limeAccent/30 transition-all hover:scale-[1.01] active:scale-[0.98]"
+                  className="w-full rounded-2xl bg-limeAccent hover:bg-limeAccent/90 text-[#0B0F10] font-heading font-black py-3.5 px-4 text-sm flex items-center justify-center gap-2 shadow-xl shadow-limeAccent/30 transition-all duration-200 active:scale-[0.98]"
                 >
                   {isUserStartup(top1.url) ? (
                     <>
@@ -550,89 +562,94 @@ export default function Leaderboard({
               </div>
             )}
 
-            {/* Rank 3 (Bronze) */}
+            {/* ----------------- RANK 3 (BRONZE GLASS) ----------------- */}
             {top3 && (
               <div
-                className={`order-3 relative rounded-2xl border bg-surface p-5 shadow-xl transition-all hover:-translate-y-1 ${isUserStartup(top3.url)
-                  ? 'border-limeAccent ring-2 ring-limeAccent/70 shadow-[0_0_35px_rgba(209,250,77,0.2)] bg-gradient-to-b from-limeAccent/10 via-surface to-surface'
-                  : 'border-borderMuted hover:border-limeAccent/40'
+                className={`order-3 relative rounded-3xl p-6 transition-all duration-300 hover:-translate-y-2 backdrop-blur-xl border bg-gradient-to-b from-white/[0.07] to-white/[0.02] shadow-[0_8px_32px_0_rgba(0,0,0,0.36)] ${isUserStartup(top3.url)
+                  ? 'border-limeAccent ring-2 ring-limeAccent/50 shadow-[0_0_40px_rgba(209,250,77,0.2)]'
+                  : 'border-white/10 hover:border-amber-600/30'
                   }`}
               >
-                {/* YOUR LISTING BADGE IF APPLICABLE */}
+                {/* User Badge */}
                 {isUserStartup(top3.url) && (
-                  <div className="absolute -top-3.5 right-4 z-20 flex items-center gap-1.5 rounded-full bg-limeAccent px-3 py-1 text-[10px] font-heading font-black text-[#0B0F10] shadow-lg shadow-limeAccent/40 animate-pulse">
+                  <div className="absolute -top-3.5 right-6 z-20 flex items-center gap-1.5 rounded-full bg-limeAccent px-3 py-1 text-[10px] font-heading font-black text-[#0B0F10] shadow-lg shadow-limeAccent/30 animate-pulse">
                     <Sparkles className="h-3 w-3 fill-[#0B0F10]" />
                     <span>YOUR STARTUP</span>
                   </div>
                 )}
 
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-surfaceElevated font-mono font-black text-textMain text-sm ring-1 ring-borderMuted">
+                {/* Header Row */}
+                <div className="flex items-center justify-between mb-5">
+                  <div className="flex items-center gap-2.5">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-white/5 font-mono font-black text-textMain text-sm border border-white/10 backdrop-blur-md shadow-inner">
                       #3
                     </span>
-                    <span className="text-xs font-heading font-bold uppercase tracking-wider text-textMuted">
+                    <span className="text-xs font-heading font-bold uppercase tracking-widest text-amber-500/80">
                       Bronze
                     </span>
                   </div>
-                  <span className="rounded bg-surfaceElevated px-2 py-0.5 text-[11px] font-mono font-semibold text-textMuted border border-borderMuted">
+                  <span className="rounded-full bg-white/5 px-2.5 py-0.5 text-[10px] font-mono font-semibold text-textMuted border border-white/10 backdrop-blur-sm">
                     {top3.category}
                   </span>
                 </div>
 
-                <div className="flex items-start gap-3 mb-3">
-                  <div className="p-2 rounded-xl bg-surfaceElevated border border-borderMuted shrink-0">
-                    <FaviconImage url={top3.url} fallback={top3.logo} className="w-8 h-8 rounded-lg" size={128} />
+                {/* Product Details */}
+                <div className="flex items-start gap-3.5 mb-4">
+                  <div className="p-2.5 rounded-2xl bg-white/5 border border-white/10 shrink-0 shadow-inner backdrop-blur-md">
+                    <FaviconImage url={top3.url} fallback={top3.logo} className="w-8 h-8 rounded-xl" size={128} />
                   </div>
-                  <div>
-                    <h3 className="text-lg font-heading font-black text-textMain hover:text-limeAccent transition">
-                      <a href={top3.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1">
+                  <div className="min-w-0">
+                    <h3 className="text-lg font-heading font-black text-textMain hover:text-limeAccent transition truncate">
+                      <a href={top3.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5">
                         {top3.name}
-                        <ExternalLink className="h-3.5 w-3.5 opacity-60" />
+                        <ExternalLink className="h-3.5 w-3.5 opacity-50 shrink-0" />
                       </a>
                     </h3>
-                    <p className="text-xs text-textMuted line-clamp-2 mt-0.5">
+                    <p className="text-xs text-textMuted line-clamp-2 mt-0.5 leading-relaxed">
                       {top3.tagline}
                     </p>
                   </div>
                 </div>
 
-                <div className="my-4 rounded-xl bg-surfaceElevated p-3 border border-borderMuted flex justify-between items-center">
+                {/* Stats Box */}
+                <div className="my-5 rounded-2xl bg-black/20 p-3.5 border border-white/5 backdrop-blur-md flex justify-between items-center shadow-inner">
                   <div>
-                    <span className="text-[10px] uppercase font-mono font-semibold text-textMuted">
+                    <span className="text-[9px] uppercase font-mono tracking-wider font-semibold text-textMuted/70 block mb-0.5">
                       {board === 'all-time' ? 'Total Contributed' : 'Today Spent'}
                     </span>
-                    <div className="text-xl font-mono font-black text-textMain">
+                    <div className="text-xl font-mono font-black text-textMain tracking-tight">
                       ${(board === 'all-time' ? top3.allTimeSpend : top3.todaySpend).toLocaleString()}
                     </div>
                   </div>
-                  <div className="text-right text-xs text-textMuted">
-                    <div className="font-mono">{top3.clicks?.toLocaleString() || 0} clicks</div>
-                    <div className="text-[10px] text-emeraldAccent font-semibold">Active</div>
+                  <div className="text-right text-xs">
+                    <div className="font-mono text-textMuted font-medium">{top3.clicks?.toLocaleString() || 0} clicks</div>
+                    <div className="text-[10px] text-emerald-400 font-semibold mt-0.5">Active</div>
                   </div>
                 </div>
 
+                {/* Action Button */}
                 <button
                   onClick={() => onClaimRank(3, top3.url, top3.name)}
-                  className={`w-full rounded-xl font-heading font-bold py-2.5 px-3 text-xs flex items-center justify-center gap-2 border shadow-md transition active:scale-[0.98] ${isUserStartup(top3.url)
-                    ? 'bg-limeAccent text-[#0B0F10] border-limeAccent hover:brightness-110 font-black'
-                    : 'bg-surfaceElevated hover:bg-surface text-textMain hover:border-limeAccent border-borderMuted'
+                  className={`w-full rounded-2xl font-heading font-bold py-3 px-4 text-xs flex items-center justify-center gap-2 border transition-all duration-200 active:scale-[0.98] ${isUserStartup(top3.url)
+                    ? 'bg-limeAccent text-[#0B0F10] border-limeAccent hover:brightness-110 font-black shadow-lg shadow-limeAccent/20'
+                    : 'bg-white/5 hover:bg-white/10 text-textMain border-white/10 hover:border-limeAccent/50 backdrop-blur-md shadow-sm'
                     }`}
                 >
                   {isUserStartup(top3.url) ? (
                     <>
-                      <ShieldCheck className="h-3.5 w-3.5 text-[#0B0F10]" />
+                      <ShieldCheck className="h-4 w-4 text-[#0B0F10]" />
                       <span>Defend Your Rank #3 (${getOvertakeCost(3).toLocaleString()})</span>
                     </>
                   ) : (
                     <>
-                      <Coins className="h-3.5 w-3.5 text-textMuted" />
+                      <Coins className="h-4 w-4 text-textMuted" />
                       <span>Claim #3 (${getOvertakeCost(3).toLocaleString()})</span>
                     </>
                   )}
                 </button>
               </div>
             )}
+
           </div>
         </div>
       )}
@@ -684,11 +701,10 @@ export default function Leaderboard({
                       setQuickTargetRank(rk);
                       setCustomRankInput('');
                     }}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-heading font-bold transition-all ${
-                      quickTargetRank === rk && customRankInput === ''
-                        ? 'bg-limeAccent text-[#0B0F10] shadow-md shadow-limeAccent/30 font-black scale-105'
-                        : 'text-textMuted hover:text-textMain hover:bg-surface'
-                    }`}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-heading font-bold transition-all ${quickTargetRank === rk && customRankInput === ''
+                      ? 'bg-limeAccent text-[#0B0F10] shadow-md shadow-limeAccent/30 font-black scale-105'
+                      : 'text-textMuted hover:text-textMain hover:bg-surface'
+                      }`}
                   >
                     #{rk}
                   </button>
@@ -697,11 +713,10 @@ export default function Leaderboard({
                 {/* Custom Rank Input Option */}
                 <div className="flex items-center pl-1 border-l border-borderMuted/60">
                   <div
-                    className={`flex items-center gap-0.5 px-2 py-0.5 rounded-lg border transition-all ${
-                      customRankInput !== ''
-                        ? 'bg-limeAccent text-[#0B0F10] border-limeAccent shadow-md shadow-limeAccent/30 font-black ring-1 ring-limeAccent/40'
-                        : 'bg-surface/70 border-borderMuted text-textMuted hover:border-limeAccent/50 focus-within:border-limeAccent focus-within:text-limeAccent'
-                    }`}
+                    className={`flex items-center gap-0.5 px-2 py-0.5 rounded-lg border transition-all ${customRankInput !== ''
+                      ? 'bg-limeAccent text-[#0B0F10] border-limeAccent shadow-md shadow-limeAccent/30 font-black ring-1 ring-limeAccent/40'
+                      : 'bg-surface/70 border-borderMuted text-textMuted hover:border-limeAccent/50 focus-within:border-limeAccent focus-within:text-limeAccent'
+                      }`}
                   >
                     <span className={`text-[11px] font-mono font-bold ${customRankInput !== '' ? 'text-[#0B0F10]' : 'text-textMuted'}`}>
                       #
@@ -720,11 +735,10 @@ export default function Leaderboard({
                           setQuickTargetRank(Math.min(100, Math.max(1, val)));
                         }
                       }}
-                      className={`w-12 sm:w-14 bg-transparent text-xs font-mono font-bold text-center outline-none ${
-                        customRankInput !== ''
-                          ? 'text-[#0B0F10] placeholder:text-[#0B0F10]/50 font-black'
-                          : 'text-textMain placeholder:text-textMuted/50'
-                      }`}
+                      className={`w-12 sm:w-14 bg-transparent text-xs font-mono font-bold text-center outline-none ${customRankInput !== ''
+                        ? 'text-[#0B0F10] placeholder:text-[#0B0F10]/50 font-black'
+                        : 'text-textMain placeholder:text-textMuted/50'
+                        }`}
                     />
                   </div>
                 </div>
