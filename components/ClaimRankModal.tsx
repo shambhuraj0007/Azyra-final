@@ -141,7 +141,7 @@ export default function ClaimRankModal({
     return (
       existingProduct.id === currentHolder.id ||
       existingProduct.url.trim().toLowerCase().replace(/\/$/, '') ===
-        currentHolder.url.trim().toLowerCase().replace(/\/$/, '')
+      currentHolder.url.trim().toLowerCase().replace(/\/$/, '')
     );
   }, [existingProduct, currentHolder]);
 
@@ -298,11 +298,10 @@ export default function ClaimRankModal({
                     setTargetRank(rk);
                     setCustomBid('');
                   }}
-                  className={`py-1.5 px-2.5 sm:px-3 rounded-lg text-xs font-mono font-bold transition border ${
-                    targetRank === rk
+                  className={`py-1.5 px-2.5 sm:px-3 rounded-lg text-xs font-mono font-bold transition border ${targetRank === rk
                       ? 'bg-limeAccent text-[#0B0F10] border-limeAccent shadow-sm'
                       : 'bg-white/5 text-textMuted border-white/10 hover:text-white hover:border-white/20'
-                  }`}
+                    }`}
                 >
                   #{rk}
                 </button>
@@ -313,11 +312,10 @@ export default function ClaimRankModal({
                   setTargetRank(products.length + 1);
                   setCustomBid('1');
                 }}
-                className={`py-1.5 px-2.5 rounded-lg text-xs font-mono font-semibold transition border ${
-                  targetRank === products.length + 1
+                className={`py-1.5 px-2.5 rounded-lg text-xs font-mono font-semibold transition border ${targetRank === products.length + 1
                     ? 'bg-emeraldAccent text-[#0B0F10] border-emeraldAccent font-bold'
                     : 'bg-white/5 text-emerald-400/90 border-emerald-500/20 hover:border-emerald-400/40'
-                }`}
+                  }`}
               >
                 Bottom (#{products.length + 1}) · $1
               </button>
@@ -416,18 +414,18 @@ export default function ClaimRankModal({
                     <select
                       value={category}
                       onChange={(e) => setCategory(e.target.value as any)}
-                      className="sm:col-span-1 bg-white/5 border border-white/10 rounded-xl px-2 py-2 text-xs text-white focus:border-limeAccent outline-none"
+                      className="sm:col-span-1 bg-neutral-900 border border-white/10 rounded-xl px-2 py-2 text-xs text-white focus:border-limeAccent outline-none cursor-pointer"
                     >
-                      <option value="AI & ML">AI & ML</option>
-                      <option value="DevTools">DevTools</option>
-                      <option value="SaaS">SaaS</option>
-                      <option value="Web3">Web3</option>
-                      <option value="Fintech">Fintech</option>
-                      <option value="Design">Design</option>
-                      <option value="Productivity">Productivity</option>
-                      <option value="Marketing">Marketing</option>
-                      <option value="E-commerce">E-commerce</option>
-                      <option value="Others">Others</option>
+                      <option value="AI & ML" className="bg-neutral-900 text-white">AI & ML</option>
+                      <option value="DevTools" className="bg-neutral-900 text-white">DevTools</option>
+                      <option value="SaaS" className="bg-neutral-900 text-white">SaaS</option>
+                      <option value="Web3" className="bg-neutral-900 text-white">Web3</option>
+                      <option value="Fintech" className="bg-neutral-900 text-white">Fintech</option>
+                      <option value="Design" className="bg-neutral-900 text-white">Design</option>
+                      <option value="Productivity" className="bg-neutral-900 text-white">Productivity</option>
+                      <option value="Marketing" className="bg-neutral-900 text-white">Marketing</option>
+                      <option value="E-commerce" className="bg-neutral-900 text-white">E-commerce</option>
+                      <option value="Others" className="bg-neutral-900 text-white">Others</option>
                     </select>
                   </div>
                 )}

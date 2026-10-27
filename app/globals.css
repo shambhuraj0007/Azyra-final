@@ -15,12 +15,10 @@
   --font-mono: var(--font-jetbrains-mono), monospace;
   --font-serif: var(--font-serif), Georgia, serif;
 }
-
 :root {
   --background: #000000;
   --foreground: #F4F7F6;
 }
-
 html {
   overflow-x: hidden;
   max-width: 100vw;

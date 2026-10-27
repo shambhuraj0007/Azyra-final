@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "@/lib/toast";
+import SocialPostRenderer from "@/components/SocialPostRenderer";
 
 interface Submission {
   id: string;
@@ -248,6 +249,11 @@ export default function AdminSubmissions() {
                         <p className="text-[10px] uppercase text-textMuted font-bold mb-1">Submitted</p>
                         <p className="text-sm font-medium">{new Date(sub.submitted_at).toLocaleDateString()}</p>
                       </div>
+                    </div>
+
+                    {/* Social Post Native Embed */}
+                    <div className="max-w-xl">
+                      <SocialPostRenderer url={sub.video_url} />
                     </div>
                   </div>
 

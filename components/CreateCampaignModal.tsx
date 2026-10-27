@@ -335,9 +335,6 @@ export default function CreateCampaignModal({ isOpen, onClose }: CreateCampaignM
                   <h2 className="text-xl sm:text-2xl font-heading font-bold text-textMain">
                     Launch Creator Campaign
                   </h2>
-                  <p className="text-xs text-textMuted line-clamp-1 sm:line-clamp-none">
-                    Set up escrow rewards, viral hook briefs, raw video footage, and payout criteria for creators
-                  </p>
                 </div>
               </div>
 

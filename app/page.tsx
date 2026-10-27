@@ -21,8 +21,8 @@ import HowItWorks from '../components/HowItWorks';
 import ClaimRankModal from '../components/ClaimRankModal';
 import AzyraLogo from '../components/AzyraLogo';
 import CinematicCanvas from '../components/CinematicCanvas';
-import { INITIAL_PRODUCTS, INITIAL_ACTIVITIES, sortLeaderboard } from '../lib/data';
-import { ProductEntry, BoardType, BidActivity } from '../lib/types';
+import { INITIAL_PRODUCTS, INITIAL_ACTIVITIES, sortLeaderboard, calculateProductTodaySpend, isPaymentToday } from '../lib/data';
+import { ProductEntry, BoardType, BidActivity, PaymentRecord } from '../lib/types';
 import { triggerConfetti } from '../lib/confetti';
 
 export default function Home() {
@@ -35,12 +35,25 @@ export default function Home() {
   const [modalProductName, setModalProductName] = useState('');
   const [userStartupUrls, setUserStartupUrls] = useState<string[]>([]);
 
-  // Hydrate from localStorage if available
+  // Hydrate from localStorage if available, ensuring todaySpend is calculated from payment dates
   useEffect(() => {
     try {
       const savedProducts = localStorage.getItem('outbid_products');
       if (savedProducts) {
-        setProducts(JSON.parse(savedProducts));
+        const parsed: ProductEntry[] = JSON.parse(savedProducts);
+        // Date of payment is strictly used to evaluate today's payment; all-time uses cumulative paid amount
+        const refreshed = parsed.map((p) => ({
+          ...p,
+          todaySpend: calculateProductTodaySpend(p),
+        }));
+        setProducts(refreshed);
+      } else {
+        setProducts(
+          INITIAL_PRODUCTS.map((p) => ({
+            ...p,
+            todaySpend: calculateProductTodaySpend(p),
+          }))
+        );
       }
       const savedActivities = localStorage.getItem('outbid_activities');
       if (savedActivities) {
@@ -114,7 +127,7 @@ export default function Home() {
     });
   };
 
-  // Process a new bid or bump
+  // Process a new bid or bump: date of payment is tracked for today, total paid amount for all-time
   const handlePlaceBid = ({
     productName,
     productUrl,
@@ -141,6 +154,11 @@ export default function Home() {
 
     let updatedList: ProductEntry[] = [];
     let updatedProduct: ProductEntry;
+    const now = Date.now();
+    const newPaymentRecord: PaymentRecord = {
+      amount: bidAmount,
+      timestamp: now,
+    };
 
     // Record old ranks before outbid to compute exact rank delta indicators
     const oldRanks = new Map<string, number>();
@@ -149,16 +167,24 @@ export default function Home() {
     });
 
     if (existingIndex !== -1) {
-      // Bump existing product: add bidAmount to cumulative spend
+      // Bump existing product: add bidAmount to allTimeSpend, and use date of payment to compute today's payment
       const current = products[existingIndex];
+      const existingPayments = current.payments || [];
+      const updatedPayments = [...existingPayments, newPaymentRecord];
+      const updatedTodaySpend = updatedPayments
+        .filter((p) => isPaymentToday(p.timestamp))
+        .reduce((sum, p) => sum + p.amount, 0);
+
       updatedProduct = {
         ...current,
         name: productName || current.name,
         tagline: tagline || current.tagline,
         logo: logo || current.logo,
         category: category || current.category,
-        allTimeSpend: current.allTimeSpend + bidAmount,
-        todaySpend: current.todaySpend + bidAmount,
+        allTimeSpend: current.allTimeSpend + bidAmount, // All-time uses cumulative paid amount
+        todaySpend: updatedTodaySpend,                 // Date of payment is used to track today's payment
+        lastPaymentDate: now,
+        payments: updatedPayments,
         recentBidDelta: bidAmount,
       };
       updatedList = [...products];
@@ -166,15 +192,17 @@ export default function Home() {
     } else {
       // New product entering the leaderboard
       updatedProduct = {
-        id: `prod-${Date.now()}`,
+        id: `prod-${now}`,
         name: productName,
         tagline: tagline || 'Built for modern builders',
         url: productUrl,
         logo: logo || '🚀',
         category,
-        allTimeSpend: bidAmount,
-        todaySpend: bidAmount,
-        createdAt: Date.now(), // timestamp for tie-breaker rule
+        allTimeSpend: bidAmount, // Total paid amount
+        todaySpend: bidAmount,   // Date of payment is today
+        lastPaymentDate: now,
+        payments: [newPaymentRecord],
+        createdAt: now, // timestamp for tie-breaker rule
         recentBidDelta: bidAmount,
         clicks: Math.floor(Math.random() * 50) + 10,
         description: tagline,
@@ -201,12 +229,12 @@ export default function Home() {
 
     // Add to activity stream
     const newActivity: BidActivity = {
-      id: `act-${Date.now()}`,
+      id: `act-${now}`,
       productId: updatedProduct.id,
       productName: updatedProduct.name,
       amount: bidAmount,
       targetRank,
-      timestamp: Date.now(),
+      timestamp: now,
       isBump,
     };
     const updatedActs = [newActivity, ...activities.slice(0, 19)];
@@ -217,8 +245,8 @@ export default function Home() {
     triggerConfetti();
   };
 
-  const totalCapitalAllTime = products.reduce((acc, p) => acc + p.allTimeSpend, 0);
-  const totalCapitalToday = products.reduce((acc, p) => acc + p.todaySpend, 0);
+  const totalCapitalAllTime = products.reduce((acc, p) => acc + (p.allTimeSpend || 0), 0);
+  const totalCapitalToday = products.reduce((acc, p) => acc + calculateProductTodaySpend(p), 0);
 
   return (
     <div className="relative min-h-screen bg-canvas text-textMain flex flex-col selection:bg-limeAccent selection:text-[#000000] font-sans">
@@ -232,44 +260,42 @@ export default function Home() {
         totalProducts={products.length}
       />
 
-      <main className="relative z-10 flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 py-8 space-y-12">
+      <main className="relative z-10 flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 pt-3 pb-8 sm:pt-4 sm:pb-12 space-y-4 sm:space-y-5">
         {/* HERO SECTION */}
-        <section className="card-craft relative w-full rounded-3xl p-6 sm:p-12 overflow-hidden shadow-2xl">
+        <section className="card-craft relative w-full rounded-2xl py-5 px-5 sm:py-6 sm:px-8 overflow-hidden shadow-2xl">
           {/* Subtle inner radial glow */}
-          <div className="pointer-events-none absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 h-[320px] w-[560px] rounded-full bg-limeAccent/[0.08] blur-[110px]" />
+          <div className="pointer-events-none absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 h-[220px] w-[460px] rounded-full bg-limeAccent/[0.08] blur-[90px]" />
 
-          <div className="relative z-10 mx-auto max-w-3xl text-center flex flex-col items-center gap-6">
-
-
+          <div className="relative z-10 mx-auto max-w-3xl text-center flex flex-col items-center gap-2.5 sm:gap-3">
             {/* Editorial Serif Contrast Headline */}
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-heading font-extrabold tracking-tight text-textMain leading-[1.12]">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-heading font-extrabold tracking-tight text-textMain leading-[1.16]">
               Stop waiting on algorithms.<br className="hidden sm:block" />
               <span className="font-serif italic font-normal text-limeAccent"> Own your visibility.</span>
             </h1>
 
             {/* Cleaner, elegant sub-copy */}
-            <p className="text-sm sm:text-base text-textMuted max-w-xl font-sans leading-relaxed">
+            <p className="text-xs sm:text-sm text-textMuted max-w-lg font-sans leading-relaxed">
               No fake upvotes or shadowbans. Just guaranteed exposure. Outbid the leader to claim the top spot and climb.
             </p>
 
             {/* ReleaseStack-styled interactive pill buttons */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2 w-full sm:w-auto">
+            <div className="flex flex-row items-center justify-center gap-2.5 pt-0.5 w-auto">
               <button
                 onClick={() => handleOpenBidModal(1)}
-                className="group relative flex w-full sm:w-auto items-center justify-center gap-2 rounded-full bg-limeAccent px-6 py-3 text-sm font-heading font-bold text-[#070B0C] transition-all duration-200 hover:brightness-110 active:scale-[0.98] shadow-lg shadow-limeAccent/20 hover:shadow-limeAccent/30"
+                className="group relative flex items-center justify-center gap-2 rounded-full bg-limeAccent px-4.5 py-2 sm:px-5 sm:py-2.5 text-xs sm:text-sm font-heading font-bold text-[#070B0C] transition-all duration-200 hover:brightness-110 active:scale-[0.98] shadow-md shadow-limeAccent/20 hover:shadow-limeAccent/30"
               >
-                <Sparkles className="h-4 w-4 fill-[#070B0C]" />
+                <Sparkles className="h-3.5 w-3.5 fill-[#070B0C]" />
                 <span>Claim the #1 Spot</span>
-                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1 group-hover:-translate-y-0.5" />
+                <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1 group-hover:-translate-y-0.5" />
               </button>
 
               <Link
                 href="/campaigns"
-                className="group flex w-full sm:w-auto items-center justify-center gap-2 rounded-full border border-borderMuted bg-surfaceElevated/60 px-6 py-3 text-sm font-heading font-medium text-textMain transition-all duration-200 hover:border-emeraldAccent/40 hover:bg-surfaceElevated active:scale-[0.98] backdrop-blur-sm"
+                className="group flex items-center justify-center gap-2 rounded-full border border-borderMuted bg-surfaceElevated/60 px-4.5 py-2 sm:px-5 sm:py-2.5 text-xs sm:text-sm font-heading font-medium text-textMain transition-all duration-200 hover:border-emeraldAccent/40 hover:bg-surfaceElevated active:scale-[0.98] backdrop-blur-sm"
               >
-                <Megaphone className="h-4 w-4 text-emeraldAccent transition-transform group-hover:-rotate-12" />
+                <Megaphone className="h-3.5 w-3.5 text-emeraldAccent transition-transform group-hover:-rotate-12" />
                 <span>Earn as a Creator</span>
-                <ArrowRight className="h-4 w-4 opacity-50 transition-transform group-hover:translate-x-0.5 group-hover:opacity-100" />
+                <ArrowRight className="h-3.5 w-3.5 opacity-50 transition-transform group-hover:translate-x-0.5 group-hover:opacity-100" />
               </Link>
             </div>
           </div>

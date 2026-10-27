@@ -36,13 +36,17 @@ import {
   XCircle,
   CheckCheck,
   FileText,
-  AlertTriangle
+  AlertTriangle,
+  ScanLine,
+  Camera,
+  Loader2
 } from 'lucide-react';
 import Navbar from '../../../components/Navbar';
 import WithdrawModal from '../../../components/WithdrawModal';
 import CreateCampaignModal from '../../../components/CreateCampaignModal';
 import { useCampaigns } from '../../../lib/CampaignContext';
 import AzyraLogo from '../../../components/AzyraLogo';
+import SocialPostRenderer from '../../../components/SocialPostRenderer';
 import { parseSocialUrl, formatPlatform } from '../../../lib/campaignUtils';
 import { SocialPlatform } from '../../../lib/types';
 import { toast, handleUnauthorized } from '@/lib/toast';
@@ -66,7 +70,8 @@ function CampaignWorkspaceContent({ params }: PageProps) {
     submitClip,
     verifySubmission,
     cancelSubmission,
-    toggleCampaignStatus
+    toggleCampaignStatus,
+    trackViewsViaOcr
   } = useCampaigns();
 
   const [copiedTag, setCopiedTag] = useState<string | null>(null);
@@ -78,6 +83,11 @@ function CampaignWorkspaceContent({ params }: PageProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+
+  // OCR View Tracking State
+  const [isScanningOcr, setIsScanningOcr] = useState(false);
+  const [ocrScanningSubId, setOcrScanningSubId] = useState<string | null>(null);
+  const [detectedOcrSnippet, setDetectedOcrSnippet] = useState<string | null>(null);
 
   // Sponsor Verification Hub State
   const [verificationFilter, setVerificationFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
@@ -201,7 +211,45 @@ function CampaignWorkspaceContent({ params }: PageProps) {
     setVideoUrl('');
     setReportedViews(0);
     setProofNotes('');
+    setDetectedOcrSnippet(null);
     setTimeout(() => setSubmitSuccess(false), 3000);
+  };
+
+  // OCR Scan Handler for Submission Form
+  const handleScanFormViewsViaOcr = async () => {
+    if (!videoUrl.trim()) {
+      toast.error('URL Required', 'Please paste your published post URL first to scan views.');
+      return;
+    }
+    setIsScanningOcr(true);
+    setDetectedOcrSnippet(null);
+    toast.info('Scanning Post via OCR', 'Capturing headless screenshot and analyzing engagement metrics...');
+
+    const res = await trackViewsViaOcr({ url: videoUrl.trim() });
+    setIsScanningOcr(false);
+
+    if (res.success && res.views && res.views > 0) {
+      setReportedViews(res.views);
+      setDetectedOcrSnippet(res.matchedSnippet || `${res.views.toLocaleString()} views`);
+      toast.success('Views Detected via OCR!', `Found ${res.views.toLocaleString()} views on your live post.`);
+    } else {
+      toast.info('OCR Scan Complete', 'Could not parse views from page layout. You can enter your current views manually.');
+    }
+  };
+
+  // OCR Scan Handler for Existing Submission Card
+  const handleScanSubmissionViaOcr = async (sub: any) => {
+    setOcrScanningSubId(sub.id);
+    toast.info('Scanning Clip via OCR', `Capturing live post snapshot for ${formatPlatform(sub.platform).label}...`);
+
+    const res = await trackViewsViaOcr({ url: sub.video_url, submissionId: sub.id });
+    setOcrScanningSubId(null);
+
+    if (res.success && res.views && res.views > 0) {
+      toast.success('Views Verified via OCR!', `Updated to ${res.views.toLocaleString()} views (${res.matchedSnippet || 'OCR Verified'}).`);
+    } else {
+      toast.info('OCR Scan Complete', 'Post scanned. No higher view count detected on live page.');
+    }
   };
 
   // Open approval modal and pre-calculate payout suggestion
@@ -992,6 +1040,11 @@ function CampaignWorkspaceContent({ params }: PageProps) {
                             </a>
                           </div>
 
+                          {/* Native Social Media Embed / Rich Card */}
+                          <div className="pt-2 max-w-md">
+                            <SocialPostRenderer url={sub.video_url} />
+                          </div>
+
                           {/* Proof Notes if provided */}
                           {sub.proof_notes && (
                             <div className="rounded-xl bg-canvas/70 border border-borderMuted/80 p-2.5 text-xs text-textMuted flex items-start gap-2">
@@ -1163,12 +1216,45 @@ function CampaignWorkspaceContent({ params }: PageProps) {
                     )}
                   </div>
                 )}
+
+                {/* Live Post Embed Preview */}
+                {videoUrl.trim() && parsedPreview?.isValid && (
+                  <div className="pt-3">
+                    <span className="text-[10px] font-mono uppercase tracking-wider text-textMuted font-bold block mb-1">
+                      Post Live Preview:
+                    </span>
+                    <div className="max-w-md">
+                      <SocialPostRenderer url={videoUrl.trim()} />
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div>
-                <label className="block text-xs font-heading font-bold uppercase tracking-wider text-textMain mb-1">
-                  Current View Count *
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-heading font-bold uppercase tracking-wider text-textMain">
+                    Current View Count *
+                  </label>
+                  <button
+                    type="button"
+                    disabled={isScanningOcr || !videoUrl.trim()}
+                    onClick={handleScanFormViewsViaOcr}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-limeAccent/15 hover:bg-limeAccent/25 border border-limeAccent/30 text-limeAccent text-[10px] font-mono font-bold transition disabled:opacity-40"
+                    title="Capture live screenshot and extract view count with OCR"
+                  >
+                    {isScanningOcr ? (
+                      <>
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                        <span>Scanning OCR...</span>
+                      </>
+                    ) : (
+                      <>
+                        <ScanLine className="h-3 w-3" />
+                        <span>Auto-Detect (OCR)</span>
+                      </>
+                    )}
+                  </button>
+                </div>
                 <input
                   type="number"
                   min="0"
@@ -1178,9 +1264,17 @@ function CampaignWorkspaceContent({ params }: PageProps) {
                   onChange={(e) => setReportedViews(parseInt(e.target.value) || 0)}
                   className="w-full rounded-xl bg-surfaceElevated border border-borderMuted px-3.5 py-2.5 text-xs text-textMain font-mono focus:border-limeAccent outline-none"
                 />
-                <span className="text-[10px] text-textMuted mt-1 block font-mono">
-                  Current views on your video post
-                </span>
+                <div className="flex items-center justify-between mt-1 text-[10px] font-mono">
+                  <span className="text-textMuted">
+                    Current views on your video post
+                  </span>
+                  {detectedOcrSnippet && (
+                    <span className="text-limeAccent font-bold flex items-center gap-1">
+                      <Check className="h-2.5 w-2.5" />
+                      OCR: {detectedOcrSnippet}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -1281,9 +1375,9 @@ function CampaignWorkspaceContent({ params }: PageProps) {
                 return (
                   <div
                     key={sub.id}
-                    className="py-5 flex flex-col md:flex-row md:items-center justify-between gap-4"
+                    className="py-5 flex flex-col md:flex-row md:items-start justify-between gap-4"
                   >
-                    <div className="space-y-2 max-w-xl">
+                    <div className="space-y-3 max-w-xl w-full">
                       <div className="flex items-center gap-2">
                         <span
                           className={`rounded-full px-2.5 py-0.5 text-[10px] font-mono font-bold border ${platMeta.badgeBg}`}
@@ -1303,6 +1397,11 @@ function CampaignWorkspaceContent({ params }: PageProps) {
                         </a>
                       </div>
 
+                      {/* Native Social Media Embed / Post Preview */}
+                      <div className="pt-1 max-w-md w-full">
+                        <SocialPostRenderer url={sub.video_url} />
+                      </div>
+
                       <div className="flex flex-wrap items-center gap-3 text-xs text-textMuted">
                         <span>
                           Reported Views:{' '}
@@ -1314,7 +1413,45 @@ function CampaignWorkspaceContent({ params }: PageProps) {
                         <span>
                           Submitted: {new Date(sub.submitted_at).toLocaleDateString()}
                         </span>
+                        {/* OCR Scan Button */}
+                        <button
+                          type="button"
+                          disabled={ocrScanningSubId === sub.id}
+                          onClick={() => handleScanSubmissionViaOcr(sub)}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surfaceElevated hover:bg-surface border border-limeAccent/30 text-limeAccent hover:border-limeAccent text-[11px] font-mono font-bold transition active:scale-95 disabled:opacity-50 shadow-sm"
+                          title="Capture screenshot of live post and update view count via OCR"
+                        >
+                          {ocrScanningSubId === sub.id ? (
+                            <>
+                              <Loader2 className="h-3 w-3 animate-spin text-limeAccent" />
+                              <span>Scanning OCR...</span>
+                            </>
+                          ) : (
+                            <>
+                              <ScanLine className="h-3 w-3 text-limeAccent" />
+                              <span>Fetch Live Views (OCR)</span>
+                            </>
+                          )}
+                        </button>
                       </div>
+
+                      {/* OCR verification pill if available */}
+                      {sub.ocr_snippet && (
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-limeAccent/10 border border-limeAccent/20 text-limeAccent text-[11px] font-mono">
+                          <Check className="h-3 w-3 shrink-0" />
+                          <span>OCR Verified: <strong>{sub.ocr_snippet}</strong></span>
+                        </div>
+                      )}
+
+                      {/* Proof Notes if provided */}
+                      {sub.proof_notes && (
+                        <div className="rounded-xl bg-surfaceElevated border border-borderMuted/80 p-2.5 text-xs text-textMuted flex items-start gap-2">
+                          <FileText className="h-3.5 w-3.5 text-limeAccent shrink-0 mt-0.5" />
+                          <div className="leading-relaxed">
+                            <strong className="text-textMain font-heading">Your Notes:</strong> {sub.proof_notes}
+                          </div>
+                        </div>
+                      )}
 
                       {/* Verification Status Banner */}
                       <div>
@@ -1437,14 +1574,55 @@ function CampaignWorkspaceContent({ params }: PageProps) {
                     <strong className="text-textMain">Notes:</strong> {selectedSubToApprove.proof_notes}
                   </div>
                 )}
+                {/* Embed Preview */}
+                <div className="pt-2 border-t border-borderMuted/60">
+                  <span className="text-textMuted text-[10px] font-mono block mb-1.5 font-bold uppercase tracking-wider">
+                    Post Embed Preview:
+                  </span>
+                  <SocialPostRenderer url={selectedSubToApprove.video_url} />
+                </div>
               </div>
 
               {/* Editable verification fields */}
               <div className="space-y-4">
                 <div>
-                  <label className="block text-xs font-heading font-bold uppercase tracking-wider text-textMain mb-1">
-                    Verified View Count
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-heading font-bold uppercase tracking-wider text-textMain">
+                      Verified View Count
+                    </label>
+                    <button
+                      type="button"
+                      disabled={isScanningOcr}
+                      onClick={async () => {
+                        setIsScanningOcr(true);
+                        toast.info('Scanning Post via OCR', 'Capturing live screenshot and parsing views...');
+                        const res = await trackViewsViaOcr({
+                          url: selectedSubToApprove.video_url,
+                          submissionId: selectedSubToApprove.id,
+                        });
+                        setIsScanningOcr(false);
+                        if (res.success && res.views && res.views > 0) {
+                          handleVerifiedViewsChange(res.views);
+                          toast.success('OCR Verified!', `Detected ${res.views.toLocaleString()} views.`);
+                        } else {
+                          toast.info('Scan Completed', 'No higher view count detected on live page.');
+                        }
+                      }}
+                      className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-limeAccent/15 hover:bg-limeAccent/25 border border-limeAccent/30 text-limeAccent text-[11px] font-mono font-bold transition disabled:opacity-40"
+                    >
+                      {isScanningOcr ? (
+                        <>
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                          <span>Scanning...</span>
+                        </>
+                      ) : (
+                        <>
+                          <ScanLine className="h-3 w-3" />
+                          <span>OCR Re-Scan</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
                   <input
                     type="number"
                     min="0"
@@ -1452,9 +1630,16 @@ function CampaignWorkspaceContent({ params }: PageProps) {
                     onChange={(e) => handleVerifiedViewsChange(parseInt(e.target.value) || 0)}
                     className="w-full rounded-xl bg-surfaceElevated border border-borderMuted px-3.5 py-2.5 text-sm text-textMain font-mono focus:border-limeAccent outline-none"
                   />
-                  <span className="text-[10px] text-textMuted mt-1 block font-mono">
-                    Reported by creator: {(selectedSubToApprove.reported_views || selectedSubToApprove.current_view_count || 0).toLocaleString()} views
-                  </span>
+                  <div className="flex items-center justify-between mt-1 text-[10px] font-mono">
+                    <span className="text-textMuted">
+                      Reported by creator: {(selectedSubToApprove.reported_views || selectedSubToApprove.current_view_count || 0).toLocaleString()} views
+                    </span>
+                    {selectedSubToApprove.ocr_snippet && (
+                      <span className="text-limeAccent font-bold">
+                        OCR: {selectedSubToApprove.ocr_snippet}
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 <div>

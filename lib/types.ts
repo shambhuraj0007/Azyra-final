@@ -1,3 +1,10 @@
+export interface PaymentRecord {
+  id?: string;
+  amount: number;
+  timestamp: number; // Exact payment date & time (epoch ms)
+  orderId?: string;
+}
+
 export interface ProductEntry {
   id: string;
   name: string;
@@ -5,9 +12,11 @@ export interface ProductEntry {
   url: string;
   logo: string;
   category: 'AI & ML' | 'DevTools' | 'SaaS' | 'Web3' | 'Design' | 'Productivity' | 'Fintech' | 'Crypto' | 'Gaming' | 'Marketing' | 'E-commerce' | 'Mobile' | 'Others';
-  allTimeSpend: number;
-  todaySpend: number;
+  allTimeSpend: number; // Cumulative total paid amount across all time
+  todaySpend: number;   // Total amount paid on today's date (UTC)
   createdAt: number;
+  lastPaymentDate?: number; // Timestamp of the most recent payment
+  payments?: PaymentRecord[]; // History of payments with dates
   recentBidDelta?: number;
   rankDelta?: number;
   clicks?: number;
@@ -155,4 +164,6 @@ export interface ClipSubmission {
   reviewed_by?: string;
   platform_fee?: number;
   net_payout?: number;
+  screenshot_url?: string;
+  ocr_snippet?: string;
 }

@@ -24,6 +24,8 @@ export interface ISubmission extends Document {
   reviewed_by?: string;
   platform_fee?: number;
   net_payout?: number;
+  screenshot_url?: string;
+  ocr_snippet?: string;
 }
 
 const SubmissionSchema = new Schema<ISubmission>(
@@ -42,6 +44,8 @@ const SubmissionSchema = new Schema<ISubmission>(
     earned_amount: { type: Number, default: 0 },
     platform_fee: { type: Number, default: 0 },
     net_payout: { type: Number, default: 0 },
+    screenshot_url: { type: String },
+    ocr_snippet: { type: String },
     verification_status: {
       type: String,
       enum: ['pending_review', 'approved', 'rejected', 'verifying', 'active', 'flagged_bot', 'paid'],

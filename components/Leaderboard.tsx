@@ -26,7 +26,7 @@ import {
   Layers,
 } from 'lucide-react';
 import { ProductEntry, BoardType } from '../lib/types';
-import { sortLeaderboard, calculateRequiredBid, extractDomain, inferStartupName } from '../lib/data';
+import { sortLeaderboard, calculateRequiredBid, extractDomain, inferStartupName, calculateProductTodaySpend, isPaymentToday } from '../lib/data';
 import FaviconImage from './FaviconImage';
 
 interface LeaderboardProps {
@@ -249,51 +249,51 @@ export default function Leaderboard({
   }, [quickDomain, sortedProducts]);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-3.5 sm:space-y-4">
       {/* Board Selector Tabs & Daily UTC Countdown Header */}
-      <div className="card-craft flex flex-col sm:flex-row items-center justify-between gap-4 rounded-2xl p-2.5 shadow-xl">
-        <div className="flex w-full sm:w-auto items-center gap-1.5 p-1 bg-surfaceElevated rounded-xl border border-borderMuted">
+      <div className="card-craft flex flex-col sm:flex-row items-center justify-between gap-2.5 rounded-xl p-2 shadow-lg">
+        <div className="flex w-full sm:w-auto items-center gap-1.5 p-0.5 bg-surfaceElevated rounded-lg border border-borderMuted">
           <button
             onClick={() => setBoard('all-time')}
-            className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 sm:gap-2 rounded-lg px-2.5 sm:px-4 py-2 text-xs sm:text-sm font-heading font-bold transition-all ${board === 'all-time'
-              ? 'bg-limeAccent text-[#070B0C] shadow-md shadow-limeAccent/20'
+            className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-heading font-bold transition-all ${board === 'all-time'
+              ? 'bg-limeAccent text-[#070B0C] shadow-sm shadow-limeAccent/20'
               : 'text-textMuted hover:text-textMain hover:bg-surface'
               }`}
           >
-            <Trophy className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+            <Trophy className="h-3.5 w-3.5 shrink-0" />
             <span className="sm:hidden">All-Time</span>
             <span className="hidden sm:inline">All-Time Board</span>
-            <span className="rounded-full bg-[#070B0C]/20 px-1.5 py-0.2 text-[9px] sm:text-[10px] font-mono hidden xs:inline">
+            <span className="rounded-full bg-[#070B0C]/20 px-1.5 py-0.2 text-[9px] font-mono hidden xs:inline">
               Permanent
             </span>
           </button>
 
           <button
             onClick={() => setBoard('daily')}
-            className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 sm:gap-2 rounded-lg px-2.5 sm:px-4 py-2 text-xs sm:text-sm font-heading font-bold transition-all ${board === 'daily'
-              ? 'bg-limeAccent text-[#070B0C] shadow-md shadow-limeAccent/20'
+            className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-heading font-bold transition-all ${board === 'daily'
+              ? 'bg-limeAccent text-[#070B0C] shadow-sm shadow-limeAccent/20'
               : 'text-textMuted hover:text-textMain hover:bg-surface'
               }`}
           >
-            <Flame className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+            <Flame className="h-3.5 w-3.5 shrink-0" />
             <span className="sm:hidden">Daily 24h</span>
             <span className="hidden sm:inline">Today's Board (Daily)</span>
-            <span className="rounded-full bg-[#070B0C]/20 px-1.5 py-0.2 text-[9px] sm:text-[10px] font-mono hidden xs:inline">
+            <span className="rounded-full bg-[#070B0C]/20 px-1.5 py-0.2 text-[9px] font-mono hidden xs:inline">
               UTC
             </span>
           </button>
         </div>
 
         {/* Board description & UTC Reset Timer */}
-        <div className="flex items-center gap-3 text-xs text-textMuted px-3">
+        <div className="flex items-center gap-2.5 text-xs text-textMuted px-2">
           {board === 'daily' ? (
-            <div className="flex items-center gap-2 rounded-lg bg-emeraldAccent/10 border border-emeraldAccent/30 px-3 py-1.5 text-emeraldAccent">
-              <Clock className="h-4 w-4 text-emeraldAccent animate-spin" style={{ animationDuration: '8s' }} />
+            <div className="flex items-center gap-2 rounded-lg bg-emeraldAccent/10 border border-emeraldAccent/30 px-2.5 py-1 text-emeraldAccent text-xs">
+              <Clock className="h-3.5 w-3.5 text-emeraldAccent animate-spin" style={{ animationDuration: '8s' }} />
               <span>Next UTC Reset in:</span>
               <strong className="font-mono text-emeraldAccent font-bold">{utcCountdown}</strong>
             </div>
           ) : (
-            <div className="flex items-center gap-1.5 text-textMuted">
+            <div className="flex items-center gap-1.5 text-textMuted text-xs">
               <Calendar className="h-3.5 w-3.5 text-limeAccent" />
               <span>Cumulative lifetime spend • Listings never expire</span>
             </div>
@@ -301,167 +301,97 @@ export default function Leaderboard({
         </div>
       </div>
 
-      {/* USER'S ACTIVE LISTING HUD (If user already has a claimed startup on this board) */}
-      {userListing && userListingRank && (
-        <div className="relative overflow-hidden rounded-2xl border-2 border-limeAccent bg-gradient-to-r from-limeAccent/15 via-surface to-surface p-4 sm:p-5 shadow-xl glow-lime">
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-            <div className="flex items-center gap-3.5">
-              <div className="relative">
-                <div className="p-2 rounded-2xl bg-surfaceElevated border border-limeAccent/40 shadow-inner">
-                  <FaviconImage url={userListing.url} fallback={userListing.logo} className="w-9 h-9 rounded-xl" size={128} />
-                </div>
-                <span className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-limeAccent text-[#070B0C] text-[10px] font-black">
-                  ★
-                </span>
-              </div>
-              <div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-base sm:text-lg font-heading font-black text-textMain">
-                    {userListing.name}
-                  </span>
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-limeAccent text-[#070B0C] text-[10px] font-heading font-black uppercase tracking-wider shadow-sm">
-                    <Sparkles className="h-3 w-3 fill-[#070B0C]" />
-                    YOUR ACTIVE LISTING
-                  </span>
-                  <span className="rounded bg-surfaceElevated px-2 py-0.5 text-[10px] font-mono text-textMuted border border-borderMuted">
-                    {userListing.category}
-                  </span>
-                </div>
-                <div className="flex items-center gap-3 text-xs text-textMuted mt-1">
-                  <span>
-                    Currently holding <strong className="text-limeAccent font-mono font-bold">Rank #{userListingRank}</strong>
-                  </span>
-                  <span>•</span>
-                  <span>
-                    Total Spend: <strong className="text-textMain font-mono font-bold">${(board === 'all-time' ? userListing.allTimeSpend : userListing.todaySpend).toLocaleString()}</strong>
-                  </span>
-                  <span>•</span>
-                  <span>{userListing.clicks || 0} clicks</span>
-                </div>
-              </div>
-            </div>
 
-            <div className="flex items-center gap-2.5 w-full md:w-auto">
-              <button
-                onClick={() => onClaimRank(userListingRank, userListing.url, userListing.name)}
-                className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 rounded-xl bg-limeAccent hover:brightness-110 text-[#070B0C] font-heading font-black py-2.5 px-4 text-xs shadow-lg shadow-limeAccent/25 transition active:scale-[0.98]"
-              >
-                <ShieldCheck className="h-4 w-4 text-[#070B0C]" />
-                <span>Defend / Boost Rank (#{userListingRank})</span>
-              </button>
-              <button
-                onClick={() => setIsQuickBarOpen((prev) => !prev)}
-                className="inline-flex items-center justify-center gap-1 rounded-xl bg-surfaceElevated hover:bg-surface text-textMuted hover:text-textMain py-2.5 px-3 text-xs border border-borderMuted transition"
-                title="List another startup"
-              >
-                <Plus className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Add Another</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* TOP 3 PODIUM / SPOTLIGHT SHOWCASE */}
       {searchTerm === '' && selectedCategory === 'All' && sortedProducts.length >= 3 && (
-        <div className="pt-6 pb-4">
-          {/* Section Header */}
-          <div className="text-center mb-10">
-            <span className="inline-flex items-center gap-1.5 text-[10px] font-mono font-bold uppercase tracking-widest text-limeAccent bg-limeAccent/10 px-3 py-1 rounded-full border border-limeAccent/20 backdrop-blur-md shadow-sm">
-              The Sovereign Heights
-            </span>
-            <h2 className="text-3xl sm:text-4xl font-heading font-black text-textMain tracking-tight mt-3">
-              Top three. <span className="font-serif italic font-normal text-limeAccent">Pure capital.</span>
-            </h2>
-            <p className="text-xs text-textMuted/80 mt-2 max-w-md mx-auto leading-relaxed">
-              Holding the most valuable product real estate on the internet through pure capital allocation.
-            </p>
-          </div>
+        <div className="pt-0 pb-1">
+
 
           {/* Podium Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 items-end">
+          <div className="grid grid-cols-1 md:grid-cols-3 gapOvertake requires +$5 min-3 sm:gap-3.5 lg:gap-4 items-end">
 
             {/* ----------------- RANK 2 (SILVER GLASS) ----------------- */}
             {top2 && (
               <div
-                className={`order-2 md:order-1 relative rounded-3xl p-6 transition-all duration-300 hover:-translate-y-2 backdrop-blur-xl border bg-gradient-to-b from-white/[0.07] to-white/[0.02] shadow-[0_8px_32px_0_rgba(0,0,0,0.36)] ${isUserStartup(top2.url)
-                  ? 'border-limeAccent ring-2 ring-limeAccent/50 shadow-[0_0_40px_rgba(209,250,77,0.2)]'
+                className={`order-2 md:order-1 relative rounded-2xl p-4 sm:p-4.5 transition-all duration-300 hover:-translate-y-1 backdrop-blur-xl border bg-gradient-to-b from-white/[0.07] to-white/[0.02] shadow-[0_8px_32px_0_rgba(0,0,0,0.36)] ${isUserStartup(top2.url)
+                  ? 'border-limeAccent ring-2 ring-limeAccent/50 shadow-[0_0_30px_rgba(209,250,77,0.2)]'
                   : 'border-white/10 hover:border-slate-300/30'
                   }`}
               >
                 {/* User Badge */}
                 {isUserStartup(top2.url) && (
-                  <div className="absolute -top-3.5 right-6 z-20 flex items-center gap-1.5 rounded-full bg-limeAccent px-3 py-1 text-[10px] font-heading font-black text-[#0B0F10] shadow-lg shadow-limeAccent/30 animate-pulse">
-                    <Sparkles className="h-3 w-3 fill-[#0B0F10]" />
+                  <div className="absolute -top-3 right-4 z-20 flex items-center gap-1 rounded-full bg-limeAccent px-2.5 py-0.5 text-[9px] font-heading font-black text-[#0B0F10] shadow-md shadow-limeAccent/30 animate-pulse">
+                    <Sparkles className="h-2.5 w-2.5 fill-[#0B0F10]" />
                     <span>YOUR STARTUP</span>
                   </div>
                 )}
 
                 {/* Header Row */}
-                <div className="flex items-center justify-between mb-5">
-                  <div className="flex items-center gap-2.5">
-                    <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-white/5 font-mono font-black text-textMain text-sm border border-white/10 backdrop-blur-md shadow-inner">
+                <div className="flex items-center justify-between mb-2.5">
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-white/5 font-mono font-black text-textMain text-xs border border-white/10 backdrop-blur-md shadow-inner">
                       #2
                     </span>
-                    <span className="text-xs font-heading font-bold uppercase tracking-widest text-slate-300/80">
+                    <span className="text-[11px] font-heading font-bold uppercase tracking-wider text-slate-300/80">
                       Silver
                     </span>
                   </div>
-                  <span className="rounded-full bg-white/5 px-2.5 py-0.5 text-[10px] font-mono font-semibold text-textMuted border border-white/10 backdrop-blur-sm">
+                  <span className="rounded-full bg-white/5 px-2 py-0.5 text-[9px] font-mono font-semibold text-textMuted border border-white/10 backdrop-blur-sm">
                     {top2.category}
                   </span>
                 </div>
 
                 {/* Product Details */}
-                <div className="flex items-start gap-3.5 mb-4">
-                  <div className="p-2.5 rounded-2xl bg-white/5 border border-white/10 shrink-0 shadow-inner backdrop-blur-md">
-                    <FaviconImage url={top2.url} fallback={top2.logo} className="w-8 h-8 rounded-xl" size={128} />
+                <div className="flex items-start gap-2.5 mb-2.5">
+                  <div className="p-1.5 rounded-xl bg-white/5 border border-white/10 shrink-0 shadow-inner backdrop-blur-md">
+                    <FaviconImage url={top2.url} fallback={top2.logo} className="w-7 h-7 rounded-lg" size={128} />
                   </div>
                   <div className="min-w-0">
-                    <h3 className="text-lg font-heading font-black text-textMain hover:text-limeAccent transition truncate">
+                    <h3 className="text-base font-heading font-black text-textMain hover:text-limeAccent transition truncate">
                       <a href={top2.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5">
                         {top2.name}
-                        <ExternalLink className="h-3.5 w-3.5 opacity-50 shrink-0" />
+                        <ExternalLink className="h-3 w-3 opacity-50 shrink-0" />
                       </a>
                     </h3>
-                    <p className="text-xs text-textMuted line-clamp-2 mt-0.5 leading-relaxed">
+                    <p className="text-[11px] text-textMuted line-clamp-1 mt-0.5 leading-snug">
                       {top2.tagline}
                     </p>
                   </div>
                 </div>
 
                 {/* Stats Box */}
-                <div className="my-5 rounded-2xl bg-black/20 p-3.5 border border-white/5 backdrop-blur-md flex justify-between items-center shadow-inner">
+                <div className="my-2.5 rounded-xl bg-black/25 p-2.5 border border-white/5 backdrop-blur-md flex justify-between items-center shadow-inner">
                   <div>
-                    <span className="text-[9px] uppercase font-mono tracking-wider font-semibold text-textMuted/70 block mb-0.5">
-                      {board === 'all-time' ? 'Total Contributed' : 'Today Spent'}
+                    <span className="text-[8px] uppercase font-mono tracking-wider font-semibold text-textMuted/70 block mb-0.5">
+                      {board === 'all-time' ? 'Total Paid Amount' : "Today's Payment (UTC)"}
                     </span>
-                    <div className="text-xl font-mono font-black text-textMain tracking-tight">
-                      ${(board === 'all-time' ? top2.allTimeSpend : top2.todaySpend).toLocaleString()}
+                    <div className="text-base sm:text-lg font-mono font-black text-textMain tracking-tight">
+                      ${(board === 'all-time' ? top2.allTimeSpend : calculateProductTodaySpend(top2)).toLocaleString()}
                     </div>
                   </div>
-                  <div className="text-right text-xs">
+                  <div className="text-right text-[11px]">
                     <div className="font-mono text-textMuted font-medium">{top2.clicks?.toLocaleString() || 0} clicks</div>
-                    <div className="text-[10px] text-emerald-400 font-semibold mt-0.5">Active</div>
+                    <div className="text-[9px] text-emerald-400 font-semibold mt-0.5">Active</div>
                   </div>
                 </div>
 
                 {/* Action Button */}
                 <button
                   onClick={() => onClaimRank(2, top2.url, top2.name)}
-                  className={`w-full rounded-2xl font-heading font-bold py-3 px-4 text-xs flex items-center justify-center gap-2 border transition-all duration-200 active:scale-[0.98] ${isUserStartup(top2.url)
-                    ? 'bg-limeAccent text-[#0B0F10] border-limeAccent hover:brightness-110 font-black shadow-lg shadow-limeAccent/20'
+                  className={`w-full rounded-xl font-heading font-bold py-2 px-3 text-xs flex items-center justify-center gap-1.5 border transition-all duration-200 active:scale-[0.98] ${isUserStartup(top2.url)
+                    ? 'bg-limeAccent text-[#0B0F10] border-limeAccent hover:brightness-110 font-black shadow-md shadow-limeAccent/20'
                     : 'bg-white/5 hover:bg-white/10 text-textMain border-white/10 hover:border-limeAccent/50 backdrop-blur-md shadow-sm'
                     }`}
                 >
                   {isUserStartup(top2.url) ? (
                     <>
-                      <ShieldCheck className="h-4 w-4 text-[#0B0F10]" />
-                      <span>Defend Your Rank #2 (${getOvertakeCost(2).toLocaleString()})</span>
+                      <ShieldCheck className="h-3.5 w-3.5 text-[#0B0F10]" />
+                      <span>Defend Rank #2 (${getOvertakeCost(2).toLocaleString()})</span>
                     </>
                   ) : (
                     <>
-                      <Coins className="h-4 w-4 text-textMuted" />
+                      <Coins className="h-3.5 w-3.5 text-textMuted" />
                       <span>Claim #2 (${getOvertakeCost(2).toLocaleString()})</span>
                     </>
                   )}
@@ -472,71 +402,68 @@ export default function Leaderboard({
             {/* ----------------- RANK 1 (ELECTRIC LIME MONARCH) ----------------- */}
             {top1 && (
               <div
-                className={`order-1 md:order-2 relative rounded-[2rem] p-7 transition-all duration-300 hover:scale-[1.02] -translate-y-3 backdrop-blur-2xl border-2 bg-gradient-to-b from-limeAccent/15 via-white/[0.05] to-black/40 shadow-[0_0_50px_rgba(209,250,77,0.2)] ${isUserStartup(top1.url)
-                  ? 'border-limeAccent ring-4 ring-limeAccent/40 shadow-[0_0_60px_rgba(209,250,77,0.35)]'
+                className={`order-1 md:order-2 relative rounded-2xl p-4 sm:p-5 transition-all duration-300 hover:scale-[1.01] -translate-y-1.5 backdrop-blur-2xl border-2 bg-gradient-to-b from-limeAccent/15 via-white/[0.05] to-black/40 shadow-[0_0_40px_rgba(209,250,77,0.2)] ${isUserStartup(top1.url)
+                  ? 'border-limeAccent ring-4 ring-limeAccent/40 shadow-[0_0_50px_rgba(209,250,77,0.35)]'
                   : 'border-limeAccent/80'
                   }`}
               >
                 {/* King Crown Badge */}
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5 rounded-full bg-limeAccent px-4 py-1.5 text-xs font-heading font-black text-[#0B0F10] shadow-xl shadow-limeAccent/40 border border-limeAccent">
-                  <Crown className="h-4 w-4 fill-[#0B0F10]" />
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 flex items-center gap-1 rounded-full bg-limeAccent px-3 py-0.5 text-[10px] font-heading font-black text-[#0B0F10] shadow-md shadow-limeAccent/40 border border-limeAccent whitespace-nowrap">
+                  <Crown className="h-3.5 w-3.5 fill-[#0B0F10]" />
                   <span>{isUserStartup(top1.url) ? 'YOUR REIGNING #1 LISTING' : 'REIGNING #1 KING'}</span>
                 </div>
 
                 {/* Header Row */}
-                <div className="flex items-center justify-between mb-5 pt-3">
-                  <div className="flex items-center gap-2.5">
-                    <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-limeAccent font-heading font-black text-[#0B0F10] text-lg shadow-lg shadow-limeAccent/30">
+                <div className="flex items-center justify-between mb-2.5 pt-1.5">
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-limeAccent font-heading font-black text-[#0B0F10] text-sm shadow-md shadow-limeAccent/30">
                       #1
                     </span>
                     <div>
-                      <span className="text-xs font-heading font-black uppercase tracking-wider text-limeAccent flex items-center gap-1">
+                      <span className="text-[11px] font-heading font-black uppercase tracking-wider text-limeAccent flex items-center gap-1">
                         Lime Monarch
-                      </span>
-                      <span className="text-[10px] text-textMuted font-mono block">
-                        Overtake requires +$5 min
                       </span>
                     </div>
                   </div>
-                  <span className="rounded-full bg-limeAccent/20 px-3 py-1 text-xs font-mono font-bold text-limeAccent border border-limeAccent/30 backdrop-blur-md">
+                  <span className="rounded-full bg-limeAccent/20 px-2.5 py-0.5 text-[10px] font-mono font-bold text-limeAccent border border-limeAccent/30 backdrop-blur-md">
                     {top1.category}
                   </span>
                 </div>
 
                 {/* Product Details */}
-                <div className="flex items-start gap-4 mb-5">
-                  <div className="p-3 rounded-2xl bg-black/40 border border-limeAccent/40 shadow-inner shrink-0 backdrop-blur-md">
-                    <FaviconImage url={top1.url} fallback={top1.logo} className="w-10 h-10 rounded-xl" size={128} />
+                <div className="flex items-start gap-2.5 mb-2.5">
+                  <div className="p-2 rounded-xl bg-black/40 border border-limeAccent/40 shadow-inner shrink-0 backdrop-blur-md">
+                    <FaviconImage url={top1.url} fallback={top1.logo} className="w-8 h-8 rounded-lg" size={128} />
                   </div>
                   <div className="min-w-0">
-                    <h3 className="text-2xl font-heading font-black text-textMain hover:text-limeAccent transition truncate">
-                      <a href={top1.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2">
+                    <h3 className="text-lg sm:text-xl font-heading font-black text-textMain hover:text-limeAccent transition truncate">
+                      <a href={top1.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5">
                         {top1.name}
-                        <ExternalLink className="h-4 w-4 text-limeAccent opacity-80 shrink-0" />
+                        <ExternalLink className="h-3.5 w-3.5 text-limeAccent opacity-80 shrink-0" />
                       </a>
                     </h3>
-                    <p className="text-xs text-textMuted line-clamp-2 mt-1 leading-relaxed">
+                    <p className="text-[11px] text-textMuted line-clamp-1 mt-0.5 leading-snug">
                       {top1.tagline}
                     </p>
                   </div>
                 </div>
 
                 {/* Highlight Stats Box */}
-                <div className="my-5 rounded-2xl bg-black/30 p-4 border border-limeAccent/30 flex justify-between items-center shadow-inner backdrop-blur-md">
+                <div className="my-2.5 rounded-xl bg-black/35 p-2.5 border border-limeAccent/30 flex justify-between items-center shadow-inner backdrop-blur-md">
                   <div>
-                    <span className="text-[9px] uppercase font-mono tracking-widest font-bold text-limeAccent/90 block mb-0.5">
-                      {board === 'all-time' ? 'Dominant Capital Spent' : 'Today Spent'}
+                    <span className="text-[8px] uppercase font-mono tracking-widest font-bold text-limeAccent/90 block mb-0.5">
+                      {board === 'all-time' ? 'Dominant Paid Amount' : "Today's Payment (UTC)"}
                     </span>
-                    <div className="text-2xl font-mono font-black text-limeAccent tracking-tight">
-                      ${(board === 'all-time' ? top1.allTimeSpend : top1.todaySpend).toLocaleString()}
+                    <div className="text-lg sm:text-xl font-mono font-black text-limeAccent tracking-tight">
+                      ${(board === 'all-time' ? top1.allTimeSpend : calculateProductTodaySpend(top1)).toLocaleString()}
                     </div>
                   </div>
-                  <div className="text-right text-xs">
+                  <div className="text-right text-[11px]">
                     <div className="font-mono font-bold text-textMain">
                       {top1.clicks?.toLocaleString() || 0} clicks
                     </div>
-                    <div className="text-[10px] text-emerald-400 font-mono font-bold flex items-center gap-1.5 justify-end mt-1">
-                      <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <div className="text-[9px] text-emerald-400 font-mono font-bold flex items-center gap-1 justify-end mt-0.5">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
                       Prime Spot
                     </div>
                   </div>
@@ -545,16 +472,16 @@ export default function Leaderboard({
                 {/* CTA Button */}
                 <button
                   onClick={() => onClaimRank(1, top1.url, top1.name)}
-                  className="w-full rounded-2xl bg-limeAccent hover:bg-limeAccent/90 text-[#0B0F10] font-heading font-black py-3.5 px-4 text-sm flex items-center justify-center gap-2 shadow-xl shadow-limeAccent/30 transition-all duration-200 active:scale-[0.98]"
+                  className="w-full rounded-xl bg-limeAccent hover:bg-limeAccent/90 text-[#0B0F10] font-heading font-black py-2.5 px-3 text-xs flex items-center justify-center gap-1.5 shadow-md shadow-limeAccent/30 transition-all duration-200 active:scale-[0.98]"
                 >
                   {isUserStartup(top1.url) ? (
                     <>
-                      <ShieldCheck className="h-4 w-4 fill-[#0B0F10]" />
+                      <ShieldCheck className="h-3.5 w-3.5 fill-[#0B0F10]" />
                       <span>Defend Sovereign #1 (${getOvertakeCost(1).toLocaleString()})</span>
                     </>
                   ) : (
                     <>
-                      <Sparkles className="h-4 w-4 fill-[#0B0F10]" />
+                      <Sparkles className="h-3.5 w-3.5 fill-[#0B0F10]" />
                       <span>Claim #1 (${getOvertakeCost(1).toLocaleString()})</span>
                     </>
                   )}
@@ -565,84 +492,84 @@ export default function Leaderboard({
             {/* ----------------- RANK 3 (BRONZE GLASS) ----------------- */}
             {top3 && (
               <div
-                className={`order-3 relative rounded-3xl p-6 transition-all duration-300 hover:-translate-y-2 backdrop-blur-xl border bg-gradient-to-b from-white/[0.07] to-white/[0.02] shadow-[0_8px_32px_0_rgba(0,0,0,0.36)] ${isUserStartup(top3.url)
-                  ? 'border-limeAccent ring-2 ring-limeAccent/50 shadow-[0_0_40px_rgba(209,250,77,0.2)]'
+                className={`order-3 relative rounded-2xl p-4 sm:p-4.5 transition-all duration-300 hover:-translate-y-1 backdrop-blur-xl border bg-gradient-to-b from-white/[0.07] to-white/[0.02] shadow-[0_8px_32px_0_rgba(0,0,0,0.36)] ${isUserStartup(top3.url)
+                  ? 'border-limeAccent ring-2 ring-limeAccent/50 shadow-[0_0_30px_rgba(209,250,77,0.2)]'
                   : 'border-white/10 hover:border-amber-600/30'
                   }`}
               >
                 {/* User Badge */}
                 {isUserStartup(top3.url) && (
-                  <div className="absolute -top-3.5 right-6 z-20 flex items-center gap-1.5 rounded-full bg-limeAccent px-3 py-1 text-[10px] font-heading font-black text-[#0B0F10] shadow-lg shadow-limeAccent/30 animate-pulse">
-                    <Sparkles className="h-3 w-3 fill-[#0B0F10]" />
+                  <div className="absolute -top-3 right-4 z-20 flex items-center gap-1 rounded-full bg-limeAccent px-2.5 py-0.5 text-[9px] font-heading font-black text-[#0B0F10] shadow-md shadow-limeAccent/30 animate-pulse">
+                    <Sparkles className="h-2.5 w-2.5 fill-[#0B0F10]" />
                     <span>YOUR STARTUP</span>
                   </div>
                 )}
 
                 {/* Header Row */}
-                <div className="flex items-center justify-between mb-5">
-                  <div className="flex items-center gap-2.5">
-                    <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-white/5 font-mono font-black text-textMain text-sm border border-white/10 backdrop-blur-md shadow-inner">
+                <div className="flex items-center justify-between mb-2.5">
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-white/5 font-mono font-black text-textMain text-xs border border-white/10 backdrop-blur-md shadow-inner">
                       #3
                     </span>
-                    <span className="text-xs font-heading font-bold uppercase tracking-widest text-amber-500/80">
+                    <span className="text-[11px] font-heading font-bold uppercase tracking-wider text-amber-500/80">
                       Bronze
                     </span>
                   </div>
-                  <span className="rounded-full bg-white/5 px-2.5 py-0.5 text-[10px] font-mono font-semibold text-textMuted border border-white/10 backdrop-blur-sm">
+                  <span className="rounded-full bg-white/5 px-2 py-0.5 text-[9px] font-mono font-semibold text-textMuted border border-white/10 backdrop-blur-sm">
                     {top3.category}
                   </span>
                 </div>
 
                 {/* Product Details */}
-                <div className="flex items-start gap-3.5 mb-4">
-                  <div className="p-2.5 rounded-2xl bg-white/5 border border-white/10 shrink-0 shadow-inner backdrop-blur-md">
-                    <FaviconImage url={top3.url} fallback={top3.logo} className="w-8 h-8 rounded-xl" size={128} />
+                <div className="flex items-start gap-2.5 mb-2.5">
+                  <div className="p-1.5 rounded-xl bg-white/5 border border-white/10 shrink-0 shadow-inner backdrop-blur-md">
+                    <FaviconImage url={top3.url} fallback={top3.logo} className="w-7 h-7 rounded-lg" size={128} />
                   </div>
                   <div className="min-w-0">
-                    <h3 className="text-lg font-heading font-black text-textMain hover:text-limeAccent transition truncate">
+                    <h3 className="text-base font-heading font-black text-textMain hover:text-limeAccent transition truncate">
                       <a href={top3.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5">
                         {top3.name}
-                        <ExternalLink className="h-3.5 w-3.5 opacity-50 shrink-0" />
+                        <ExternalLink className="h-3 w-3 opacity-50 shrink-0" />
                       </a>
                     </h3>
-                    <p className="text-xs text-textMuted line-clamp-2 mt-0.5 leading-relaxed">
+                    <p className="text-[11px] text-textMuted line-clamp-1 mt-0.5 leading-snug">
                       {top3.tagline}
                     </p>
                   </div>
                 </div>
 
                 {/* Stats Box */}
-                <div className="my-5 rounded-2xl bg-black/20 p-3.5 border border-white/5 backdrop-blur-md flex justify-between items-center shadow-inner">
+                <div className="my-2.5 rounded-xl bg-black/25 p-2.5 border border-white/5 backdrop-blur-md flex justify-between items-center shadow-inner">
                   <div>
-                    <span className="text-[9px] uppercase font-mono tracking-wider font-semibold text-textMuted/70 block mb-0.5">
-                      {board === 'all-time' ? 'Total Contributed' : 'Today Spent'}
+                    <span className="text-[8px] uppercase font-mono tracking-wider font-semibold text-textMuted/70 block mb-0.5">
+                      {board === 'all-time' ? 'Total Paid Amount' : "Today's Payment (UTC)"}
                     </span>
-                    <div className="text-xl font-mono font-black text-textMain tracking-tight">
-                      ${(board === 'all-time' ? top3.allTimeSpend : top3.todaySpend).toLocaleString()}
+                    <div className="text-base sm:text-lg font-mono font-black text-textMain tracking-tight">
+                      ${(board === 'all-time' ? top3.allTimeSpend : calculateProductTodaySpend(top3)).toLocaleString()}
                     </div>
                   </div>
-                  <div className="text-right text-xs">
+                  <div className="text-right text-[11px]">
                     <div className="font-mono text-textMuted font-medium">{top3.clicks?.toLocaleString() || 0} clicks</div>
-                    <div className="text-[10px] text-emerald-400 font-semibold mt-0.5">Active</div>
+                    <div className="text-[9px] text-emerald-400 font-semibold mt-0.5">Active</div>
                   </div>
                 </div>
 
                 {/* Action Button */}
                 <button
                   onClick={() => onClaimRank(3, top3.url, top3.name)}
-                  className={`w-full rounded-2xl font-heading font-bold py-3 px-4 text-xs flex items-center justify-center gap-2 border transition-all duration-200 active:scale-[0.98] ${isUserStartup(top3.url)
-                    ? 'bg-limeAccent text-[#0B0F10] border-limeAccent hover:brightness-110 font-black shadow-lg shadow-limeAccent/20'
+                  className={`w-full rounded-xl font-heading font-bold py-2 px-3 text-xs flex items-center justify-center gap-1.5 border transition-all duration-200 active:scale-[0.98] ${isUserStartup(top3.url)
+                    ? 'bg-limeAccent text-[#0B0F10] border-limeAccent hover:brightness-110 font-black shadow-md shadow-limeAccent/20'
                     : 'bg-white/5 hover:bg-white/10 text-textMain border-white/10 hover:border-limeAccent/50 backdrop-blur-md shadow-sm'
                     }`}
                 >
                   {isUserStartup(top3.url) ? (
                     <>
-                      <ShieldCheck className="h-4 w-4 text-[#0B0F10]" />
-                      <span>Defend Your Rank #3 (${getOvertakeCost(3).toLocaleString()})</span>
+                      <ShieldCheck className="h-3.5 w-3.5 text-[#0B0F10]" />
+                      <span>Defend Rank #3 (${getOvertakeCost(3).toLocaleString()})</span>
                     </>
                   ) : (
                     <>
-                      <Coins className="h-4 w-4 text-textMuted" />
+                      <Coins className="h-3.5 w-3.5 text-textMuted" />
                       <span>Claim #3 (${getOvertakeCost(3).toLocaleString()})</span>
                     </>
                   )}
@@ -771,15 +698,7 @@ export default function Leaderboard({
                       · &ldquo;{quickBrowserTitle}&rdquo;
                     </span>
                   )}
-                  {quickExistingProduct ? (
-                    <span className="rounded bg-limeAccent/15 border border-limeAccent/40 px-1.5 py-0.2 text-[10px] font-bold text-limeAccent">
-                      Active Rank #{sortedProducts.findIndex((p) => p.id === quickExistingProduct.id) + 1} (Bump Discount)
-                    </span>
-                  ) : (
-                    <span className="rounded bg-emerald-500/10 border border-emerald-500/30 px-1.5 py-0.2 text-[10px] font-bold text-emerald-400">
-                      Favicon Ready
-                    </span>
-                  )}
+
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-textMuted">Cost to take #{quickTargetRank}:</span>
@@ -838,7 +757,7 @@ export default function Leaderboard({
           <div className="col-span-1 text-center">Rank</div>
           <div className="col-span-5 font-heading">Product & Pitch</div>
           <div className="col-span-2 text-right">
-            {board === 'all-time' ? 'All-Time Spend' : 'Today Spend'}
+            {board === 'all-time' ? 'All-Time Paid' : "Today's Payment"}
           </div>
           <div className="col-span-2 text-center">Engagement</div>
           <div className="col-span-2 text-right">Overtake CTA</div>
@@ -854,7 +773,8 @@ export default function Leaderboard({
           ) : (
             filteredProducts.map((product) => {
               const actualRank = sortedProducts.findIndex((p) => p.id === product.id) + 1;
-              const spend = board === 'all-time' ? product.allTimeSpend : product.todaySpend;
+              const todayPaid = calculateProductTodaySpend(product);
+              const spend = board === 'all-time' ? (product.allTimeSpend || 0) : todayPaid;
               const overtakeCost = getOvertakeCost(actualRank);
               const isOwnListing = isUserStartup(product.url);
 
@@ -962,7 +882,7 @@ export default function Leaderboard({
                   {/* Financial Total Spend Column */}
                   <div className="md:col-span-2 flex md:flex-col justify-between items-center md:items-end">
                     <span className="text-xs text-textMuted md:hidden">
-                      Total Contributed:
+                      {board === 'all-time' ? 'All-Time Paid:' : "Today's Payment:"}
                     </span>
                     <div className="text-right">
                       <div className="font-mono font-bold text-base sm:text-lg text-textMain">
@@ -970,8 +890,8 @@ export default function Leaderboard({
                       </div>
                       <div className="text-[10px] font-mono text-textMuted">
                         {board === 'all-time'
-                          ? `Today: $${product.todaySpend.toLocaleString()}`
-                          : `All-Time: $${product.allTimeSpend.toLocaleString()}`}
+                          ? `Today: $${todayPaid.toLocaleString()}`
+                          : `All-Time: $${(product.allTimeSpend || 0).toLocaleString()}`}
                       </div>
                     </div>
                   </div>

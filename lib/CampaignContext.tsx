@@ -58,6 +58,18 @@ interface CampaignContextType {
   }) => Promise<{ success: boolean; error?: string; submission?: ClipSubmission; payoutDelta?: number }>;
   simulateViewGrowth: (submissionId: string, additionalViews: number) => Promise<void>;
   checkViews: (submissionId: string) => Promise<{ success: boolean; views?: number; error?: string }>;
+  trackViewsViaOcr: (payload: {
+    url?: string;
+    submissionId?: string;
+    uploadedImageBase64?: string;
+  }) => Promise<{
+    success: boolean;
+    views?: number;
+    matchedSnippet?: string;
+    confidence?: number;
+    screenshotUrl?: string;
+    error?: string;
+  }>;
   cancelSubmission: (submissionId: string) => Promise<{ success: boolean; error?: string }>;
   createCampaign: (data: Omit<Campaign, 'id' | 'created_at' | 'participants_count' | 'total_views_tracked' | 'total_paid_out'>) => Promise<{ success: boolean; error?: string; campaign?: Campaign }>;
   toggleCampaignStatus: (campaignId: string, newStatus: Campaign['status']) => void;
@@ -700,6 +712,52 @@ export function CampaignProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const trackViewsViaOcr = async (payload: {
+    url?: string;
+    submissionId?: string;
+    uploadedImageBase64?: string;
+  }) => {
+    try {
+      const res = await fetch('/api/metrics/ocr-track', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        if (payload.submissionId) {
+          const subIndex = submissions.findIndex((s) => s.id === payload.submissionId);
+          if (subIndex !== -1) {
+            const updatedSubmissions = [...submissions];
+            const oldSub = updatedSubmissions[subIndex];
+            const updatedSub = {
+              ...oldSub,
+              ...(data.submission || {}),
+              current_view_count: data.views > oldSub.current_view_count ? data.views : oldSub.current_view_count,
+              ocr_snippet: data.matchedSnippet || oldSub.ocr_snippet,
+              screenshot_url: data.screenshotUrl || oldSub.screenshot_url,
+              last_polled_at: Date.now(),
+            };
+            updatedSubmissions[subIndex] = updatedSub;
+            setSubmissions(updatedSubmissions);
+            saveStorage(currentUser, campaigns, updatedSubmissions, participants);
+          }
+        }
+        return {
+          success: true,
+          views: data.views,
+          matchedSnippet: data.matchedSnippet,
+          confidence: data.confidence,
+          screenshotUrl: data.screenshotUrl,
+        };
+      }
+      return { success: false, error: data.error || 'Failed to detect views via OCR' };
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Network error during OCR tracking' };
+    }
+  };
+
   const cancelSubmission = async (submissionId: string) => {
     try {
       const res = await fetch(`/api/submissions/${submissionId}`, {
@@ -838,6 +896,7 @@ export function CampaignProvider({ children }: { children: React.ReactNode }) {
         verifySubmission,
         simulateViewGrowth,
         checkViews,
+        trackViewsViaOcr,
         cancelSubmission,
         createCampaign,
         toggleCampaignStatus,

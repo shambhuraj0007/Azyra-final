@@ -38,6 +38,7 @@ import WithdrawModal from '../../components/WithdrawModal';
 import { useCampaigns } from '../../lib/CampaignContext';
 import { SocialPlatform } from '../../lib/types';
 import { formatPlatform } from '../../lib/campaignUtils';
+import SocialPostRenderer from '../../components/SocialPostRenderer';
 
 export default function ProfilePage() {
   const {
@@ -1716,15 +1717,7 @@ export default function ProfilePage() {
                       return (
                         <tr key={sub.id} className="hover:bg-surfaceElevated/50 transition">
                           <td className="py-3 px-3">
-                            <a
-                              href={sub.video_url}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="text-limeAccent hover:underline flex items-center gap-1 max-w-[200px] truncate"
-                            >
-                              <ExternalLink className="h-3 w-3 shrink-0" />
-                              <span className="truncate">{sub.video_url}</span>
-                            </a>
+                            <SocialPostRenderer url={sub.video_url} compact={true} />
                           </td>
                           <td className="py-3 px-3">
                             <span className="rounded px-2 py-0.5 text-[10px] bg-surfaceElevated border border-borderMuted">
