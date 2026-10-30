@@ -94,11 +94,42 @@ export function CampaignProvider({ children }: { children: React.ReactNode }) {
 
   // 1. Load marketplace data once on client mount
   useEffect(() => {
+    // 1a. Hydrate from localStorage first for instant display
+    try {
+      const cached = localStorage.getItem('azyra_campaigns');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setCampaigns(parsed);
+        }
+      }
+    } catch (err) {
+      console.warn('Could not read cached campaigns from localStorage:', err);
+    }
+
+    // 1b. Fetch fresh data from MongoDB
     fetch('/api/campaigns')
       .then((res) => res.json())
       .then((data) => {
         if (data?.success && Array.isArray(data.campaigns) && data.campaigns.length > 0) {
-          setCampaigns(data.campaigns);
+          const dbCampaigns: Campaign[] = data.campaigns.map((c: any) => ({
+            ...c,
+            id: c.id || (c._id ? c._id.toString() : `camp-${Date.now()}`),
+          }));
+
+          setCampaigns((prev) => {
+            const dbIds = new Set(dbCampaigns.map((c) => c.id));
+            const localOnly = prev.filter(
+              (p) => !dbIds.has(p.id) && !INITIAL_MARKETPLACE_CAMPAIGNS.some((init) => init.id === p.id)
+            );
+            const merged = [...localOnly, ...dbCampaigns];
+            try {
+              localStorage.setItem('azyra_campaigns', JSON.stringify(merged));
+            } catch (e) {
+              console.error(e);
+            }
+            return merged;
+          });
         }
       })
       .catch((e) => console.warn('Could not fetch campaigns from MongoDB:', e));
@@ -823,11 +854,26 @@ export function CampaignProvider({ children }: { children: React.ReactNode }) {
 
     // Persist to MongoDB
     try {
-      await fetch('/api/campaigns', {
+      const res = await fetch('/api/campaigns', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newCamp),
       });
+      const dataRes = await res.json();
+      if (!res.ok || !dataRes.success) {
+        console.warn('MongoDB returned error creating campaign:', dataRes.error);
+      } else if (dataRes.campaign) {
+        const saved = dataRes.campaign;
+        setCampaigns((current) => {
+          const list = current.map((c) =>
+            c.id === newCamp.id ? { ...c, ...saved, id: saved.id || c.id } : c
+          );
+          try {
+            localStorage.setItem('azyra_campaigns', JSON.stringify(list));
+          } catch (e) {}
+          return list;
+        });
+      }
     } catch (e) {
       console.warn('Could not persist new campaign to MongoDB:', e);
     }

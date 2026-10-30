@@ -4,8 +4,6 @@ import { connectToDatabase } from '@/lib/mongodb';
 import UserModel from '@/models/User';
 import cloudinary from '@/lib/cloudinary';
 
-export const runtime = 'nodejs';
-
 // Max file size: 5MB
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
 const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml'];

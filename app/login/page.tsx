@@ -232,9 +232,7 @@ function AuthContent() {
   const subline =
     mode === 'signin'
       ? 'Sign in to your Azyra account'
-      : role === 'creator'
-        ? 'Earn per 1,000 verified video views'
-        : 'Launch pay-per-view video campaigns';
+      : role === 'creator';
 
   const primaryBtnLabel = isLoading
     ? 'Please wait\u2026'

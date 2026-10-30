@@ -35,7 +35,7 @@ function getBrowserExecutablePath(): string | null {
       'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
     ];
     for (const c of candidates) {
-      if (fs.existsSync(c)) return c;
+      if (fs.existsSync(/*turbopackIgnore: true*/ c)) return c;
     }
   } else {
     const candidates = [
@@ -45,7 +45,7 @@ function getBrowserExecutablePath(): string | null {
       '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
     ];
     for (const c of candidates) {
-      if (fs.existsSync(c)) return c;
+      if (fs.existsSync(/*turbopackIgnore: true*/ c)) return c;
     }
   }
 

@@ -159,6 +159,7 @@ export default function CreateCampaignModal({ isOpen, onClose }: CreateCampaignM
   // Status
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!isOpen) return null;
 
@@ -227,9 +228,12 @@ export default function CreateCampaignModal({ isOpen, onClose }: CreateCampaignM
       .filter(Boolean);
 
   const executeCampaignCreation = async (escrowOrderId?: string) => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     setErrorMsg(null);
 
     if (!currentUser?.isLoggedIn) {
+      setIsSubmitting(false);
       onClose();
       handleUnauthorized('Please sign in or register to launch a campaign.');
       return;
@@ -241,11 +245,29 @@ export default function CreateCampaignModal({ isOpen, onClose }: CreateCampaignM
     const parsedDos = parseList(dosText);
     const parsedDonts = parseList(dontsText);
 
+    const execType = rewardModel === 'cpm' ? 'cpm_pool' : 'creator_direct';
+    const numQuota = Math.floor(totalBudget / (bountyAmount || 1));
+
+    const payoutMetric =
+      execType === 'cpm_pool'
+        ? {
+            primary_label: 'Performance CPM',
+            primary_value: `$${cpmRate.toFixed(2)} / 1K views`,
+            action_type: 'view' as const,
+          }
+        : {
+            primary_label: 'Custom Success Payout',
+            primary_value: `$${bountyAmount.toLocaleString()} / Deal`,
+            action_type: 'dedicated_video' as const,
+            target_quota: numQuota,
+            completed_quota: 0,
+          };
+
     const res = await createCampaign({
-      brand_id: currentUser.id || 'brand_default',
-      brand_name: brandName || currentUser.name || 'Partner Brand',
+      brand_id: currentUser.id || currentUser.email || 'brand_default',
+      brand_name: brandName.trim() || currentUser.name || 'Partner Brand',
       brand_logo: brandLogo || '⚡',
-      brand_url: brandUrl,
+      brand_url: brandUrl || 'https://example.com',
       title: title.trim(),
       tagline: tagline.trim() || undefined,
       description: description.trim(),
@@ -271,17 +293,26 @@ export default function CreateCampaignModal({ isOpen, onClose }: CreateCampaignM
         video_duration: videoDuration,
         target_audience: targetAudience,
         success_criteria: successCriteria.trim(),
-        payout_structure: rewardModel === 'cpm' ? 'cpm' : `custom_${customBountyType}`,
+        payout_structure: rewardModel === 'cpm' ? 'cpm' : 'custom_success',
       },
       total_budget: totalBudget,
       remaining_budget: totalBudget,
-      cpm_rate: rewardModel === 'cpm' ? cpmRate : bountyAmount,
-      max_payout_per_clip: rewardModel === 'cpm' ? maxPayoutPerClip : bountyAmount,
+      execution_type: execType,
+      payout_metric: payoutMetric,
+      bounty_rate: rewardModel !== 'cpm' ? bountyAmount : undefined,
+      bounty_action: rewardModel !== 'cpm' ? 'Custom Success' : undefined,
+      actions_remaining: rewardModel !== 'cpm' ? numQuota : undefined,
+      flat_rate: rewardModel !== 'cpm' ? bountyAmount : undefined,
+      deliverable_type: rewardModel !== 'cpm' ? 'Custom Success Deliverable' : undefined,
+      cpm_rate: rewardModel === 'cpm' ? cpmRate : 0,
+      max_payout_per_clip: rewardModel === 'cpm' ? maxPayoutPerClip : 0,
       min_views_threshold: rewardModel === 'cpm' ? minViewsThreshold : 0,
-      platforms,
-      category,
+      platforms: platforms.length > 0 ? platforms : ['x', 'instagram', 'youtube_shorts'],
+      category: category || 'DevTools',
       status: 'active',
     });
+
+    setIsSubmitting(false);
 
     if (!res.success) {
       setErrorMsg(res.error || 'Failed to create campaign');
@@ -295,7 +326,8 @@ export default function CreateCampaignModal({ isOpen, onClose }: CreateCampaignM
       onClose();
       setIsSuccess(false);
       setStep(1);
-    }, 1800);
+      router.push('/campaigns?created=1');
+    }, 1400);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -745,9 +777,7 @@ export default function CreateCampaignModal({ isOpen, onClose }: CreateCampaignM
                     <label className="block text-xs font-bold uppercase text-textMain font-heading">
                       Reward & Compensation Model *
                     </label>
-                    <span className="text-[10px] font-mono text-limeAccent bg-limeAccent/10 px-2.5 py-0.5 rounded-full border border-limeAccent/30">
-                      {rewardModel === 'cpm' ? '📈 1K Views Payout Model' : '🎯 Custom  Bounty Model'}
-                    </span>
+
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 p-1.5 rounded-2xl bg-canvas border border-borderMuted gap-1.5">
@@ -763,8 +793,7 @@ export default function CreateCampaignModal({ isOpen, onClose }: CreateCampaignM
                         }`}
                     >
                       <Coins className="h-4 w-4 shrink-0" />
-                      <span className="sm:hidden">1K View Money (CPM)</span>
-                      <span className="hidden sm:inline">1K Per View Money (CPM)</span>
+                      <span>Pay-Per-View (CPM)</span>
                     </button>
 
                     <button
@@ -782,18 +811,17 @@ export default function CreateCampaignModal({ isOpen, onClose }: CreateCampaignM
                         }
                       }}
                       className={`flex items-center justify-center gap-2 py-2.5 sm:py-3 px-3 sm:px-4 rounded-xl text-xs sm:text-sm font-heading font-bold transition-all ${rewardModel === 'custom_bounty'
-                        ? 'bg-limeAccent text-[#0B0F10] shadow-md shadow-limeAccent/20 scale-[1.01]'
+                        ? 'bg-cyan-400 text-[#0B0F10] shadow-md shadow-cyan-400/20 scale-[1.01]'
                         : 'text-textMuted hover:text-textMain hover:bg-surfaceElevated'
                         }`}
                     >
                       <Sparkles className="h-4 w-4 shrink-0" />
-                      <span className="sm:hidden">Custom Bounties</span>
-                      <span className="hidden sm:inline">Custom Success / Bounties (Azyra Protocol)</span>
+                      <span>Direct Sponsorship (Custom Success)</span>
                     </button>
                   </div>
                   <p className="text-[11px] text-textMuted mt-1.5 leading-relaxed font-sans">
                     {rewardModel === 'cpm'
-                      ? 'Pay creators strictly based on verified view counts at an agreed dollar rate per 1,000 views.'
+                      ? 'Pay creators strictly based on verified view counts at an agreed dollar rate per views.'
                       : 'Define custom deliverables with Azyra: flat video bounties, customer checkouts, signups, or custom milestones where you set whatever rules you want.'}
                   </p>
                 </div>
@@ -825,30 +853,7 @@ export default function CreateCampaignModal({ isOpen, onClose }: CreateCampaignM
                         className="w-full rounded-xl bg-canvas border border-borderMuted px-3.5 py-2.5 text-xs text-textMain leading-relaxed focus:border-emeraldAccent outline-none font-mono"
                       />
 
-                      {/* Quick criteria preset pills */}
-                      <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                        <span className="text-[10px] text-textMuted font-heading font-bold mr-1">Quick Add:</span>
-                        {[
-                          '30s+ Watch Retention',
-                          'Live Product Screen Demo in first 5s',
-                          'Pinned CTA Link in Comments/Bio',
-                          'Zero Bot Traffic / Organic Verified',
-                          '1080p High-Res Vertical (9:16)',
-                        ].map((pill) => (
-                          <button
-                            key={pill}
-                            type="button"
-                            onClick={() => {
-                              if (!successCriteria.includes(pill)) {
-                                setSuccessCriteria((prev) => (prev ? `${prev}\n• ${pill}` : `• ${pill}`));
-                              }
-                            }}
-                            className="px-2 py-0.5 rounded-md bg-canvas hover:bg-surface text-[10px] text-textMuted hover:text-emeraldAccent border border-borderMuted transition"
-                          >
-                            +{pill}
-                          </button>
-                        ))}
-                      </div>
+
                     </div>
 
                     {/* CPM & Budget Parameters */}
@@ -994,30 +999,6 @@ export default function CreateCampaignModal({ isOpen, onClose }: CreateCampaignM
                         className="w-full rounded-xl bg-canvas border border-borderMuted px-3.5 py-2.5 text-xs text-textMain leading-relaxed focus:border-limeAccent outline-none font-mono"
                       />
 
-                      {/* Custom Azyra / Action Quick Presets */}
-                      <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                        <span className="text-[10px] text-textMuted font-heading font-bold mr-1">Quick Add:</span>
-                        {[
-                          'Verified Member Checkout Demo',
-                          'Pinned Bio Tracking Link',
-                          'Full 45s Workflow Tutorial',
-                          'Organic Reach / Zero Bot Traffic',
-                          'Live Testimonial & Screen Share',
-                        ].map((pill) => (
-                          <button
-                            key={pill}
-                            type="button"
-                            onClick={() => {
-                              if (!successCriteria.includes(pill)) {
-                                setSuccessCriteria((prev) => (prev ? `${prev}\n• ${pill}` : `• ${pill}`));
-                              }
-                            }}
-                            className="px-2 py-0.5 rounded-md bg-canvas hover:bg-surface text-[10px] text-textMuted hover:text-limeAccent border border-borderMuted transition"
-                          >
-                            +{pill}
-                          </button>
-                        ))}
-                      </div>
                     </div>
 
                     {/* Custom Bounty & Budget Parameters */}
@@ -1212,48 +1193,92 @@ export default function CreateCampaignModal({ isOpen, onClose }: CreateCampaignM
                   </div>
                 </div>
 
-                {/* Real Payment Gateway Only - No Simulations */}
-                <div className="rounded-2xl border border-limeAccent/40 bg-surfaceElevated p-5 space-y-3 shadow-xl">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="text-sm font-heading font-bold text-textMain block">
-                        Fund Escrow via Dodo Payments
-                      </span>
-                      <span className="text-xs text-textMuted">
-                        Deposit ${totalBudget.toLocaleString()} USD into protected campaign escrow. Funds are locked and automatically disbursed to verified creators.
-                      </span>
+                {/* Escrow Activation & Funding Controls */}
+                <div className="space-y-4">
+                  {/* Primary Instant Launch Action */}
+                  <div className="rounded-2xl border-2 border-limeAccent/50 bg-surfaceElevated p-5 sm:p-6 space-y-4 shadow-2xl relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-limeAccent/10 rounded-full blur-2xl pointer-events-none" />
+
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-base font-heading font-extrabold text-textMain">
+                            Instant Escrow Launch & Publish
+                          </span>
+                          <span className="text-[10px] font-mono font-bold text-limeAccent bg-limeAccent/15 px-2 py-0.5 rounded-full border border-limeAccent/30">
+                            Recommended
+                          </span>
+                        </div>
+                        <p className="text-xs text-textMuted mt-1 leading-relaxed">
+                          Locks <strong className="text-textMain font-mono">${totalBudget.toLocaleString()} USD</strong> into campaign escrow and makes your campaign instantly visible and active on the marketplace.
+                        </p>
+                      </div>
                     </div>
-                    <span className="text-[10px] font-mono text-limeAccent bg-limeAccent/10 px-2.5 py-1 rounded-full border border-limeAccent/30 hidden sm:inline">
-                      PCI-DSS Level 1
-                    </span>
+
+                    <button
+                      type="button"
+                      disabled={isSubmitting}
+                      onClick={() => executeCampaignCreation()}
+                      className="w-full cursor-pointer rounded-2xl bg-limeAccent hover:brightness-110 text-[#0B0F10] font-heading font-extrabold py-4 px-6 text-sm flex items-center justify-center gap-2.5 shadow-xl shadow-limeAccent/25 transition-all duration-200 active:scale-[0.98] disabled:opacity-50"
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="h-5 w-5 animate-spin" />
+                          <span>Securing Escrow & Launching Campaign...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="h-5 w-5 stroke-[2.5]" />
+                          <span>Confirm & Launch Campaign (${totalBudget.toLocaleString()})</span>
+                          <ArrowRight className="h-4 w-4 stroke-[3]" />
+                        </>
+                      )}
+                    </button>
                   </div>
 
-                  <DodoCheckout
-                    amountUsd={totalBudget}
-                    type="campaign_escrow"
-                    campaignTitle={title}
-                    redirectUrl="/campaigns?escrow_success=1"
-                    metadata={{
-                      campaign_title: title,
-                      total_budget: totalBudget,
-                      reward_model: rewardModel,
-                      cpm_rate: rewardModel === 'cpm' ? cpmRate : bountyAmount,
-                      custom_bounty_type: rewardModel === 'custom_bounty' ? customBountyType : undefined,
-                    }}
-                    onSuccess={(orderId) => {
-                      executeCampaignCreation(orderId);
-                    }}
-                    onError={(err) => {
-                      setErrorMsg(`Payment error: ${err}`);
-                      toast.error('Escrow Payment Failed', err);
-                    }}
-                  />
+                  {/* Alternative Card Checkout Rail via Dodo Payments */}
+                  <div className="rounded-2xl border border-borderMuted bg-surface/80 p-5 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="text-xs font-heading font-bold text-textMain block">
+                          Or Pay via Card / Apple Pay (Dodo Payments)
+                        </span>
+                        <span className="text-[11px] text-textMuted">
+                          External card authorization and international settlement.
+                        </span>
+                      </div>
+                      <span className="text-[10px] font-mono text-limeAccent bg-limeAccent/10 px-2 py-0.5 rounded border border-limeAccent/30 hidden sm:inline">
+                        PCI-DSS Level 1
+                      </span>
+                    </div>
+
+                    <DodoCheckout
+                      amountUsd={totalBudget}
+                      type="campaign_escrow"
+                      campaignTitle={title}
+                      redirectUrl="/campaigns?escrow_success=1"
+                      metadata={{
+                        campaign_title: title,
+                        total_budget: totalBudget,
+                        reward_model: rewardModel,
+                        cpm_rate: rewardModel === 'cpm' ? cpmRate : bountyAmount,
+                        custom_bounty_type: rewardModel === 'custom_bounty' ? customBountyType : undefined,
+                      }}
+                      onSuccess={(orderId) => {
+                        executeCampaignCreation(orderId);
+                      }}
+                      onError={(err) => {
+                        setErrorMsg(`Payment error: ${err}`);
+                        toast.error('Escrow Payment Failed', err);
+                      }}
+                    />
+                  </div>
 
                   <div className="pt-2 flex justify-start">
                     <button
                       type="button"
                       onClick={() => setStep(3)}
-                      className="text-xs font-bold text-textMuted hover:text-textMain flex items-center gap-1 transition"
+                      className="text-xs font-bold text-textMuted hover:text-textMain flex items-center gap-1.5 transition cursor-pointer"
                     >
                       <ArrowLeft className="h-3.5 w-3.5" />
                       <span>Back to Reward Model</span>

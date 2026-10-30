@@ -55,6 +55,25 @@ export default function Home() {
           }))
         );
       }
+
+      // Sync click metrics from database
+      fetch('/api/products/click')
+        .then((res) => res.json())
+        .then((data) => {
+          if (data?.success && data?.clicks) {
+            setProducts((prev) =>
+              prev.map((p) => {
+                const dbClicks = data.clicks[p.id];
+                if (typeof dbClicks === 'number') {
+                  return { ...p, clicks: Math.max(p.clicks || 0, dbClicks) };
+                }
+                return p;
+              })
+            );
+          }
+        })
+        .catch(() => {});
+
       const savedActivities = localStorage.getItem('outbid_activities');
       if (savedActivities) {
         setActivities(JSON.parse(savedActivities));
@@ -111,6 +130,36 @@ export default function Home() {
     setModalProductUrl(productUrl);
     setModalProductName(productName);
     setIsModalOpen(true);
+  };
+
+
+  const handleTrackClick = (product: ProductEntry) => {
+    if (!product?.id) return;
+    setProducts((prev) => {
+      const updated = prev.map((p) =>
+        p.id === product.id ? { ...p, clicks: (p.clicks || 0) + 1 } : p
+      );
+      try {
+        localStorage.setItem('outbid_products', JSON.stringify(updated));
+      } catch (e) {
+        console.error(e);
+      }
+      return updated;
+    });
+
+    // Persist to MongoDB database
+    fetch('/api/products/click', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        productId: product.id,
+        productUrl: product.url,
+        productName: product.name,
+      }),
+      keepalive: true,
+    }).catch((err) => {
+      console.warn('Failed to record click in DB:', err);
+    });
   };
 
   const handleAddUserStartup = (url: string) => {
@@ -310,6 +359,7 @@ export default function Home() {
             onClaimRank={(targetRank, url, name) => handleOpenBidModal(targetRank, url, name)}
             userStartupUrls={userStartupUrls}
             onAddUserStartup={handleAddUserStartup}
+            onTrackClick={handleTrackClick}
           />
         </section>
 
@@ -367,6 +417,12 @@ export default function Home() {
             <a href="#how-it-works" className="hover:text-textMain transition">
               Protocol Rules
             </a>
+            <Link href="/terms" className="hover:text-limeAccent transition">
+              Terms
+            </Link>
+            <Link href="/privacy" className="hover:text-limeAccent transition">
+              Privacy
+            </Link>
           </div>
 
           <div className="text-right text-[11px] text-textMuted font-mono">

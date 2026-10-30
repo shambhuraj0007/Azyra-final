@@ -129,7 +129,7 @@ export function calculateClipPayout({
 /**
  * Formats platform names and badges
  */
-export function formatPlatform(platform: SocialPlatform): {
+export function formatPlatform(platform: SocialPlatform | string): {
   label: string;
   color: string;
   badgeBg: string;
@@ -141,5 +141,7 @@ export function formatPlatform(platform: SocialPlatform): {
       return { label: 'Instagram Reels', color: 'text-textMain', badgeBg: 'bg-surfaceElevated border-borderMuted text-textMain' };
     case 'youtube_shorts':
       return { label: 'YouTube Shorts', color: 'text-textMain', badgeBg: 'bg-surfaceElevated border-borderMuted text-textMain' };
+    default:
+      return { label: String(platform).toUpperCase(), color: 'text-textMain', badgeBg: 'bg-surfaceElevated border-borderMuted text-textMain' };
   }
 }

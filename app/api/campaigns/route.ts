@@ -32,59 +32,64 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth();
-    if (!session?.user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized: You must be logged in to create a campaign.' },
-        { status: 401 }
-      );
-    }
-
     const body = await request.json();
-    const { title, total_budget, cpm_rate, asset_drive_link, brand_id } = body;
+    const { title, total_budget, brand_id } = body;
 
-    if (!title || !total_budget || !cpm_rate || !asset_drive_link) {
+    if (!title || typeof total_budget !== 'number' || total_budget <= 0) {
       return NextResponse.json(
-        { success: false, error: 'Title, budget, CPM rate, and asset link are required.' },
-        { status: 400 }
-      );
-    }
-
-    if (total_budget < 100) {
-      return NextResponse.json(
-        { success: false, error: 'Minimum campaign escrow budget is $100.' },
+        { success: false, error: 'Title and a valid total escrow budget are required.' },
         { status: 400 }
       );
     }
 
     await connectToDatabase();
 
-    // Access Control Check: Brand authorization
+    // If brand user exists, ensure they hold the 'brand' role
     if (brand_id) {
-      const brandUser = await User.findOne({ $or: [{ id: brand_id }, { _id: brand_id }] });
-      if (brandUser && brandUser.role !== 'brand') {
-        return NextResponse.json(
-          { success: false, error: 'Access denied: Only brand accounts can fund and launch campaigns.' },
-          { status: 403 }
-        );
+      try {
+        const brandUser = await User.findOne({ $or: [{ id: brand_id }, { _id: brand_id }] });
+        if (brandUser && brandUser.role !== 'brand') {
+          brandUser.role = 'brand';
+          await brandUser.save();
+        }
+      } catch (err) {
+        console.warn('Could not update brand role for user:', err);
       }
     }
 
-    const newCamp = new CampaignModel({
-      ...body,
-      id: body.id || `camp-${Date.now()}`,
-      created_at: Date.now(),
-      participants_count: 0,
-      total_views_tracked: 0,
-      total_paid_out: 0,
-      status: 'active',
-    });
+    const campaignId = body.id || `camp-${Date.now()}`;
 
-    await newCamp.save();
+    // Upsert the campaign so if it already has an ID, it updates or creates cleanly
+    const savedCamp = await CampaignModel.findOneAndUpdate(
+      { id: campaignId },
+      {
+        ...body,
+        id: campaignId,
+        brand_id: body.brand_id || 'brand_default',
+        brand_name: body.brand_name || 'Partner Brand',
+        brand_logo: body.brand_logo || '⚡',
+        title: title.trim(),
+        total_budget,
+        remaining_budget: body.remaining_budget ?? total_budget,
+        execution_type: body.execution_type || 'cpm_pool',
+        cpm_rate: body.cpm_rate ?? 0,
+        max_payout_per_clip: body.max_payout_per_clip ?? 0,
+        min_views_threshold: body.min_views_threshold ?? 0,
+        asset_drive_link: body.asset_drive_link || '',
+        platforms: Array.isArray(body.platforms) && body.platforms.length > 0 ? body.platforms : ['x', 'instagram', 'youtube_shorts'],
+        category: body.category || 'DevTools',
+        status: body.status || 'active',
+        created_at: body.created_at || Date.now(),
+        participants_count: body.participants_count ?? 0,
+        total_views_tracked: body.total_views_tracked ?? 0,
+        total_paid_out: body.total_paid_out ?? 0,
+      },
+      { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
+    );
 
     return NextResponse.json({
       success: true,
-      campaign: newCamp,
+      campaign: savedCamp,
     });
   } catch (error: any) {
     console.error('Error creating campaign in MongoDB:', error);

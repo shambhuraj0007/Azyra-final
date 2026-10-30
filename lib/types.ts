@@ -104,6 +104,16 @@ export interface CampaignGuidelines {
   payout_structure?: string;
 }
 
+export type CampaignType = 'cpm_pool' | 'flat_bounty' | 'creator_direct';
+
+export interface CampaignPayoutMetric {
+  primary_label: string;      // "CPM Rate", "Per Action", "Flat Deal"
+  primary_value: string;      // "$1.50 / 1K views", "$0.50 / Quote RT", "$450 / Video"
+  action_type?: 'view' | 'retweet' | 'comment' | 'dedicated_video';
+  target_quota?: number;      // e.g. 500 retweets needed
+  completed_quota?: number;   // e.g. 340 retweets done
+}
+
 export interface Campaign {
   id: string;
   brand_id: string;
@@ -118,9 +128,24 @@ export interface Campaign {
   guidelines: CampaignGuidelines;
   total_budget: number;
   remaining_budget: number;
+  execution_type?: CampaignType; // 'cpm_pool' | 'flat_bounty' | 'creator_direct'
+  payout_metric?: CampaignPayoutMetric;
+
+  // Specific to cpm_pool
   cpm_rate: number; // e.g. 1.50 = $1.50 per 1,000 views
   max_payout_per_clip: number; // cap e.g. $300
   min_views_threshold: number; // e.g. 3000 views before payout unlocks
+
+  // Specific to flat_bounty
+  bounty_rate?: number;
+  bounty_action?: string;
+  actions_remaining?: number;
+
+  // Specific to creator_direct
+  flat_rate?: number;
+  min_followers?: number;
+  deliverable_type?: string;
+
   platforms: SocialPlatform[];
   category: 'SaaS' | 'AI & ML' | 'DevTools' | 'Crypto' | 'Web3' | 'E-commerce' | 'Gaming' | 'Productivity' | 'Design' | 'Fintech' | 'Marketing' | 'Mobile' | 'Others';
   status: 'active' | 'paused' | 'budget_exhausted' | 'archived';
