@@ -13,11 +13,11 @@ import {
   Zap,
   Coins,
   CheckCircle,
-  Megaphone
+  Megaphone,
+  Rocket
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Leaderboard from '../components/Leaderboard';
-import HowItWorks from '../components/HowItWorks';
 import ClaimRankModal from '../components/ClaimRankModal';
 import AzyraLogo from '../components/AzyraLogo';
 import CinematicCanvas from '../components/CinematicCanvas';
@@ -393,8 +393,32 @@ export default function Home() {
           </Link>
         </section>
 
-        {/* HOW IT WORKS / RULES SECTION */}
-        <HowItWorks />
+        {/* PRODUCT LAUNCH & HYPE PACKAGES BANNER */}
+        <section className="relative overflow-hidden rounded-3xl border border-limeAccent/30 bg-gradient-to-r from-surface via-surfaceElevated to-surface p-6 sm:p-10 shadow-2xl backdrop-blur-xl">
+          <div className="absolute top-0 right-0 w-80 h-80 bg-limeAccent/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+            <div className="space-y-2 max-w-2xl">
+              <div className="inline-flex items-center gap-2 rounded-full bg-limeAccent/15 px-3 py-1 text-xs font-mono font-bold text-limeAccent border border-limeAccent/30">
+                <Rocket className="h-3.5 w-3.5 text-limeAccent" />
+                <span>Launching a Product?</span>
+              </div>
+              <h3 className="text-2xl sm:text-3xl font-heading font-extrabold text-textMain tracking-tight">
+                Dominate Launch Day & Create <span className="text-limeAccent">Market Hype</span>
+              </h3>
+              <p className="text-xs sm:text-sm text-textMuted leading-relaxed">
+                Unlock turnkey creator syndication, guaranteed leaderboard placement, and viral video reach. Discover our launch packages engineered to turn your launch into an industry event.
+              </p>
+            </div>
+
+            <Link
+              href="/launch"
+              className="group rounded-full bg-limeAccent hover:brightness-110 text-[#070B0C] font-heading font-bold px-7 py-3.5 text-xs sm:text-sm flex items-center gap-2.5 transition whitespace-nowrap shadow-xl shadow-limeAccent/25 shrink-0 active:scale-[0.98]"
+            >
+              <span>Explore Launch Packages</span>
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+            </Link>
+          </div>
+        </section>
       </main>
 
       {/* FOOTER */}
@@ -414,9 +438,9 @@ export default function Home() {
             <Link href="/campaigns" className="hover:text-emeraldAccent transition">
               Creator Campaigns
             </Link>
-            <a href="#how-it-works" className="hover:text-textMain transition">
-              Protocol Rules
-            </a>
+            <Link href="/launch" className="hover:text-limeAccent transition">
+              Launch Packages
+            </Link>
             <Link href="/terms" className="hover:text-limeAccent transition">
               Terms
             </Link>

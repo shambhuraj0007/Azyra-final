@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Trophy, Sparkles, ShieldCheck, Megaphone, User, Menu, X, ArrowRight } from 'lucide-react';
+import { Trophy, Sparkles, ShieldCheck, Megaphone, User, Menu, X, ArrowRight, Rocket } from 'lucide-react';
 import AzyraLogo from './AzyraLogo';
 import { useCampaigns } from '../lib/CampaignContext';
 
@@ -68,11 +68,17 @@ export default function Navbar({ onOpenBidModal, totalVolume, totalProducts }: N
             </Link>
 
             <Link
-              href="/#how-it-works"
-              className="flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-textMuted font-heading transition-colors hover:bg-surfaceElevated hover:text-textMain"
+              href="/launch"
+              className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 font-heading transition-colors ${pathname === '/launch'
+                  ? 'bg-surfaceElevated text-limeAccent font-bold border border-borderMuted shadow-sm'
+                  : 'text-textMuted hover:bg-surfaceElevated hover:text-textMain'
+                }`}
             >
-              <ShieldCheck className="h-4 w-4 text-limeAccent/80" />
-              How It Works
+              <Rocket className="h-4 w-4 text-limeAccent" />
+              <span>Launch Packages</span>
+              <span className="rounded-md bg-limeAccent/15 px-1.5 py-0.5 text-[10px] font-mono font-bold text-limeAccent border border-limeAccent/30">
+                Hype
+              </span>
             </Link>
           </nav>
         </div>
@@ -201,14 +207,20 @@ export default function Navbar({ onOpenBidModal, totalVolume, totalProducts }: N
           </Link>
 
           <Link
-            href="/#how-it-works"
+            href="/launch"
             onClick={() => setMobileMenuOpen(false)}
-            className="flex items-center justify-between rounded-xl px-4 py-2.5 font-heading text-sm text-textMuted hover:bg-surfaceElevated hover:text-textMain transition"
+            className={`flex items-center justify-between rounded-xl px-4 py-2.5 font-heading text-sm font-bold transition ${pathname === '/launch'
+              ? 'bg-surfaceElevated text-limeAccent border border-borderMuted'
+              : 'text-textMuted hover:bg-surfaceElevated hover:text-textMain'
+              }`}
           >
             <div className="flex items-center gap-2.5">
-              <ShieldCheck className="h-4 w-4 text-limeAccent/80" />
-              <span>How It Works & Rules</span>
+              <Rocket className="h-4 w-4 text-limeAccent" />
+              <span>Launch Packages & Hype</span>
             </div>
+            <span className="rounded-md bg-limeAccent/15 px-2 py-0.5 text-[10px] font-mono font-bold text-limeAccent border border-limeAccent/30">
+              New
+            </span>
           </Link>
 
           {/* Quick status box inside mobile menu */}

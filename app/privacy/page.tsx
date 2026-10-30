@@ -401,7 +401,7 @@ export default function PrivacyPage() {
           </div>
 
           <div className="text-right text-[11px] text-textMuted font-mono">
-            © {new Date().getFullYear()} Azyra. All rights reserved.
+            © 2026 Azyra. All rights reserved.
           </div>
         </div>
       </footer>

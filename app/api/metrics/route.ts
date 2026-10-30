@@ -13,6 +13,8 @@ import User from '@/models/User';
 import { fetchLiveStats } from '@/lib/metrics';
 import { calculateClipPayout } from '@/lib/campaignUtils';
 
+export const dynamic = 'force-dynamic';
+
 /** Cache TTL: don't re-fetch the platform if polled within this window */
 const POLL_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
