@@ -12,7 +12,6 @@ import { auth } from '@/auth';
 import { connectToDatabase } from '@/lib/mongodb';
 import PaymentModel from '@/models/Payment';
 
-export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   try {

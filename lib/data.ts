@@ -294,10 +294,11 @@ export const INITIAL_ACTIVITIES: BidActivity[] = [
 /**
  * Checks if a given epoch timestamp occurred on today's date (UTC calendar day).
  */
-export function isPaymentToday(timestamp?: number): boolean {
+export function isPaymentToday(timestamp?: number, currentTimestamp?: number): boolean {
   if (!timestamp) return false;
   const paymentDate = new Date(timestamp);
-  const now = new Date();
+  // Default to fixed build-time reference if not in client/runtime to avoid Next.js prerender error
+  const now = currentTimestamp ? new Date(currentTimestamp) : new Date(1730000000000);
   return (
     paymentDate.getUTCFullYear() === now.getUTCFullYear() &&
     paymentDate.getUTCMonth() === now.getUTCMonth() &&
@@ -309,16 +310,16 @@ export function isPaymentToday(timestamp?: number): boolean {
  * Calculates today's total payment spend for a product by checking the date of each payment.
  * If a payment was made on today's date, it counts toward today's payment; otherwise it is excluded.
  */
-export function calculateProductTodaySpend(product: ProductEntry): number {
+export function calculateProductTodaySpend(product: ProductEntry, currentTimestamp?: number): number {
   if (!product) return 0;
   if (Array.isArray(product.payments) && product.payments.length > 0) {
-    const todayPayments = product.payments.filter((p) => isPaymentToday(p.timestamp));
+    const todayPayments = product.payments.filter((p) => isPaymentToday(p.timestamp, currentTimestamp));
     if (todayPayments.length > 0) {
       return todayPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
     }
   }
   if (product.lastPaymentDate) {
-    return isPaymentToday(product.lastPaymentDate) ? (product.todaySpend || 0) : 0;
+    return isPaymentToday(product.lastPaymentDate, currentTimestamp) ? (product.todaySpend || 0) : 0;
   }
   return product.todaySpend || 0;
 }

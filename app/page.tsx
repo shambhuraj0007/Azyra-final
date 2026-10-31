@@ -35,8 +35,12 @@ export default function Home() {
   const [modalProductName, setModalProductName] = useState('');
   const [userStartupUrls, setUserStartupUrls] = useState<string[]>([]);
 
+  const [nowTimestamp, setNowTimestamp] = useState<number | undefined>(undefined);
+
   // Hydrate from localStorage if available, ensuring todaySpend is calculated from payment dates
   useEffect(() => {
+    const currentNow = Date.now();
+    setNowTimestamp(currentNow);
     try {
       const savedProducts = localStorage.getItem('outbid_products');
       if (savedProducts) {
@@ -44,14 +48,14 @@ export default function Home() {
         // Date of payment is strictly used to evaluate today's payment; all-time uses cumulative paid amount
         const refreshed = parsed.map((p) => ({
           ...p,
-          todaySpend: calculateProductTodaySpend(p),
+          todaySpend: calculateProductTodaySpend(p, currentNow),
         }));
         setProducts(refreshed);
       } else {
         setProducts(
           INITIAL_PRODUCTS.map((p) => ({
             ...p,
-            todaySpend: calculateProductTodaySpend(p),
+            todaySpend: calculateProductTodaySpend(p, currentNow),
           }))
         );
       }
@@ -295,7 +299,7 @@ export default function Home() {
   };
 
   const totalCapitalAllTime = products.reduce((acc, p) => acc + (p.allTimeSpend || 0), 0);
-  const totalCapitalToday = products.reduce((acc, p) => acc + calculateProductTodaySpend(p), 0);
+  const totalCapitalToday = products.reduce((acc, p) => acc + calculateProductTodaySpend(p, nowTimestamp), 0);
 
   return (
     <div className="relative min-h-screen bg-canvas text-textMain flex flex-col selection:bg-limeAccent selection:text-[#000000] font-sans">
