@@ -16,6 +16,7 @@ export default function CinematicCanvas() {
     let width = 0;
     let height = 0;
     let time = 0;
+    let isVisible = true;
 
     // Mouse tracking with gentle smoothing for subtle parallax
     let targetMouseX = 0;
@@ -43,54 +44,67 @@ export default function CinematicCanvas() {
     window.addEventListener('resize', handleResize);
     window.addEventListener('mousemove', handleMouseMove, { passive: true });
 
-    // Floating ambient stardust particles
-    const particles = Array.from({ length: 42 }, () => ({
+    // Handle visibility to save GPU/CPU cycles
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        isVisible = false;
+        cancelAnimationFrame(animationFrameId);
+      } else {
+        isVisible = true;
+        animationFrameId = requestAnimationFrame(render);
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // Optimized particle count: 24 (reduced from 42 for top 60fps performance)
+    const particles = Array.from({ length: 24 }, () => ({
       x: Math.random() * width,
       y: Math.random() * height,
-      size: Math.random() * 1.5 + 0.5,
-      speedY: Math.random() * 0.25 + 0.1,
-      speedX: (Math.random() - 0.5) * 0.2,
-      opacity: Math.random() * 0.4 + 0.1,
+      size: Math.random() * 1.4 + 0.5,
+      speedY: Math.random() * 0.2 + 0.08,
+      speedX: (Math.random() - 0.5) * 0.15,
+      opacity: Math.random() * 0.35 + 0.1,
       pulse: Math.random() * Math.PI * 2,
     }));
 
     const render = () => {
-      time += 0.012;
+      if (!isVisible) return;
+      time += 0.01;
 
       // Smooth mouse interpolation
       currentMouseX += (targetMouseX - currentMouseX) * 0.04;
       currentMouseY += (targetMouseY - currentMouseY) * 0.04;
 
-      // Pure deep black background clear
-      ctx.fillStyle = '#000000';
+      // Deep rich canvas background fill
+      ctx.fillStyle = '#08090A';
       ctx.fillRect(0, 0, width, height);
 
-      // --- LAYER 1: Animated Radial Aurora Glows (Atmospheric depth) ---
-      const glow1X = width * 0.5 + Math.sin(time * 0.7) * 90 + currentMouseX * 50;
-      const glow1Y = height * 0.18 + Math.cos(time * 0.5) * 60 + currentMouseY * 30;
-      const grad1 = ctx.createRadialGradient(glow1X, glow1Y, 0, glow1X, glow1Y, Math.min(width, 700));
-      grad1.addColorStop(0, 'rgba(212, 246, 60, 0.065)'); // Electric Lime tint
-      grad1.addColorStop(0.5, 'rgba(46, 229, 157, 0.03)'); // Emerald tint
-      grad1.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      // --- LAYER 1: Subtle Radial Glows ---
+      const glow1X = width * 0.5 + Math.sin(time * 0.6) * 70 + currentMouseX * 40;
+      const glow1Y = height * 0.18 + Math.cos(time * 0.45) * 50 + currentMouseY * 25;
+      const grad1 = ctx.createRadialGradient(glow1X, glow1Y, 0, glow1X, glow1Y, Math.min(width, 680));
+      grad1.addColorStop(0, 'rgba(212, 246, 60, 0.045)'); // Refined Lime tint
+      grad1.addColorStop(0.6, 'rgba(56, 189, 248, 0.02)'); // Clean Ice Blue hint
+      grad1.addColorStop(1, 'rgba(8, 9, 10, 0)');
       ctx.fillStyle = grad1;
       ctx.fillRect(0, 0, width, height);
 
-      const glow2X = width * 0.85 + Math.cos(time * 0.4) * 80;
-      const glow2Y = height * 0.55 + Math.sin(time * 0.6) * 70;
-      const grad2 = ctx.createRadialGradient(glow2X, glow2Y, 0, glow2X, glow2Y, 500);
-      grad2.addColorStop(0, 'rgba(46, 229, 157, 0.04)');
-      grad2.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      const glow2X = width * 0.82 + Math.cos(time * 0.35) * 60;
+      const glow2Y = height * 0.52 + Math.sin(time * 0.5) * 50;
+      const grad2 = ctx.createRadialGradient(glow2X, glow2Y, 0, glow2X, glow2Y, 460);
+      grad2.addColorStop(0, 'rgba(52, 211, 153, 0.03)');
+      grad2.addColorStop(1, 'rgba(8, 9, 10, 0)');
       ctx.fillStyle = grad2;
       ctx.fillRect(0, 0, width, height);
 
-      // --- LAYER 2: 3D Perspective Undulating Wave Matrix (ReleaseStack style) ---
-      const rows = 32;
-      const cols = 48;
+      // --- LAYER 2: 3D Wave Perspective Matrix ---
+      const rows = 28;
+      const cols = 44;
       const fov = 340;
-      const horizonY = height * 0.28 + currentMouseY * 25;
-      const planeWidth = width * 1.5;
-      const startZ = 80;
-      const endZ = 1200;
+      const horizonY = height * 0.28 + currentMouseY * 22;
+      const planeWidth = width * 1.45;
+      const startZ = 90;
+      const endZ = 1150;
 
       for (let r = 0; r < rows; r++) {
         const normZ = r / (rows - 1);
@@ -101,30 +115,26 @@ export default function CinematicCanvas() {
           const normX = (c / (cols - 1) - 0.5) * 2;
           const worldX = normX * planeWidth * 0.65;
 
-          // Organic mathematical wave formula
-          const wave1 = Math.sin(normX * 4 + time * 1.2) * 22;
-          const wave2 = Math.cos(normZ * 5 - time * 1.0) * 26;
-          const wave3 = Math.sin((normX + normZ) * 3 + time * 0.8) * 16;
+          const wave1 = Math.sin(normX * 3.8 + time * 1.1) * 20;
+          const wave2 = Math.cos(normZ * 4.6 - time * 0.95) * 24;
+          const wave3 = Math.sin((normX + normZ) * 2.8 + time * 0.75) * 14;
           const worldY = wave1 + wave2 + wave3;
 
-          // Project to 2D screen coordinates
-          const screenX = width * 0.5 + (worldX + currentMouseX * 120 * (1 - normZ)) * scale;
-          const screenY = horizonY + (worldY + 220) * scale;
+          const screenX = width * 0.5 + (worldX + currentMouseX * 110 * (1 - normZ)) * scale;
+          const screenY = horizonY + (worldY + 210) * scale;
 
           if (screenX >= -10 && screenX <= width + 10 && screenY >= -10 && screenY <= height + 10) {
-            // Distance fading and pulse
-            const depthFade = Math.pow(1 - normZ, 1.4);
-            const dotSize = Math.max(0.6, (2.4 * scale));
-            const alpha = depthFade * 0.38;
+            const depthFade = Math.pow(1 - normZ, 1.35);
+            const dotSize = Math.max(0.6, 2.2 * scale);
+            const alpha = depthFade * 0.32;
 
             ctx.beginPath();
             ctx.arc(screenX, screenY, dotSize, 0, Math.PI * 2);
 
-            // Subtle color blend: front nodes tinted slightly electric lime
-            if (normZ < 0.35 && (c + r) % 4 === 0) {
-              ctx.fillStyle = `rgba(212, 246, 60, ${alpha * 1.4})`;
+            if (normZ < 0.32 && (c + r) % 5 === 0) {
+              ctx.fillStyle = `rgba(212, 246, 60, ${alpha * 1.3})`;
             } else {
-              ctx.fillStyle = `rgba(244, 247, 246, ${alpha})`;
+              ctx.fillStyle = `rgba(248, 250, 252, ${alpha})`;
             }
             ctx.fill();
           }
@@ -135,7 +145,7 @@ export default function CinematicCanvas() {
       for (const p of particles) {
         p.y -= p.speedY;
         p.x += p.speedX;
-        p.pulse += 0.02;
+        p.pulse += 0.018;
 
         if (p.y < 0) {
           p.y = height + 10;
@@ -153,10 +163,10 @@ export default function CinematicCanvas() {
 
       // --- LAYER 4: Smooth Vignette Gradient overlay ---
       const vignette = ctx.createLinearGradient(0, 0, 0, height);
-      vignette.addColorStop(0, 'rgba(0, 0, 0, 0.25)');
-      vignette.addColorStop(0.3, 'rgba(0, 0, 0, 0)');
-      vignette.addColorStop(0.85, 'rgba(0, 0, 0, 0.4)');
-      vignette.addColorStop(1, '#000000');
+      vignette.addColorStop(0, 'rgba(8, 9, 10, 0.25)');
+      vignette.addColorStop(0.35, 'rgba(8, 9, 10, 0)');
+      vignette.addColorStop(0.85, 'rgba(8, 9, 10, 0.45)');
+      vignette.addColorStop(1, '#08090A');
       ctx.fillStyle = vignette;
       ctx.fillRect(0, 0, width, height);
 
@@ -168,6 +178,7 @@ export default function CinematicCanvas() {
     return () => {
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
       cancelAnimationFrame(animationFrameId);
     };
   }, []);

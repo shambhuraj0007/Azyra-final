@@ -423,7 +423,7 @@ export function extractDomain(rawUrl: string): string {
 export function getFaviconUrl(domainOrUrl: string, size: number = 128): string {
   const domain = extractDomain(domainOrUrl);
   if (!domain || !domain.includes('.')) return '';
-  return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=${size}`;
+  return `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://${encodeURIComponent(domain)}&size=${size}`;
 }
 
 export function inferStartupName(rawUrl: string): string {

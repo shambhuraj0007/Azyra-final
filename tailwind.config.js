@@ -9,14 +9,15 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        canvas: '#0B0F10',
-        surface: '#141C1E',
-        surfaceElevated: '#1B2427',
-        borderMuted: '#223033',
+        canvas: '#08090A',
+        surface: '#0E1012',
+        surfaceElevated: '#16181B',
+        borderMuted: 'rgba(255, 255, 255, 0.08)',
         limeAccent: '#D4F63C',
-        emeraldAccent: '#2EE59D',
-        textMain: '#F3F7F6',
-        textMuted: '#8E9D9E',
+        emeraldAccent: '#34D399',
+        iceBlue: '#38BDF8',
+        textMain: '#F8FAFC',
+        textMuted: '#94A3B8',
       },
       fontFamily: {
         heading: ['var(--font-space-grotesk)', 'sans-serif'],

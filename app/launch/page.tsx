@@ -232,7 +232,7 @@ export default function LaunchPackagesPage() {
                 className={`relative rounded-3xl flex flex-col justify-between p-6 sm:p-8 transition-all duration-300 backdrop-blur-xl ${
                   pkg.isPopular
                     ? 'border-2 border-limeAccent bg-gradient-to-b from-surfaceElevated via-surface to-surface shadow-2xl shadow-limeAccent/15 lg:-translate-y-2'
-                    : 'border border-borderMuted bg-surface/90 hover:border-limeAccent/40 hover:bg-surfaceElevated/60 shadow-xl'
+                    : 'card-premium'
                 }`}
               >
                 {pkg.isPopular && (

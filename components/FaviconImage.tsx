@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Globe } from 'lucide-react';
-import { extractDomain, getFaviconUrl } from '../lib/data';
+import { extractDomain } from '../lib/data';
 
 interface FaviconImageProps {
   url?: string;
@@ -21,18 +21,41 @@ export default function FaviconImage({
   size = 128,
   alt = 'Startup favicon',
 }: FaviconImageProps) {
-  const [error, setError] = useState(false);
+  const [providerIndex, setProviderIndex] = useState(0);
   const [loaded, setLoaded] = useState(false);
+  const [hasError, setHasError] = useState(false);
 
   const resolvedDomain = domain || (url ? extractDomain(url) : '');
-  const faviconSrc = resolvedDomain && resolvedDomain.includes('.')
-    ? getFaviconUrl(resolvedDomain, size)
-    : null;
 
-  if (!faviconSrc || error) {
+  // Reset state when url or domain changes
+  useEffect(() => {
+    setProviderIndex(0);
+    setLoaded(false);
+    setHasError(false);
+  }, [resolvedDomain]);
+
+  // Robust multi-provider cascade: Google V2 -> Icon Horse -> Unavatar -> Direct Domain Favicon
+  const providers = resolvedDomain && resolvedDomain.includes('.')
+    ? [
+        `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://${resolvedDomain}&size=${size}`,
+        `https://icon.horse/icon/${resolvedDomain}`,
+        `https://unavatar.io/${resolvedDomain}?fallback=false`,
+        `https://${resolvedDomain}/favicon.ico`,
+      ]
+    : [];
+
+  const handleImageError = () => {
+    if (providerIndex < providers.length - 1) {
+      setProviderIndex((prev) => prev + 1);
+    } else {
+      setHasError(true);
+    }
+  };
+
+  if (!resolvedDomain || !resolvedDomain.includes('.') || hasError || providers.length === 0) {
     if (fallback) {
       return (
-        <span className={`inline-flex items-center justify-center ${className} select-none`}>
+        <span className={`inline-flex items-center justify-center ${className} select-none font-bold text-sm`}>
           {fallback}
         </span>
       );
@@ -44,19 +67,23 @@ export default function FaviconImage({
     );
   }
 
+  const currentSrc = providers[providerIndex];
+
   return (
-    <div className={`relative inline-flex items-center justify-center shrink-0 ${className}`}>
+    <div className={`relative inline-flex items-center justify-center shrink-0 overflow-hidden ${className}`}>
       {!loaded && (
-        <span className="absolute inset-0 flex items-center justify-center text-xs opacity-50 select-none animate-pulse">
+        <span className="absolute inset-0 flex items-center justify-center text-xs opacity-60 select-none animate-pulse">
           {fallback || '🌐'}
         </span>
       )}
       <img
-        src={faviconSrc}
+        key={currentSrc}
+        src={currentSrc}
         alt={alt}
-        loading="lazy"
+        loading="eager"
+        crossOrigin="anonymous"
         onLoad={() => setLoaded(true)}
-        onError={() => setError(true)}
+        onError={handleImageError}
         className={`${className} object-contain rounded-lg transition-opacity duration-200 ${
           loaded ? 'opacity-100' : 'opacity-0'
         }`}
