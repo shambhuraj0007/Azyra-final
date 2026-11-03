@@ -5,29 +5,16 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   Megaphone,
-  Sparkles,
   Trophy,
   Users,
-  DollarSign,
-  CheckCircle,
-  X,
-  ExternalLink,
-  ArrowRight,
-  Clock,
-  Filter,
-  Check,
   Video,
   Layers,
-  Send,
-  Building2,
-  FolderDown,
-  TrendingUp,
-  AlertCircle,
-  PauseCircle,
-  PlayCircle,
-  Archive,
   Eye,
-  Plus
+  Plus,
+  ArrowUpRight,
+  Check,
+  Search,
+  Filter
 } from 'lucide-react';
 import Navbar from '../../components/Navbar';
 import CreateCampaignModal from '../../components/CreateCampaignModal';
@@ -43,13 +30,9 @@ export default function CampaignsMarketplacePage() {
   const {
     currentUser,
     campaigns,
-    submissions,
-    participants,
     isJoined,
     joinCampaign,
     openSetupModal,
-    toggleCampaignStatus,
-    switchRole
   } = useCampaigns();
 
   const [selectedType, setSelectedType] = useState<string>('all');
@@ -61,7 +44,6 @@ export default function CampaignsMarketplacePage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
 
-  // Authentication guard for creating a campaign
   const handleOpenCreateCampaign = () => {
     if (!currentUser?.isLoggedIn) {
       router.push('/login?redirect=/campaigns&action=create');
@@ -70,7 +52,6 @@ export default function CampaignsMarketplacePage() {
     setIsCreateModalOpen(true);
   };
 
-  // If redirected back from login or payment return
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
@@ -87,14 +68,6 @@ export default function CampaignsMarketplacePage() {
       }
     }
   }, [currentUser?.isLoggedIn]);
-
-  // Platform filters
-  const platformOptions: { id: string; label: string }[] = [
-    { id: 'All', label: 'All Platforms' },
-    { id: 'x', label: 'X (Twitter)' },
-    { id: 'instagram', label: 'Instagram Reels' },
-    { id: 'youtube_shorts', label: 'YouTube Shorts' },
-  ];
 
   const categories = [
     'All',
@@ -113,13 +86,9 @@ export default function CampaignsMarketplacePage() {
     'Others',
   ];
 
-  // Total platform stats calculation
   const totalEscrowPool = campaigns.reduce((acc, c) => acc + c.remaining_budget, 0);
   const totalViewsTracked = campaigns.reduce((acc, c) => acc + c.total_views_tracked, 0);
-  const totalPaidOut = campaigns.reduce((acc, c) => acc + c.total_paid_out, 0);
-  const totalClippers = 142; // simulated network count
 
-  // Filter and sort
   const filteredCampaigns = useMemo(() => {
     return campaigns
       .filter((camp) => {
@@ -151,240 +120,127 @@ export default function CampaignsMarketplacePage() {
       });
   }, [campaigns, selectedType, selectedPlatform, selectedCategory, searchQuery, sortBy]);
 
-  // Creator's joined campaigns
-  const myJoinedCampaigns = useMemo(() => {
-    return campaigns.filter((c) => isJoined(c.id));
-  }, [campaigns, participants, currentUser.id]);
-
   return (
     <div className="min-h-screen bg-canvas text-textMain flex flex-col font-sans">
-      {/* Universal Top Navigation */}
       <Navbar />
 
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 py-8 space-y-10">
-        {/* HERO SECTION & TWO-SIDED BANNER */}
-        <div className="group relative overflow-hidden rounded-3xl border border-borderMuted/80 bg-gradient-to-b from-surface/95 via-surface/80 to-surface/95 p-6 sm:p-10 lg:p-12 shadow-2xl backdrop-blur-2xl transition-all duration-500 hover:border-limeAccent/30">
-          {/* Ambient Mesh Glows & Background Grid */}
-          <div className="absolute inset-0 bg-[radial-gradient(#ffffff0a_1px,transparent_1px)] [background-size:20px_20px] opacity-40 pointer-events-none" />
-          <div className="absolute -top-32 -right-32 h-[420px] w-[420px] rounded-full bg-limeAccent/15 blur-[120px] pointer-events-none transition-transform duration-1000 group-hover:scale-110 group-hover:bg-limeAccent/20" />
-          <div className="absolute -bottom-32 -left-20 h-[360px] w-[360px] rounded-full bg-emeraldAccent/10 blur-[100px] pointer-events-none transition-transform duration-1000 group-hover:scale-110" />
+      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 py-6 space-y-8">
+        {/* HERO BANNER: Premium Creator Marketplace Header */}
+        <div className="card-terminal p-6 sm:p-8">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+            <div className="space-y-3 max-w-2xl">
+              <div className="inline-flex items-center gap-2 rounded-md bg-surfaceElevated px-2.5 py-1 text-[11px] font-sans font-semibold text-textMuted border border-borderMuted">
+                <span className="h-1.5 w-1.5 rounded-full bg-iceBlue" />
+                <span>PERFORMANCE CREATOR ESCROW EXCHANGE</span>
+              </div>
 
-          {/* Top Shimmer Line */}
-          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-limeAccent/40 to-transparent" />
-
-          <div className="relative z-10 grid grid-cols-1 items-center gap-10 lg:grid-cols-12 lg:gap-12">
-            {/* Left Column: Hero Pitch & CTAs */}
-            <div className="space-y-6 sm:space-y-8 lg:col-span-7">
-              {/* Persona Switcher / Status Pill */}
-
-
-              {/* Main Headline */}
-              <h1 className="font-heading text-3xl font-extrabold tracking-tight text-textMain sm:text-5xl lg:text-[3.25rem] leading-[1.12]">
-                Get Paid For Views To Market{' '}
-                <span className="bg-gradient-to-r from-limeAccent via-emerald-400 to-limeAccent bg-[length:200%_auto] bg-clip-text text-transparent font-black animate-pulse">
-                  Top Internet Products
-                </span>
+              <h1 className="text-2xl sm:text-4xl font-heading font-extrabold tracking-tight text-textMain leading-[1.15]">
+                Syndicate Short-Form Reach. <br className="hidden sm:block" />
+                Earn Verified CPM & Custom Bounties.
               </h1>
 
-              {/* Subtext */}
-              <p className="max-w-xl text-sm leading-relaxed text-textMuted sm:text-base/relaxed lg:text-lg">
-                Brands fund transparent escrow pools with algorithmic CPM rates. Creators pull raw clips, syndicate short-form content to <strong className="text-textMain font-medium">X, Reels, and Shorts</strong>, and unlock verified real-time payouts as views compound.
+              <p className="text-xs sm:text-sm text-textMuted leading-relaxed max-w-xl">
+                Founders fund escrow vaults with algorithmic payout rates. Creators publish organic video hooks to X, Reels, and Shorts, unlocking automated payouts verified by view metrics.
               </p>
-
-              {/* Action Bar & Stats */}
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 pt-1">
-                <button
-                  onClick={handleOpenCreateCampaign}
-                  className="group/btn relative flex items-center justify-center gap-2.5 rounded-xl bg-limeAccent px-6 py-3.5 font-heading text-sm font-bold text-[#0B0F10] shadow-[0_0_24px_rgba(200,255,0,0.22)] transition-all duration-300 hover:brightness-110 hover:shadow-[0_0_36px_rgba(200,255,0,0.38)] active:scale-[0.98] w-full sm:w-auto"
-                >
-                  <Plus className="h-4 w-4 stroke-[3] transition-transform duration-300 group-hover/btn:rotate-90" />
-                  <span>Create Campaign</span>
-                </button>
-
-                <div className="flex items-center justify-around sm:justify-start gap-5 sm:gap-6 rounded-xl border border-borderMuted/70 bg-surfaceElevated/60 px-5 py-2.5 shadow-inner backdrop-blur-md transition-all duration-300 hover:border-borderMuted w-full sm:w-auto">
-                  <div className="flex flex-col">
-                    <span className="text-[10px] uppercase font-mono tracking-wider text-textMuted/80 font-semibold">
-                      Active Escrow
-                    </span>
-                    <span className="font-mono text-base font-bold tracking-tight text-emeraldAccent">
-                      ${totalEscrowPool.toLocaleString()}
-                    </span>
-                  </div>
-
-                  <div className="h-6 w-px bg-borderMuted/80" />
-
-                  <div className="flex flex-col">
-                    <span className="text-[10px] uppercase font-mono tracking-wider text-textMuted/80 font-semibold">
-                      Views Tracked
-                    </span>
-                    <span className="font-mono text-base font-bold tracking-tight text-limeAccent">
-                      {(totalViewsTracked / 1000000).toFixed(1)}M+
-                    </span>
-                  </div>
-                </div>
-              </div>
             </div>
 
-            {/* Right Column: Live Proof & Escrow Payout Simulation Card */}
-            <div className="relative lg:col-span-5 flex items-center justify-center">
-              {/* Background Glow Ring */}
-              <div className="absolute inset-0 -m-4 rounded-3xl bg-gradient-to-tr from-limeAccent/10 via-transparent to-emeraldAccent/10 blur-xl pointer-events-none" />
-
-              {/* Main Glass Console */}
-              <div className="relative w-full max-w-md rounded-2xl border border-white/10 bg-surfaceElevated/70 p-5 shadow-2xl backdrop-blur-xl transition-all duration-500 hover:border-limeAccent/40">
-
-                {/* Terminal Header */}
-                <div className="flex items-center justify-between border-b border-borderMuted/60 pb-3">
-                  <div className="flex items-center gap-2">
-                    <div className="flex gap-1.5">
-                      <span className="h-2.5 w-2.5 rounded-full bg-rose-500/80" />
-                      <span className="h-2.5 w-2.5 rounded-full bg-amber-500/80" />
-                      <span className="h-2.5 w-2.5 rounded-full bg-emerald-500/80" />
-                    </div>
-                    <span className="text-[11px] font-mono font-medium text-textMuted tracking-wider pl-1">
-                      LIVE_CPM_ORACLE
-                    </span>
-                  </div>
-                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-mono text-emeraldAccent border border-emerald-500/20">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emeraldAccent animate-pulse" />
-                    SYNCED
-                  </span>
+            {/* Quick Metrics & Launch CTA */}
+            <div className="flex flex-col sm:flex-row items-stretch lg:items-center gap-3 shrink-0">
+              <div className="flex items-center gap-4 rounded-md border border-borderMuted bg-surfaceElevated px-4 py-2.5">
+                <div>
+                  <span className="text-[10px] uppercase font-sans text-textMuted block">Active Escrow</span>
+                  <strong className="text-sm font-mono-numbers text-emeraldAccent font-bold">${totalEscrowPool.toLocaleString()}</strong>
                 </div>
-
-                {/* Short-Form Media Card Simulation */}
-                <div className="mt-4 rounded-xl border border-borderMuted/50 bg-[#0B0F10]/70 p-3.5 space-y-3">
-                  <div className="flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-2">
-                      <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-limeAccent/15 text-limeAccent font-mono text-xs font-bold border border-limeAccent/30">
-                        9:16
-                      </div>
-                      <div>
-                        <p className="font-heading font-semibold text-textMain text-xs">SaaS Launch Hook.mp4</p>
-                        <p className="text-[10px] font-mono text-textMuted">TikTok • Reels • X Clip</p>
-                      </div>
-                    </div>
-                    <span className="rounded bg-limeAccent/10 px-2 py-0.5 font-mono text-[10px] font-bold text-limeAccent">
-                      $5.20 CPM
-                    </span>
-                  </div>
-
-                  {/* Dynamic Audio / Impression Waves */}
-                  <div className="flex items-end gap-1 h-8 px-2 py-1 bg-surface/50 rounded-lg border border-borderMuted/40">
-                    {[40, 75, 55, 95, 60, 85, 45, 90, 70, 100, 65, 80, 50, 90, 40].map((h, i) => (
-                      <span
-                        key={i}
-                        className="w-full rounded-full bg-gradient-to-t from-limeAccent/40 to-limeAccent transition-all duration-300"
-                        style={{
-                          height: `${h}%`,
-                          animation: `pulse 1.8s ease-in-out ${i * 0.1}s infinite alternate`
-                        }}
-                      />
-                    ))}
-                  </div>
-
-                  {/* Progress / Escrow Release Bar */}
-                  <div className="space-y-1">
-                    <div className="flex justify-between text-[10px] font-mono text-textMuted">
-                      <span>Verified Impressions</span>
-                      <span className="text-textMain font-semibold">142,800 / 250,000</span>
-                    </div>
-                    <div className="h-2 w-full overflow-hidden rounded-full bg-surface">
-                      <div className="h-full w-[57%] rounded-full bg-gradient-to-r from-emeraldAccent to-limeAccent transition-all duration-1000 shadow-[0_0_12px_rgba(200,255,0,0.4)]" />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Live Transaction Settlement Row */}
-                <div className="mt-3 flex items-center justify-between rounded-xl bg-surface/60 border border-borderMuted/40 px-3.5 py-2.5">
-                  <div className="flex items-center gap-2.5">
-                    <div className="relative flex h-8 w-8 items-center justify-center rounded-lg bg-emeraldAccent/15 text-emeraldAccent border border-emeraldAccent/20">
-                      <span className="text-xs font-mono font-bold">$</span>
-                    </div>
-                    <div>
-                      <p className="text-[11px] font-medium text-textMain">Instant Escrow Release</p>
-                      <p className="text-[9px] font-mono text-textMuted">Tx: 0x8f...39b2 • Automated</p>
-                    </div>
-                  </div>
-                  <span className="font-mono text-xs font-bold text-emeraldAccent">
-                    +$742.56
-                  </span>
-                </div>
-
-                {/* Floating Verified Badge */}
-                <div className="absolute -bottom-4 -left-3 flex items-center gap-2 rounded-xl border border-limeAccent/30 bg-[#0B0F10]/90 px-3.5 py-1.5 shadow-xl backdrop-blur-md">
-                  <span className="flex h-2 w-2 rounded-full bg-limeAccent animate-ping" />
-                  <span className="text-[10px] font-mono font-semibold text-limeAccent">
-                    Auto-Disbursing CPM
-                  </span>
+                <div className="h-6 w-px bg-borderMuted" />
+                <div>
+                  <span className="text-[10px] uppercase font-sans text-textMuted block">Views Tracked</span>
+                  <strong className="text-sm font-mono-numbers text-textMain font-bold">{(totalViewsTracked / 1000000).toFixed(1)}M+</strong>
                 </div>
               </div>
+
+              <button
+                onClick={handleOpenCreateCampaign}
+                className="inline-flex items-center justify-center gap-2 rounded-md bg-limeAccent px-4.5 py-2.5 text-xs sm:text-sm font-heading font-bold text-[#090A0C] transition hover:brightness-105 active:scale-[0.98] cursor-pointer"
+              >
+                <Plus className="h-4 w-4 stroke-[2.5]" />
+                <span>Launch Campaign</span>
+              </button>
             </div>
           </div>
         </div>
 
-        {/* DISCOVER & FILTER BAR (Section 2A) */}
-        <div className="space-y-4">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            {/* Platform filter pills */}
-            <div className="flex flex-wrap items-center gap-2">
-              {platformOptions.map((opt) => (
-                <button
-                  key={opt.id}
-                  onClick={() => setSelectedPlatform(opt.id)}
-                  className={`rounded-xl px-3.5 py-1.5 text-xs font-heading font-bold transition ${selectedPlatform === opt.id
-                    ? 'bg-limeAccent text-[#0B0F10] shadow-md shadow-limeAccent/20'
-                    : 'bg-surface text-textMuted hover:text-textMain border border-borderMuted hover:bg-surfaceElevated'
-                    }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
+        {/* WORK STYLE ARCHETYPE SELECTOR */}
+        <div className="flex flex-wrap items-center gap-1.5 bg-surface border border-borderMuted rounded-md p-1">
+          <button
+            type="button"
+            onClick={() => setSelectedType('all')}
+            className={`cursor-pointer flex items-center gap-1.5 rounded px-3 py-1.5 text-xs font-heading font-medium transition ${
+              selectedType === 'all'
+                ? 'bg-surfaceElevated text-textMain font-bold border border-borderStrong'
+                : 'text-textMuted hover:text-textMain'
+            }`}
+          >
+            <Layers className="h-3.5 w-3.5" />
+            <span>All Deals</span>
+            <span className="text-[10px] font-mono-numbers text-textMuted font-medium">({campaigns.length})</span>
+          </button>
 
-            {/* Sort, Search, and Add Campaign Button */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full md:w-auto">
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as any)}
-                className="rounded-xl bg-surface border border-borderMuted px-3 py-2 text-xs text-textMain focus:border-limeAccent outline-none w-full sm:w-auto"
-              >
-                <option value="highest_cpm">Sort: Highest CPM</option>
-                <option value="budget_left">Sort: Most Budget Left</option>
-                <option value="views">Sort: Most Views Tracked</option>
-                <option value="newest">Sort: Newest</option>
-              </select>
+          <button
+            type="button"
+            onClick={() => setSelectedType('cpm_pool')}
+            className={`cursor-pointer flex items-center gap-1.5 rounded px-3 py-1.5 text-xs font-heading font-medium transition ${
+              selectedType === 'cpm_pool'
+                ? 'bg-surfaceElevated text-textMain font-bold border border-borderStrong'
+                : 'text-textMuted hover:text-textMain'
+            }`}
+          >
+            <Video className="h-3.5 w-3.5 text-textMuted" />
+            <span>Pay-Per-View CPM</span>
+            <span className="text-[10px] font-mono-numbers text-textMuted font-medium">
+              ({campaigns.filter((c) => (c.execution_type || 'cpm_pool') === 'cpm_pool').length})
+            </span>
+          </button>
 
-              <input
-                type="text"
-                placeholder="Search campaigns, brands..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="rounded-xl bg-surface border border-borderMuted px-3 py-2 text-xs text-textMain placeholder-textMuted/50 focus:border-limeAccent outline-none w-full sm:min-w-[180px]"
-              />
+          <button
+            type="button"
+            onClick={() => setSelectedType('creator_direct')}
+            className={`cursor-pointer flex items-center gap-1.5 rounded px-3 py-1.5 text-xs font-heading font-medium transition ${
+              selectedType === 'creator_direct'
+                ? 'bg-surfaceElevated text-textMain font-bold border border-borderStrong'
+                : 'text-textMuted hover:text-textMain'
+            }`}
+          >
+            <Trophy className="h-3.5 w-3.5 text-iceBlue" />
+            <span>Direct Sponsorships</span>
+            <span className="text-[10px] font-mono-numbers text-textMuted font-medium">
+              ({campaigns.filter((c) => c.execution_type === 'creator_direct' || c.execution_type === 'flat_bounty' || (c as any).execution_type === 'custom_bounty').length})
+            </span>
+          </button>
+        </div>
 
-              <button
-                onClick={handleOpenCreateCampaign}
-                className="rounded-xl bg-limeAccent hover:brightness-110 text-[#0B0F10] font-heading font-bold px-3.5 py-2 text-xs flex items-center justify-center gap-1.5 shadow-md shadow-limeAccent/20 transition shrink-0 active:scale-[0.98] w-full sm:w-auto"
-              >
-                <Plus className="h-3.5 w-3.5 stroke-[3]" />
-                <span>Add Campaign</span>
-              </button>
-            </div>
+        {/* SEARCH & CATEGORY ROW */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+          <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-textMuted" />
+            <input
+              type="text"
+              placeholder="Search campaigns, brands, keywords..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full rounded-md bg-surface border border-borderMuted pl-8.5 pr-3 py-1.5 text-xs text-textMain placeholder:text-textMuted/60 focus:outline-none focus:border-borderStrong transition"
+            />
           </div>
 
-          {/* Niche Pills */}
-          <div className="flex flex-wrap items-center gap-1.5 pt-1">
-            <span className="text-xs text-textMuted mr-2 flex items-center gap-1 font-heading">
-              <Filter className="h-3 w-3" /> Niche:
-            </span>
+          <div className="flex items-center gap-1 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
             {categories.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
-                className={`rounded-lg px-2.5 py-1 text-xs transition ${selectedCategory === cat
-                  ? 'bg-surfaceElevated text-limeAccent font-heading font-bold border border-borderMuted'
-                  : 'text-textMuted hover:text-textMain'
-                  }`}
+                className={`cursor-pointer rounded px-2.5 py-1 text-[11px] font-sans transition ${
+                  selectedCategory === cat
+                    ? 'bg-surfaceElevated text-textMain font-bold border border-borderStrong'
+                    : 'text-textMuted hover:text-textMain hover:bg-surfaceElevated'
+                }`}
               >
                 {cat}
               </button>
@@ -392,58 +248,8 @@ export default function CampaignsMarketplacePage() {
           </div>
         </div>
 
-        {/* SEGMENTED ARCHETYPE SWITCHER (Section 2 - Work Style) */}
-        <div className="flex flex-wrap items-center gap-2 p-1.5 rounded-2xl bg-surface border border-borderMuted shadow-lg">
-          <button
-            type="button"
-            onClick={() => setSelectedType('all')}
-            className={`cursor-pointer flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-heading font-bold transition-all ${selectedType === 'all'
-                ? 'bg-limeAccent text-[#0B0F10] shadow-md shadow-limeAccent/20 scale-[1.02]'
-                : 'text-textMuted hover:text-textMain hover:bg-surfaceElevated'
-              }`}
-          >
-            <Layers className="h-3.5 w-3.5" />
-            <span>All Campaigns</span>
-            <span className="rounded-full bg-black/20 px-2 py-0.5 text-[10px] font-mono">
-              {campaigns.length}
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setSelectedType('cpm_pool')}
-            className={`cursor-pointer flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-heading font-bold transition-all ${selectedType === 'cpm_pool'
-                ? 'bg-limeAccent text-[#0B0F10] shadow-md shadow-limeAccent/20 scale-[1.02]'
-                : 'text-textMuted hover:text-textMain hover:bg-surfaceElevated'
-              }`}
-          >
-            <Video className="h-3.5 w-3.5 text-limeAccent" />
-            <span>Pay-Per-View (CPM)</span>
-            <span className="text-[10px] font-mono opacity-70 hidden sm:inline">• Clip Syndication</span>
-            <span className="rounded-full bg-limeAccent/15 px-2 py-0.5 text-[10px] font-mono text-limeAccent border border-limeAccent/30">
-              {campaigns.filter((c) => (c.execution_type || 'cpm_pool') === 'cpm_pool').length}
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setSelectedType('creator_direct')}
-            className={`cursor-pointer flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-heading font-bold transition-all ${selectedType === 'creator_direct'
-                ? 'bg-iceBlue text-[#08090A] shadow-md shadow-iceBlue/20 scale-[1.02]'
-                : 'text-textMuted hover:text-textMain hover:bg-surfaceElevated'
-              }`}
-          >
-            <Trophy className="h-3.5 w-3.5 text-iceBlue" />
-            <span>Direct Sponsorships</span>
-            <span className="text-[10px] font-mono opacity-80 hidden sm:inline">• Custom Success</span>
-            <span className="rounded-full bg-iceBlue/15 px-2 py-0.5 text-[10px] font-mono text-iceBlue border border-iceBlue/30">
-              {campaigns.filter((c) => c.execution_type === 'creator_direct' || c.execution_type === 'flat_bounty' || (c as any).execution_type === 'custom_bounty').length}
-            </span>
-          </button>
-        </div>
-
-        {/* CAMPAIGN CARDS GRID (Unified Archetype Architecture) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* CAMPAIGN CARDS GRID */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredCampaigns.map((camp) => {
             const joined = isJoined(camp.id);
             const budgetPercent = Math.max(
@@ -451,196 +257,97 @@ export default function CampaignsMarketplacePage() {
               Math.min(100, (camp.remaining_budget / camp.total_budget) * 100)
             );
 
-            // Archetype-specific metadata helpers
-            const typeConfigs: Record<string, {
-              label: string;
-              badgeClass: string;
-              cta: string;
-              metricTitle: string;
-              metricHighlight: string;
-              subMetaLeft: string;
-              subMetaLeftVal: string;
-              subMetaRight: string;
-              subMetaRightVal: string;
-              progressLabel: string;
-            }> = {
-              cpm_pool: {
-                label: 'Pay-Per-View CPM',
-                badgeClass: 'bg-limeAccent/10 text-limeAccent border-limeAccent/30',
-                cta: 'Join & Clip',
-                metricTitle: 'Performance CPM',
-                metricHighlight: `$${camp.cpm_rate?.toFixed(2) || '1.00'} / 1K views`,
-                subMetaLeft: 'Clip Cap',
-                subMetaLeftVal: `$${camp.max_payout_per_clip || 500}`,
-                subMetaRight: 'Unlock',
-                subMetaRightVal: `${(camp.min_views_threshold || 1000).toLocaleString()} views`,
-                progressLabel: 'Escrow Left',
-              },
-              flat_bounty: {
-                label: 'Direct Sponsorship • Custom Success',
-                badgeClass: 'bg-iceBlue/10 text-iceBlue border-iceBlue/30',
-                cta: 'Claim Deal',
-                metricTitle: 'Custom Success Payout',
-                metricHighlight: `$${camp.bounty_rate?.toFixed(2) || camp.flat_rate?.toFixed(2) || '500'} / Deal`,
-                subMetaLeft: 'Criteria',
-                subMetaLeftVal: camp.guidelines?.success_criteria ? 'Custom Criteria' : 'Brand Rules',
-                subMetaRight: 'Deliverable',
-                subMetaRightVal: camp.deliverable_type || 'Custom Success',
-                progressLabel: 'Slots Remaining',
-              },
-              creator_direct: {
-                label: 'Direct Sponsorship • Custom Success',
-                badgeClass: 'bg-iceBlue/10 text-iceBlue border-iceBlue/30',
-                cta: 'Apply for Deal',
-                metricTitle: 'Custom Success Payout',
-                metricHighlight: `$${camp.flat_rate?.toLocaleString() || camp.bounty_rate?.toLocaleString() || '500'} / Deal`,
-                subMetaLeft: 'Criteria',
-                subMetaLeftVal: camp.guidelines?.success_criteria ? 'Custom Criteria' : (camp.min_followers ? `${(camp.min_followers / 1000).toFixed(0)}k+ Followers` : 'Custom Criteria'),
-                subMetaRight: 'Deliverable',
-                subMetaRightVal: camp.deliverable_type || 'Custom Success',
-                progressLabel: 'Campaign Budget',
-              },
-            };
-
-            const executionKey = camp.execution_type || 'cpm_pool';
-            const currentType = typeConfigs[executionKey] || typeConfigs.cpm_pool;
+            const isDirect = camp.execution_type === 'creator_direct' || camp.execution_type === 'flat_bounty';
+            const rateHighlight = isDirect
+              ? `$${camp.flat_rate?.toLocaleString() || camp.bounty_rate?.toLocaleString() || '500'} / Deal`
+              : `$${camp.cpm_rate?.toFixed(2) || '1.00'} / 1K views`;
 
             return (
               <div
                 key={camp.id}
-                className="group relative flex flex-col justify-between overflow-hidden card-premium p-5 sm:p-6 transition-all duration-300"
+                className="card-terminal p-5 flex flex-col justify-between"
               >
-
                 <div>
-                  {/* Top Header: Brand info & Archetype Tag */}
-                  <div className="flex items-start justify-between gap-3 mb-4">
-                    <div className="flex items-center gap-3">
-                      <span className="text-2xl p-2 rounded-xl bg-canvas border border-borderMuted/80 shadow-inner flex items-center justify-center">
+                  {/* Brand Row */}
+                  <div className="flex items-start justify-between gap-3 mb-3">
+                    <div className="flex items-center gap-2.5">
+                      <span className="flex h-9 w-9 items-center justify-center rounded-md bg-canvas border border-borderMuted text-base shrink-0">
                         {camp.brand_logo}
                       </span>
-                      <div>
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="font-heading font-bold text-sm text-textMain tracking-tight">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-heading font-bold text-sm text-textMain truncate">
                             {camp.brand_name}
                           </span>
                           {camp.brand_leaderboard_rank && (
-                            <span className="rounded bg-limeAccent/15 px-1.5 py-0.5 text-[9px] font-mono font-bold text-limeAccent border border-limeAccent/30">
+                            <span className="rounded bg-surfaceElevated px-1.5 py-0.2 text-[9px] font-mono-numbers text-textMuted border border-borderMuted">
                               #{camp.brand_leaderboard_rank}
                             </span>
                           )}
                         </div>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-[11px] text-textMuted font-mono">
-                            {camp.category}
-                          </span>
-                          <span className="text-textMuted/40 text-[10px]">•</span>
-                          <span className={`rounded-md px-1.5 py-0.5 text-[9px] font-mono font-semibold border ${currentType.badgeClass}`}>
-                            {currentType.label}
-                          </span>
-                        </div>
+                        <span className="text-[11px] text-textMuted block">
+                          {camp.category} • {isDirect ? 'Direct Retainer' : 'CPM Pool'}
+                        </span>
                       </div>
                     </div>
 
-                    {/* Campaign Lifecycle Status */}
-                    <span
-                      className={`rounded-full px-2.5 py-0.5 text-[10px] font-mono font-bold uppercase tracking-wider border shrink-0 ${camp.status === 'active'
-                          ? 'bg-emeraldAccent/15 text-emeraldAccent border-emeraldAccent/30'
-                          : camp.status === 'paused'
-                            ? 'bg-limeAccent/15 text-limeAccent border-limeAccent/30'
-                            : 'bg-surfaceElevated text-textMuted border-borderMuted'
-                        }`}
-                    >
-                      {camp.status.replace('_', ' ')}
+                    <span className="rounded bg-surfaceElevated px-2 py-0.5 text-[10px] font-sans font-medium text-textMuted border border-borderMuted">
+                      {camp.status}
                     </span>
                   </div>
 
                   {/* Title & Description */}
-                  <h3 className="text-base font-heading font-bold text-textMain mb-1.5 leading-snug line-clamp-1 group-hover:text-limeAccent transition-colors">
+                  <h3 className="text-sm font-heading font-bold text-textMain mb-1 line-clamp-1">
                     {camp.title}
                   </h3>
-                  <p className="text-xs text-textMuted line-clamp-2 mb-4 leading-relaxed">
+                  <p className="text-xs text-textMuted line-clamp-2 mb-3 leading-relaxed">
                     {camp.description}
                   </p>
 
-                  {/* Platforms Accepted & Perks */}
-                  <div className="flex flex-wrap items-center gap-1.5 mb-4">
+                  {/* Platforms */}
+                  <div className="flex flex-wrap items-center gap-1.5 mb-3">
                     {(Array.isArray(camp.platforms) ? camp.platforms : []).map((p) => {
                       const platMeta = formatPlatform(p);
                       return (
                         <span
                           key={p}
-                          className={`rounded-md px-2 py-0.5 text-[10px] font-mono font-semibold border ${platMeta.badgeBg}`}
+                          className="rounded bg-surfaceElevated px-2 py-0.5 text-[10px] font-sans text-textMuted border border-borderMuted"
                         >
                           {platMeta.label}
                         </span>
                       );
                     })}
-
-                    {camp.guidelines?.hooks && camp.guidelines.hooks.length > 0 && (
-                      <span className="rounded-md px-2 py-0.5 text-[10px] font-mono font-semibold bg-amber-950/30 text-amber-300 border border-amber-500/30">
-                        ⚡ {camp.guidelines.hooks.length} Hooks
-                      </span>
-                    )}
-
-                    {camp.asset_drive_link && (
-                      <span className="rounded-md px-2 py-0.5 text-[10px] font-mono font-semibold bg-limeAccent/10 text-limeAccent border border-limeAccent/30">
-                        📁 Assets Ready
-                      </span>
-                    )}
                   </div>
 
-                  {/* Dynamic Rate & Mechanics Box */}
-                  <div className="rounded-xl bg-surfaceElevated/60 border border-borderMuted/70 p-3 mb-4 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] uppercase font-mono font-bold tracking-wider text-textMuted">
-                        {currentType.metricTitle}
-                      </span>
-                      <span className="text-sm font-mono font-extrabold text-limeAccent">
-                        {currentType.metricHighlight}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center justify-between text-[11px] text-textMuted pt-1.5 border-t border-borderMuted/50">
-                      <span>{currentType.subMetaLeft}:</span>
-                      <strong className="text-textMain font-mono font-medium">
-                        {currentType.subMetaLeftVal}
-                      </strong>
-                    </div>
-
-                    <div className="flex items-center justify-between text-[11px] text-textMuted">
-                      <span>{currentType.subMetaRight}:</span>
-                      <strong className="text-textMain font-mono font-medium">
-                        {currentType.subMetaRightVal}
-                      </strong>
-                    </div>
+                  {/* Financial Rate Box */}
+                  <div className="rounded-md bg-surfaceElevated p-2.5 mb-3 flex items-center justify-between border border-borderMuted">
+                    <span className="text-[10px] uppercase font-sans text-textMuted">
+                      {isDirect ? 'Retainer Payout' : 'CPM Reward'}
+                    </span>
+                    <span className="text-xs font-mono-numbers font-bold text-textMain">
+                      {rateHighlight}
+                    </span>
                   </div>
                 </div>
 
-                {/* Footer: Budget / Quota Progress & Conversion */}
-                <div className="space-y-3 pt-3 border-t border-borderMuted/70">
-                  <div className="flex items-center justify-between text-xs font-mono">
-                    <span className="font-medium text-textMain text-[11px]">
-                      ${camp.remaining_budget.toLocaleString()} / ${camp.total_budget.toLocaleString()} left
-                    </span>
-                    <span className="text-emeraldAccent text-[10px] font-semibold">
-                      {budgetPercent.toFixed(0)}% {currentType.progressLabel}
-                    </span>
+                {/* Footer / Progress & Action */}
+                <div className="space-y-2 pt-2 border-t border-borderMuted">
+                  <div className="flex items-center justify-between text-[11px] text-textMuted font-mono-numbers">
+                    <span>${camp.remaining_budget.toLocaleString()} left</span>
+                    <span>{budgetPercent.toFixed(0)}% Escrow</span>
                   </div>
 
-                  {/* Progress Bar */}
-                  <div className="h-1.5 w-full bg-surfaceElevated rounded-full overflow-hidden">
+                  <div className="h-1 w-full bg-surfaceElevated rounded-full overflow-hidden">
                     <div
-                      className={`h-full rounded-full transition-all duration-500 ${budgetPercent > 20 ? 'bg-emeraldAccent' : 'bg-limeAccent'
-                        }`}
+                      className="h-full bg-emeraldAccent rounded-full"
                       style={{ width: `${budgetPercent}%` }}
                     />
                   </div>
 
-                  {/* Action Row */}
                   <div className="flex items-center gap-2 pt-1">
                     <Link
                       href={`/campaigns/${camp.id}`}
-                      className="flex-1 rounded-xl bg-surfaceElevated hover:bg-surface border border-borderMuted text-textMain font-heading font-semibold py-2.5 text-xs flex items-center justify-center gap-1.5 transition active:scale-[0.98]"
+                      className="flex-1 rounded-md bg-surfaceElevated hover:bg-surface border border-borderMuted hover:border-borderStrong text-textMain font-heading font-medium py-1.5 text-xs flex items-center justify-center gap-1 transition"
                     >
                       <Eye className="h-3.5 w-3.5 text-textMuted" />
                       <span>Details</span>
@@ -658,13 +365,13 @@ export default function CampaignsMarketplacePage() {
                             openSetupModal(camp.id);
                           }
                         }}
-                        className="rounded-xl bg-limeAccent hover:brightness-110 text-[#0B0F10] font-heading font-bold px-4 py-2.5 text-xs flex items-center gap-1.5 transition active:scale-[0.98] shadow-sm shadow-limeAccent/20 cursor-pointer"
+                        className="rounded-md bg-limeAccent hover:brightness-105 text-[#090A0C] font-heading font-bold px-3 py-1.5 text-xs flex items-center gap-1 transition cursor-pointer"
                       >
-                        <Sparkles className="h-3.5 w-3.5 fill-[#0B0F10]" />
-                        <span>{currentType.cta}</span>
+                        <span>Join</span>
+                        <ArrowUpRight className="h-3.5 w-3.5 stroke-[2.5]" />
                       </button>
                     ) : (
-                      <span className="rounded-xl bg-emeraldAccent/15 text-emeraldAccent border border-emeraldAccent/30 px-3 py-2 text-xs font-heading font-bold flex items-center gap-1">
+                      <span className="rounded-md bg-surfaceElevated text-emeraldAccent border border-borderMuted px-2.5 py-1.5 text-xs font-heading font-medium flex items-center gap-1">
                         <Check className="h-3.5 w-3.5" />
                         Active
                       </span>
@@ -676,23 +383,22 @@ export default function CampaignsMarketplacePage() {
           })}
         </div>
       </main>
-      {/* FOOTER */}
-      <footer className="border-t border-borderMuted bg-canvas py-8 px-4 text-center text-xs text-textMuted mt-12">
+
+      <footer className="border-t border-borderMuted bg-surface/60 py-6 px-4 text-xs text-textMuted mt-12">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <AzyraLogo size="sm" />
-            <p className="text-[11px] text-textMuted">Short-Form Creator Campaign Rewards</p>
+            <span className="text-[11px] text-textMuted">Short-Form Creator Escrow Protocol</span>
           </div>
-          <div className="flex items-center gap-4 text-textMuted">
-            <Link href="/" className="hover:text-limeAccent transition">Leaderboard</Link>
-            <Link href="/campaigns" className="hover:text-emeraldAccent transition">Campaigns</Link>
-            <Link href="/terms" className="hover:text-limeAccent transition">Terms</Link>
-            <Link href="/privacy" className="hover:text-limeAccent transition">Privacy</Link>
+          <div className="flex items-center gap-5 text-textMuted text-[11px]">
+            <Link href="/" className="hover:text-textMain transition">Leaderboard</Link>
+            <Link href="/campaigns" className="hover:text-textMain transition">Campaigns</Link>
+            <Link href="/terms" className="hover:text-textMain transition">Terms</Link>
+            <Link href="/privacy" className="hover:text-textMain transition">Privacy</Link>
           </div>
         </div>
       </footer>
 
-      {/* Modals */}
       <CreateCampaignModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}

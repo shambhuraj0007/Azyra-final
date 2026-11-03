@@ -167,7 +167,7 @@ export default function CreateCampaignModal({ isOpen, onClose }: CreateCampaignM
   if (!currentUser?.isLoggedIn) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-canvas/85 backdrop-blur-md overflow-y-auto">
-        <div className="relative w-full max-w-md rounded-3xl border border-borderMuted bg-surface shadow-2xl p-6 sm:p-8 text-center space-y-6">
+        <div className="relative w-full max-w-md rounded-xl border border-borderMuted bg-surface shadow-2xl p-6 sm:p-8 text-center space-y-6">
           <button
             onClick={onClose}
             className="absolute right-5 top-5 rounded-xl p-1.5 text-textMuted hover:bg-surfaceElevated hover:text-textMain transition"
@@ -175,7 +175,7 @@ export default function CreateCampaignModal({ isOpen, onClose }: CreateCampaignM
             <X className="h-5 w-5" />
           </button>
 
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-400 border border-amber-500/30 shadow-inner">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-lg bg-amber-500/15 text-amber-400 border border-amber-500/30 shadow-inner">
             <Lock className="h-8 w-8" />
           </div>
 
@@ -337,7 +337,7 @@ export default function CreateCampaignModal({ isOpen, onClose }: CreateCampaignM
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-canvas/85 backdrop-blur-md overflow-y-auto">
-      <div className="relative w-full max-w-3xl rounded-3xl border border-borderMuted bg-surface shadow-2xl p-4 sm:p-8 my-4 sm:my-8 max-h-[92dvh] overflow-y-auto">
+      <div className="relative w-full max-w-3xl rounded-xl border border-borderMuted bg-surface shadow-2xl p-4 sm:p-8 my-4 sm:my-8 max-h-[92dvh] overflow-y-auto">
         <button
           onClick={onClose}
           className="absolute right-4 sm:right-5 top-4 sm:top-5 rounded-xl p-1.5 text-textMuted hover:bg-surfaceElevated hover:text-textMain transition"
@@ -360,7 +360,7 @@ export default function CreateCampaignModal({ isOpen, onClose }: CreateCampaignM
             {/* Header & Steps */}
             <div className="mb-6">
               <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-2xl bg-limeAccent text-[#0B0F10] font-heading font-bold shadow-lg shadow-limeAccent/20 shrink-0">
+                <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-lg bg-limeAccent text-[#0B0F10] font-heading font-bold shadow-lg shadow-limeAccent/20 shrink-0">
                   <Building2 className="h-5 w-5 sm:h-6 sm:w-6" />
                 </div>
                 <div>
@@ -408,7 +408,7 @@ export default function CreateCampaignModal({ isOpen, onClose }: CreateCampaignM
             </div>
 
             {errorMsg && (
-              <div className="mb-5 rounded-2xl bg-red-950/60 border border-red-500/40 p-4 text-xs text-red-200 flex items-center gap-2">
+              <div className="mb-5 rounded-lg bg-red-950/60 border border-red-500/40 p-4 text-xs text-red-200 flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4 shrink-0 text-red-400" />
                 <span>{errorMsg}</span>
               </div>
@@ -568,7 +568,7 @@ export default function CreateCampaignModal({ isOpen, onClose }: CreateCampaignM
             {/* STEP 2: Creator Toolkit & Viral Strategy */}
             {step === 2 && (
               <div className="space-y-5">
-                <div className="rounded-2xl bg-surfaceElevated/70 border border-limeAccent/30 p-4 space-y-1">
+                <div className="rounded-lg bg-surfaceElevated/70 border border-limeAccent/30 p-4 space-y-1">
                   <div className="flex items-center gap-2 text-xs font-heading font-bold text-limeAccent">
                     <Sparkles className="h-4 w-4" />
                     <span>The Creator Success Suite</span>
@@ -780,7 +780,7 @@ export default function CreateCampaignModal({ isOpen, onClose }: CreateCampaignM
 
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 p-1.5 rounded-2xl bg-canvas border border-borderMuted gap-1.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 p-1.5 rounded-lg bg-canvas border border-borderMuted gap-1.5">
                     <button
                       type="button"
                       onClick={() => {
@@ -830,7 +830,7 @@ export default function CreateCampaignModal({ isOpen, onClose }: CreateCampaignM
                 {rewardModel === 'cpm' && (
                   <div className="space-y-4 animate-in fade-in duration-200">
                     {/* CORE SUCCESS CRITERIA: Describe the success of the campaign for payout */}
-                    <div className="rounded-2xl border border-emeraldAccent/30 bg-surfaceElevated/60 p-4 space-y-3">
+                    <div className="rounded-lg border border-emeraldAccent/30 bg-surfaceElevated/60 p-4 space-y-3">
                       <div className="flex items-center justify-between">
                         <label className="block text-xs font-bold uppercase text-emeraldAccent font-heading flex items-center gap-1.5">
                           <Target className="h-4 w-4" />
@@ -938,7 +938,7 @@ export default function CreateCampaignModal({ isOpen, onClose }: CreateCampaignM
                     </div>
 
                     {/* Creator Success Tiers Preview */}
-                    <div className="rounded-2xl bg-canvas border border-borderMuted p-4 space-y-2 font-mono">
+                    <div className="rounded-lg bg-canvas border border-borderMuted p-4 space-y-2 font-mono">
                       <span className="text-[10px] uppercase tracking-wider text-textMuted font-bold block">
                         Creator Success Payout Progression (Preview)
                       </span>
@@ -976,7 +976,7 @@ export default function CreateCampaignModal({ isOpen, onClose }: CreateCampaignM
 
 
                     {/* Company Custom Success Description (Describe Whatever They Want) */}
-                    <div className="rounded-2xl border border-limeAccent/30 bg-surfaceElevated/60 p-4 space-y-3">
+                    <div className="rounded-lg border border-limeAccent/30 bg-surfaceElevated/60 p-4 space-y-3">
                       <div className="flex items-center justify-between">
                         <label className="block text-xs font-bold uppercase text-limeAccent font-heading flex items-center gap-1.5">
                           <Sparkles className="h-4 w-4" />
@@ -1103,7 +1103,7 @@ export default function CreateCampaignModal({ isOpen, onClose }: CreateCampaignM
             {/* STEP 4: Review & Fund Escrow via Gateway (No Simulations) */}
             {step === 4 && (
               <div className="space-y-5">
-                <div className="rounded-2xl bg-surfaceElevated border border-borderMuted p-5 space-y-4">
+                <div className="rounded-lg bg-surfaceElevated border border-borderMuted p-5 space-y-4">
                   <div className="flex items-center justify-between pb-3 border-b border-borderMuted">
                     <div className="flex items-center gap-2.5">
                       <span className="text-2xl p-2 rounded-xl bg-canvas border border-borderMuted">
@@ -1114,7 +1114,7 @@ export default function CreateCampaignModal({ isOpen, onClose }: CreateCampaignM
                         <p className="text-[11px] text-textMuted">{brandName} • {category}</p>
                       </div>
                     </div>
-                    <span className="rounded-full px-2.5 py-1 text-[10px] font-mono font-bold uppercase bg-emeraldAccent/15 text-emeraldAccent border border-emeraldAccent/30">
+                    <span className="rounded-full px-2.5 py-1 text-[10px] font-sans font-semibold uppercase bg-emeraldAccent/15 text-emeraldAccent border border-emeraldAccent/30">
                       Escrow Ready
                     </span>
                   </div>
@@ -1196,7 +1196,7 @@ export default function CreateCampaignModal({ isOpen, onClose }: CreateCampaignM
                 {/* Escrow Activation & Funding Controls */}
                 <div className="space-y-4">
                   {/* Primary Instant Launch Action */}
-                  <div className="rounded-2xl border-2 border-limeAccent/50 bg-surfaceElevated p-5 sm:p-6 space-y-4 shadow-2xl relative overflow-hidden">
+                  <div className="rounded-lg border-2 border-limeAccent/50 bg-surfaceElevated p-5 sm:p-6 space-y-4 shadow-2xl relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-limeAccent/10 rounded-full blur-2xl pointer-events-none" />
 
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -1219,7 +1219,7 @@ export default function CreateCampaignModal({ isOpen, onClose }: CreateCampaignM
                       type="button"
                       disabled={isSubmitting}
                       onClick={() => executeCampaignCreation()}
-                      className="w-full cursor-pointer rounded-2xl bg-limeAccent hover:brightness-110 text-[#0B0F10] font-heading font-extrabold py-4 px-6 text-sm flex items-center justify-center gap-2.5 shadow-xl shadow-limeAccent/25 transition-all duration-200 active:scale-[0.98] disabled:opacity-50"
+                      className="w-full cursor-pointer rounded-lg bg-limeAccent hover:brightness-110 text-[#0B0F10] font-heading font-extrabold py-4 px-6 text-sm flex items-center justify-center gap-2.5 shadow-xl shadow-limeAccent/25 transition-all duration-200 active:scale-[0.98] disabled:opacity-50"
                     >
                       {isSubmitting ? (
                         <>
@@ -1237,7 +1237,7 @@ export default function CreateCampaignModal({ isOpen, onClose }: CreateCampaignM
                   </div>
 
                   {/* Alternative Card Checkout Rail via Dodo Payments */}
-                  <div className="rounded-2xl border border-borderMuted bg-surface/80 p-5 space-y-3">
+                  <div className="rounded-lg border border-borderMuted bg-surface/80 p-5 space-y-3">
                     <div className="flex items-center justify-between">
                       <div>
                         <span className="text-xs font-heading font-bold text-textMain block">

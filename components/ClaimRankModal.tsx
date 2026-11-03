@@ -210,21 +210,21 @@ export default function ClaimRankModal({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-md rounded-2xl border border-white/10 bg-[#0F1416] p-4 sm:p-6 shadow-2xl space-y-4 sm:space-y-5 text-textMain max-h-[92dvh] overflow-y-auto my-auto"
+        className="relative w-full max-w-md rounded-lg border border-borderStrong bg-surface p-4 sm:p-6 shadow-2xl space-y-4 sm:space-y-5 text-textMain max-h-[92dvh] overflow-y-auto my-auto"
       >
         {/* Close Button */}
         <button
           type="button"
           onClick={onClose}
           aria-label="Close"
-          className="absolute right-4 top-4 rounded-lg p-1.5 text-textMuted hover:text-white hover:bg-white/5 transition"
+          className="absolute right-4 top-4 rounded-lg p-1.5 text-textMuted hover:text-textMain hover:bg-surfaceElevated transition cursor-pointer"
         >
           <X className="h-4 w-4" />
         </button>
 
         {submitted ? (
           <div className="py-8 text-center space-y-3.5 animate-in fade-in zoom-in-95 duration-200">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-limeAccent/15 text-limeAccent ring-2 ring-limeAccent/30 shadow-lg shadow-limeAccent/10 animate-bounce">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-lg bg-limeAccent/15 text-limeAccent ring-2 ring-limeAccent/30 shadow-lg shadow-limeAccent/10 animate-bounce">
               <Crown className="h-8 w-8 fill-limeAccent/20 text-limeAccent" />
             </div>
             <div className="space-y-1">
@@ -235,7 +235,7 @@ export default function ClaimRankModal({
                 Leaderboard Position Claimed!
               </h3>
               <p className="text-xs text-textMuted">
-                <strong className="text-white">{name}</strong> is now live at Rank #{targetRank}.
+                <strong className="text-textMain">{name}</strong> is now live at Rank #{targetRank}.
               </p>
             </div>
             <div className="rounded-xl bg-surfaceElevated border border-borderMuted p-3 text-left space-y-1.5 text-xs font-mono">
@@ -261,7 +261,7 @@ export default function ClaimRankModal({
             {/* Header: Clean & Minimal */}
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <h2 className="text-lg font-heading font-bold text-white flex items-center gap-1.5">
+                <h2 className="text-lg font-heading font-bold text-textMain flex items-center gap-1.5">
                   {targetRank === 1 ? (
                     <Crown className="h-5 w-5 text-limeAccent fill-limeAccent" />
                   ) : (
@@ -269,21 +269,21 @@ export default function ClaimRankModal({
                   )}
                   {isSelfHolder ? `Defend Rank #${targetRank}` : `Claim Rank #${targetRank}`}
                 </h2>
-                <span className="rounded-md bg-white/5 px-2 py-0.5 text-[10px] font-mono text-limeAccent border border-white/10">
+                <span className="rounded-md bg-surfaceElevated px-2 py-0.5 text-[10px] font-mono text-limeAccent border border-borderMuted">
                   {board === 'all-time' ? 'All-Time' : 'Today'}
                 </span>
               </div>
               <p className="text-xs text-textMuted">
                 {isSelfHolder ? (
                   <span>
-                    You hold this spot with <strong className="text-white">${bidCalculation.existingSpend.toLocaleString()}</strong>. Boost your lead.
+                    You hold this spot with <strong className="text-textMain">${bidCalculation.existingSpend.toLocaleString()}</strong>. Boost your lead.
                   </span>
                 ) : currentHolder ? (
                   <span>
-                    Occupant: <strong className="text-white">{currentHolder.name}</strong> (${(board === 'all-time' ? currentHolder.allTimeSpend : currentHolder.todaySpend).toLocaleString()}) • <span className="text-emerald-400 font-mono font-medium">+$1 outbid to win</span>
+                    Occupant: <strong className="text-textMain">{currentHolder.name}</strong> (${(board === 'all-time' ? currentHolder.allTimeSpend : currentHolder.todaySpend).toLocaleString()}) • <span className="text-emeraldAccent font-mono font-medium">+$1 outbid to win</span>
                   </span>
                 ) : (
-                  <span className="text-emerald-400">Open spot • Start from $1</span>
+                  <span className="text-emeraldAccent">Open spot • Start from $1</span>
                 )}
               </p>
             </div>
@@ -298,9 +298,9 @@ export default function ClaimRankModal({
                     setTargetRank(rk);
                     setCustomBid('');
                   }}
-                  className={`py-1.5 px-2.5 sm:px-3 rounded-lg text-xs font-mono font-bold transition border ${targetRank === rk
+                  className={`py-1.5 px-2.5 sm:px-3 rounded-lg text-xs font-mono font-bold transition border cursor-pointer ${targetRank === rk
                       ? 'bg-limeAccent text-[#0B0F10] border-limeAccent shadow-sm'
-                      : 'bg-white/5 text-textMuted border-white/10 hover:text-white hover:border-white/20'
+                      : 'bg-surfaceElevated text-textMuted border-borderMuted hover:text-textMain hover:border-borderStrong'
                     }`}
                 >
                   #{rk}
@@ -312,14 +312,14 @@ export default function ClaimRankModal({
                   setTargetRank(products.length + 1);
                   setCustomBid('1');
                 }}
-                className={`py-1.5 px-2.5 rounded-lg text-xs font-mono font-semibold transition border ${targetRank === products.length + 1
+                className={`py-1.5 px-2.5 rounded-lg text-xs font-mono font-semibold transition border cursor-pointer ${targetRank === products.length + 1
                     ? 'bg-emeraldAccent text-[#0B0F10] border-emeraldAccent font-bold'
-                    : 'bg-white/5 text-emerald-400/90 border-emerald-500/20 hover:border-emerald-400/40'
+                    : 'bg-surfaceElevated text-emeraldAccent border-emeraldAccent/20 hover:border-emeraldAccent/40'
                   }`}
               >
                 Bottom (#{products.length + 1}) · $1
               </button>
-              <div className="flex items-center bg-white/5 px-2 py-1.5 rounded-lg border border-white/10">
+              <div className="flex items-center bg-surfaceElevated px-2 py-1.5 rounded-lg border border-borderMuted">
                 <span className="text-xs text-textMuted font-mono mr-1">#</span>
                 <input
                   type="number"
@@ -330,35 +330,35 @@ export default function ClaimRankModal({
                     setTargetRank(Math.max(1, parseInt(e.target.value) || 1));
                     setCustomBid('');
                   }}
-                  className="w-8 sm:w-10 bg-transparent text-xs text-white font-mono font-bold text-center focus:outline-none"
+                  className="w-8 sm:w-10 bg-transparent text-xs text-textMain font-mono font-bold text-center focus:outline-none"
                 />
               </div>
             </div>
 
             {/* Product Identification */}
             {existingProduct && !showEditProduct ? (
-              <div className="flex items-center justify-between p-3 rounded-xl bg-white/[0.03] border border-white/10">
+              <div className="flex items-center justify-between p-3 rounded-xl bg-surfaceElevated border border-borderMuted">
                 <div className="flex items-center gap-2.5 min-w-0">
                   <FaviconImage url={existingProduct.url} fallback="🌐" className="w-5 h-5 rounded" size={32} />
                   <div className="min-w-0">
-                    <span className="text-xs font-bold text-white block truncate">{existingProduct.name}</span>
+                    <span className="text-xs font-bold text-textMain block truncate">{existingProduct.name}</span>
                     <span className="text-[11px] font-mono text-textMuted truncate block">{existingProduct.url.replace(/^https?:\/\//, '')}</span>
                     {browserTitle && (
-                      <span className="text-[10px] text-limeAccent/80 font-mono truncate block mt-0.5">
+                      <span className="text-[10px] text-limeAccent font-mono truncate block mt-0.5">
                         Title: {browserTitle}
                       </span>
                     )}
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
-                  <span className="text-[11px] font-mono font-medium text-emerald-400 bg-emerald-950/40 border border-emerald-500/30 px-2 py-0.5 rounded-md">
+                  <span className="text-[11px] font-mono font-medium text-emeraldAccent bg-emeraldAccent/10 border border-emeraldAccent/30 px-2 py-0.5 rounded-md">
                     ${bidCalculation.existingSpend.toLocaleString()} credited
                   </span>
                   <button
                     type="button"
                     onClick={() => setShowEditProduct(true)}
                     title="Change listing"
-                    className="p-1 rounded text-textMuted hover:text-white hover:bg-white/5 transition"
+                    className="p-1 rounded text-textMuted hover:text-textMain hover:bg-surfaceElevated transition cursor-pointer"
                   >
                     <Edit3 className="h-3.5 w-3.5" />
                   </button>
@@ -382,7 +382,7 @@ export default function ClaimRankModal({
                         setName(inferStartupName(newUrl));
                       }
                     }}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-3 py-2 text-xs text-white placeholder:text-textMuted/50 focus:border-limeAccent outline-none font-mono"
+                    className="w-full bg-surfaceElevated border border-borderMuted rounded-md pl-10 pr-3 py-2 text-xs text-textMain placeholder:text-textMuted/60 focus:border-borderStrong outline-none font-mono"
                   />
                 </div>
 
@@ -394,10 +394,10 @@ export default function ClaimRankModal({
                   </div>
                 )}
                 {!fetchingMetadata && browserTitle && (
-                  <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/[0.03] border border-white/5 text-[11px] font-mono text-textMuted truncate">
+                  <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-surfaceElevated border border-borderMuted text-[11px] font-mono text-textMuted truncate">
                     <Globe className="h-3 w-3 text-limeAccent shrink-0" />
-                    <span className="text-white/60 shrink-0">Title:</span>
-                    <span className="text-white truncate font-medium">{browserTitle}</span>
+                    <span className="text-textMuted shrink-0">Title:</span>
+                    <span className="text-textMain truncate font-medium">{browserTitle}</span>
                   </div>
                 )}
 
@@ -409,23 +409,23 @@ export default function ClaimRankModal({
                       placeholder="Product Name"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      className="sm:col-span-2 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder:text-textMuted/50 focus:border-limeAccent outline-none"
+                      className="sm:col-span-2 bg-surfaceElevated border border-borderMuted rounded-md px-3 py-2 text-xs text-textMain placeholder:text-textMuted/60 focus:border-borderStrong outline-none"
                     />
                     <select
                       value={category}
                       onChange={(e) => setCategory(e.target.value as any)}
-                      className="sm:col-span-1 bg-neutral-900 border border-white/10 rounded-xl px-2 py-2 text-xs text-white focus:border-limeAccent outline-none cursor-pointer"
+                      className="sm:col-span-1 bg-surfaceElevated border border-borderMuted rounded-md px-2 py-2 text-xs text-textMain focus:border-borderStrong outline-none cursor-pointer"
                     >
-                      <option value="AI & ML" className="bg-neutral-900 text-white">AI & ML</option>
-                      <option value="DevTools" className="bg-neutral-900 text-white">DevTools</option>
-                      <option value="SaaS" className="bg-neutral-900 text-white">SaaS</option>
-                      <option value="Web3" className="bg-neutral-900 text-white">Web3</option>
-                      <option value="Fintech" className="bg-neutral-900 text-white">Fintech</option>
-                      <option value="Design" className="bg-neutral-900 text-white">Design</option>
-                      <option value="Productivity" className="bg-neutral-900 text-white">Productivity</option>
-                      <option value="Marketing" className="bg-neutral-900 text-white">Marketing</option>
-                      <option value="E-commerce" className="bg-neutral-900 text-white">E-commerce</option>
-                      <option value="Others" className="bg-neutral-900 text-white">Others</option>
+                      <option value="AI & ML" className="bg-surface text-textMain">AI & ML</option>
+                      <option value="DevTools" className="bg-surface text-textMain">DevTools</option>
+                      <option value="SaaS" className="bg-surface text-textMain">SaaS</option>
+                      <option value="Web3" className="bg-surface text-textMain">Web3</option>
+                      <option value="Fintech" className="bg-surface text-textMain">Fintech</option>
+                      <option value="Design" className="bg-surface text-textMain">Design</option>
+                      <option value="Productivity" className="bg-surface text-textMain">Productivity</option>
+                      <option value="Marketing" className="bg-surface text-textMain">Marketing</option>
+                      <option value="E-commerce" className="bg-surface text-textMain">E-commerce</option>
+                      <option value="Others" className="bg-surface text-textMain">Others</option>
                     </select>
                   </div>
                 )}
@@ -433,16 +433,16 @@ export default function ClaimRankModal({
             )}
 
             {/* Clean Receipt / Settlement Breakdown */}
-            <div className="rounded-xl bg-white/[0.03] border border-white/10 p-4 space-y-2.5">
+            <div className="rounded-xl bg-surfaceElevated border border-borderMuted p-4 space-y-2.5">
               <div className="flex items-center justify-between text-xs text-textMuted">
                 <span>Rank #{targetRank} Benchmark {currentHolder ? `(${currentHolder.name} + $1)` : ''}</span>
-                <span className="font-mono text-white font-medium">
+                <span className="font-mono text-textMain font-medium">
                   ${bidCalculation.targetSpendRequired.toLocaleString()}
                 </span>
               </div>
 
               {bidCalculation.existingSpend > 0 && (
-                <div className="flex items-center justify-between text-xs text-emerald-400">
+                <div className="flex items-center justify-between text-xs text-emeraldAccent">
                   <span>Your Previous Spend (Credit Applied)</span>
                   <span className="font-mono font-medium">
                     −${bidCalculation.existingSpend.toLocaleString()}
@@ -450,29 +450,29 @@ export default function ClaimRankModal({
                 </div>
               )}
 
-              <div className="border-t border-white/10 pt-2.5 flex items-center justify-between">
+              <div className="border-t border-borderMuted pt-2.5 flex items-center justify-between">
                 <div>
-                  <span className="text-xs font-heading font-bold text-white block">
+                  <span className="text-xs font-heading font-bold text-textMain block">
                     Total Due to Claim
                   </span>
                   <span className="text-[11px] font-mono text-textMuted">
                     Min. required: ${minNetPayable.toLocaleString()}
                   </span>
                 </div>
-                <div className="flex items-center bg-black/40 px-3 py-1.5 rounded-xl border border-limeAccent/40 focus-within:border-limeAccent">
+                <div className="flex items-center bg-surface px-3 py-1.5 rounded-md border border-borderStrong focus-within:border-limeAccent">
                   <span className="text-sm text-limeAccent font-mono font-bold mr-1">$</span>
                   <input
                     type="number"
                     min={minNetPayable}
                     value={customBid === '' ? minNetPayable : customBid}
                     onChange={(e) => setCustomBid(e.target.value)}
-                    className="w-20 bg-transparent text-right font-mono font-bold text-limeAccent text-base focus:outline-none"
+                    className="w-20 bg-transparent text-right font-mono font-bold text-textMain text-base focus:outline-none"
                   />
                 </div>
               </div>
 
               {/* Quick Boost Pills */}
-              <div className="flex items-center justify-between pt-1 border-t border-white/5 text-[10px]">
+              <div className="flex items-center justify-between pt-1 border-t border-borderMuted text-[10px]">
                 <span className="text-textMuted font-mono">Extend lead:</span>
                 <div className="flex items-center gap-1 font-mono">
                   {[1, 5, 25, 100].map((boost) => (
@@ -480,7 +480,7 @@ export default function ClaimRankModal({
                       key={boost}
                       type="button"
                       onClick={() => handleQuickAdd(boost)}
-                      className="px-2 py-0.5 rounded bg-white/5 hover:bg-white/10 hover:text-limeAccent text-textMuted border border-white/10 transition"
+                      className="px-2 py-0.5 rounded bg-surface hover:bg-surfaceElevated hover:text-textMain text-textMuted border border-borderMuted transition cursor-pointer"
                     >
                       +${boost}
                     </button>

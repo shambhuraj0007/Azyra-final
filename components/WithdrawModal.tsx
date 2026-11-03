@@ -148,7 +148,7 @@ export default function WithdrawModal({ isOpen, onClose }: WithdrawModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-canvas/80 backdrop-blur-md overflow-y-auto">
-      <div className="relative w-full max-w-md rounded-2xl border border-borderMuted bg-surface p-4 sm:p-6 shadow-2xl max-h-[92dvh] overflow-y-auto my-auto">
+      <div className="relative w-full max-w-md rounded-lg border border-borderMuted bg-surface p-4 sm:p-6 shadow-2xl max-h-[92dvh] overflow-y-auto my-auto">
         <button
           onClick={onClose}
           className="absolute right-4 top-4 rounded-lg p-1.5 text-textMuted hover:bg-surfaceElevated hover:text-textMain transition"

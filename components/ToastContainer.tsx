@@ -73,12 +73,12 @@ function ToastCard({ item }: { item: ToastItem }) {
   return (
     <div
       role="alert"
-      className={`relative w-full max-w-sm overflow-hidden rounded-2xl border ${config.borderColor} bg-[#0D1214]/95 p-4 backdrop-blur-2xl transition-all duration-300 hover:scale-[1.01] ${config.glowColor}`}
+      className={`relative w-full max-w-sm overflow-hidden rounded-xl border ${config.borderColor} bg-surface/95 p-4 backdrop-blur-2xl shadow-xl transition-all duration-300 hover:scale-[1.01]`}
     >
       <div className="flex items-start gap-3">
         {/* Animated Icon Container */}
         <div
-          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/[0.04] border border-white/5 ${config.accentColor}`}
+          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surfaceElevated border border-borderMuted ${config.accentColor}`}
         >
           <Icon className="h-5 w-5" />
         </div>
@@ -87,16 +87,16 @@ function ToastCard({ item }: { item: ToastItem }) {
         <div className="flex-1 min-w-0 pr-2">
           <div className="flex items-center gap-2 mb-1">
             <span
-              className={`text-[10px] font-mono uppercase tracking-wider font-bold px-1.5 py-0.5 rounded-md bg-white/[0.05] ${config.accentColor}`}
+              className={`text-[10px] font-mono uppercase tracking-wider font-bold px-1.5 py-0.5 rounded-md bg-surfaceElevated ${config.accentColor}`}
             >
               {config.badgeText}
             </span>
           </div>
-          <h4 className="text-sm font-heading font-bold text-white tracking-tight leading-snug">
+          <h4 className="text-sm font-heading font-bold text-textMain tracking-tight leading-snug">
             {item.title}
           </h4>
           {item.message && (
-            <p className="mt-1 text-xs text-[#9DA8AF] leading-relaxed break-words font-sans">
+            <p className="mt-1 text-xs text-textMuted leading-relaxed break-words font-sans">
               {item.message}
             </p>
           )}
@@ -108,7 +108,7 @@ function ToastCard({ item }: { item: ToastItem }) {
                 item.action?.onClick();
                 toast.dismiss(item.id);
               }}
-              className="mt-2.5 inline-flex items-center gap-1.5 rounded-lg bg-white/[0.08] hover:bg-white/[0.14] border border-white/10 px-2.5 py-1 text-xs font-heading font-semibold text-white transition active:scale-95"
+              className="mt-2.5 inline-flex items-center gap-1.5 rounded-md bg-surfaceElevated hover:bg-surface border border-borderMuted hover:border-borderStrong px-2.5 py-1 text-xs font-heading font-semibold text-textMain transition active:scale-95 cursor-pointer"
             >
               <span>{item.action.label}</span>
               <ArrowRight className="h-3.5 w-3.5 text-limeAccent" />
@@ -119,7 +119,7 @@ function ToastCard({ item }: { item: ToastItem }) {
         {/* Dismiss Button */}
         <button
           onClick={() => toast.dismiss(item.id)}
-          className="shrink-0 rounded-lg p-1 text-[#6B757D] hover:bg-white/[0.06] hover:text-white transition"
+          className="shrink-0 rounded-md p-1 text-textMuted hover:bg-surfaceElevated hover:text-textMain transition cursor-pointer"
           aria-label="Close notification"
         >
           <X className="h-4 w-4" />
@@ -128,7 +128,7 @@ function ToastCard({ item }: { item: ToastItem }) {
 
       {/* Progress Bar */}
       {duration > 0 && (
-        <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-white/[0.06]">
+        <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-borderMuted">
           <div
             className={`h-full ${config.progressBarBg} opacity-80`}
             style={{

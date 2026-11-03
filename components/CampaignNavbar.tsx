@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useCampaigns } from '../lib/CampaignContext';
 import AzyraLogo from './AzyraLogo';
+import ThemeToggle from './ThemeToggle';
 
 interface CampaignNavbarProps {
   onOpenCreateCampaign?: () => void;
@@ -91,11 +92,11 @@ export default function CampaignNavbar({
             </span>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-1.5 text-sm font-heading font-medium">
+          <nav className="hidden md:flex items-center gap-1.5 text-xs font-heading font-semibold">
             <Link
               href="/campaigns"
-              className={`flex items-center gap-2 rounded-xl px-3.5 py-2 transition-colors ${pathname === '/campaigns'
-                  ? 'bg-surfaceElevated text-limeAccent font-bold border border-borderMuted shadow-sm'
+              className={`flex items-center gap-2 rounded-md px-3.5 py-2 transition-colors ${pathname === '/campaigns'
+                  ? 'bg-surfaceElevated text-textMain font-bold border border-borderStrong shadow-xs'
                   : 'text-textMuted hover:bg-surfaceElevated hover:text-textMain'
                 }`}
             >
@@ -105,8 +106,8 @@ export default function CampaignNavbar({
 
             <Link
               href="/profile"
-              className={`flex items-center gap-2 rounded-xl px-3.5 py-2 transition-colors relative ${pathname === '/profile'
-                  ? 'bg-surfaceElevated text-limeAccent font-bold border border-borderMuted shadow-sm'
+              className={`flex items-center gap-2 rounded-md px-3.5 py-2 transition-colors relative ${pathname === '/profile'
+                  ? 'bg-surfaceElevated text-textMain font-bold border border-borderStrong shadow-xs'
                   : 'text-textMuted hover:bg-surfaceElevated hover:text-textMain'
                 }`}
             >
@@ -119,8 +120,8 @@ export default function CampaignNavbar({
 
             <Link
               href="/"
-              className={`flex items-center gap-2 rounded-xl px-3.5 py-2 transition-colors ${pathname === '/'
-                  ? 'bg-surfaceElevated text-limeAccent font-bold border border-borderMuted shadow-sm'
+              className={`flex items-center gap-2 rounded-md px-3.5 py-2 transition-colors ${pathname === '/'
+                  ? 'bg-surfaceElevated text-textMain font-bold border border-borderStrong shadow-xs'
                   : 'text-textMuted hover:bg-surfaceElevated hover:text-textMain'
                 }`}
             >
@@ -196,6 +197,9 @@ export default function CampaignNavbar({
               )}
             </div>
           )}
+
+          {/* Theme Toggle Button */}
+          <ThemeToggle />
 
           {/* Mobile Hamburger Toggle Button */}
           <button

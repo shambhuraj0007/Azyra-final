@@ -24,14 +24,14 @@ import { useCampaigns } from '@/lib/CampaignContext';
 
 /* ─── Design Tokens (aligned with globals.css) ─────────────────────── */
 const TOKEN = {
-  bg: '#0B0F10',
-  surface: '#141C1E',
-  surfaceEl: '#1B2427',
-  border: 'rgba(255,255,255,0.07)',
-  borderMuted: '#223033',
-  textPrimary: '#F3F7F6',
-  textMuted: '#8E9D9E',
-  lime: '#D4F63C',
+  bg: 'var(--color-canvas)',
+  surface: 'var(--color-surface)',
+  surfaceEl: 'var(--color-surfaceElevated)',
+  border: 'var(--color-borderMuted)',
+  borderMuted: 'var(--color-borderStrong)',
+  textPrimary: 'var(--color-textMain)',
+  textMuted: 'var(--color-textMuted)',
+  lime: 'var(--color-limeAccent)',
 };
 
 /* ─── Left-Panel Content per Role ─────────────────────────────────── */

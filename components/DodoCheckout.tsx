@@ -247,7 +247,7 @@ export default function DodoCheckout({
             </span>
             <h4 className="text-lg font-heading font-bold text-textMain">Campaign Escrow Funded!</h4>
             <p className="text-xs text-textMuted mt-0.5">
-              <strong className="text-white">{title}</strong> is now live on the marketplace.
+              <strong className="text-textMain">{title}</strong> is now live on the marketplace.
             </p>
           </div>
 

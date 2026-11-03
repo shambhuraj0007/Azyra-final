@@ -22,7 +22,7 @@ export default function AzyraLogo({
   return (
     <div className={`flex items-center gap-2.5 ${className}`}>
       {/* Azyra Glyph Icon */}
-      <div className="relative flex items-center justify-center shrink-0 rounded-xl bg-white p-1 shadow-md shadow-limeAccent/10 ring-1 ring-borderMuted transition-transform group-hover:scale-105">
+      <div className="relative flex items-center justify-center shrink-0 rounded-xl bg-surfaceElevated p-1 shadow-md shadow-limeAccent/10 ring-1 ring-borderMuted transition-transform group-hover:scale-105">
         <Image
           src="/web-app-manifest-192x192.png"
           alt="Azyra Icon"

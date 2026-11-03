@@ -3,18 +3,12 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
-  Trophy,
-  Sparkles,
-  Flame,
-  ArrowRight,
-  DollarSign,
+  ArrowUpRight,
   TrendingUp,
   ShieldCheck,
-  Zap,
-  Coins,
-  CheckCircle,
   Megaphone,
-  Rocket
+  Rocket,
+  CheckCircle2
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Leaderboard from '../components/Leaderboard';
@@ -37,7 +31,7 @@ export default function Home() {
 
   const [nowTimestamp, setNowTimestamp] = useState<number | undefined>(undefined);
 
-  // Hydrate from localStorage if available, ensuring todaySpend is calculated from payment dates
+  // Hydrate from localStorage
   useEffect(() => {
     const currentNow = Date.now();
     setNowTimestamp(currentNow);
@@ -45,7 +39,6 @@ export default function Home() {
       const savedProducts = localStorage.getItem('outbid_products');
       if (savedProducts) {
         const parsed: ProductEntry[] = JSON.parse(savedProducts);
-        // Date of payment is strictly used to evaluate today's payment; all-time uses cumulative paid amount
         const refreshed = parsed.map((p) => ({
           ...p,
           todaySpend: calculateProductTodaySpend(p, currentNow),
@@ -60,7 +53,7 @@ export default function Home() {
         );
       }
 
-      // Sync click metrics from database
+      // Sync click metrics
       fetch('/api/products/click')
         .then((res) => res.json())
         .then((data) => {
@@ -76,38 +69,13 @@ export default function Home() {
             );
           }
         })
-        .catch(() => {});
+        .catch(() => { });
 
-      const savedActivities = localStorage.getItem('outbid_activities');
-      if (savedActivities) {
-        setActivities(JSON.parse(savedActivities));
-      }
       const savedStartups = localStorage.getItem('azyra_user_startups');
       if (savedStartups) {
-        setUserStartupUrls(JSON.parse(savedStartups));
-      }
-
-      if (typeof window !== 'undefined') {
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('claim') === '1') {
-          setIsModalOpen(true);
-          setModalTargetRank(1);
-        } else if (urlParams.get('outbid_success') === '1' || urlParams.get('rank')) {
-          const targetRankNum = parseInt(urlParams.get('rank') || '1', 10);
-          setTimeout(() => {
-            const targetEl = document.getElementById(`rank-${targetRankNum}`);
-            if (targetEl) {
-              targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-            triggerConfetti();
-          }, 350);
-        } else if (window.location.hash && window.location.hash.startsWith('#rank-')) {
-          setTimeout(() => {
-            const targetEl = document.querySelector(window.location.hash);
-            if (targetEl) {
-              targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-          }, 350);
+        const parsedUrls = JSON.parse(savedStartups);
+        if (Array.isArray(parsedUrls)) {
+          setUserStartupUrls(parsedUrls);
         }
       }
     } catch (e) {
@@ -115,55 +83,26 @@ export default function Home() {
     }
   }, []);
 
-  // Save to localStorage when state changes
-  const saveState = (updatedProducts: ProductEntry[], updatedActivities: BidActivity[]) => {
+  const handleTrackClick = async (product: ProductEntry) => {
     try {
-      localStorage.setItem('outbid_products', JSON.stringify(updatedProducts));
-      localStorage.setItem('outbid_activities', JSON.stringify(updatedActivities));
-    } catch (e) {
-      console.error(e);
+      fetch('/api/products/click', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId: product.id }),
+      }).catch(() => { });
+      setProducts((prev) =>
+        prev.map((p) => (p.id === product.id ? { ...p, clicks: (p.clicks || 0) + 1 } : p))
+      );
+    } catch (err) {
+      console.error(err);
     }
   };
 
-  const handleOpenBidModal = (
-    targetRank: number = 1,
-    productUrl: string = '',
-    productName: string = ''
-  ) => {
+  const handleOpenBidModal = (targetRank: number = 1, productUrl: string = '', productName: string = '') => {
     setModalTargetRank(targetRank);
     setModalProductUrl(productUrl);
     setModalProductName(productName);
     setIsModalOpen(true);
-  };
-
-
-  const handleTrackClick = (product: ProductEntry) => {
-    if (!product?.id) return;
-    setProducts((prev) => {
-      const updated = prev.map((p) =>
-        p.id === product.id ? { ...p, clicks: (p.clicks || 0) + 1 } : p
-      );
-      try {
-        localStorage.setItem('outbid_products', JSON.stringify(updated));
-      } catch (e) {
-        console.error(e);
-      }
-      return updated;
-    });
-
-    // Persist to MongoDB database
-    fetch('/api/products/click', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        productId: product.id,
-        productUrl: product.url,
-        productName: product.name,
-      }),
-      keepalive: true,
-    }).catch((err) => {
-      console.warn('Failed to record click in DB:', err);
-    });
   };
 
   const handleAddUserStartup = (url: string) => {
@@ -180,7 +119,6 @@ export default function Home() {
     });
   };
 
-  // Process a new bid or bump: date of payment is tracked for today, total paid amount for all-time
   const handlePlaceBid = ({
     productName,
     productUrl,
@@ -213,14 +151,7 @@ export default function Home() {
       timestamp: now,
     };
 
-    // Record old ranks before outbid to compute exact rank delta indicators
-    const oldRanks = new Map<string, number>();
-    products.forEach((p, idx) => {
-      oldRanks.set(p.id, idx + 1);
-    });
-
     if (existingIndex !== -1) {
-      // Bump existing product: add bidAmount to allTimeSpend, and use date of payment to compute today's payment
       const current = products[existingIndex];
       const existingPayments = current.payments || [];
       const updatedPayments = [...existingPayments, newPaymentRecord];
@@ -234,8 +165,8 @@ export default function Home() {
         tagline: tagline || current.tagline,
         logo: logo || current.logo,
         category: category || current.category,
-        allTimeSpend: current.allTimeSpend + bidAmount, // All-time uses cumulative paid amount
-        todaySpend: updatedTodaySpend,                 // Date of payment is used to track today's payment
+        allTimeSpend: current.allTimeSpend + bidAmount,
+        todaySpend: updatedTodaySpend,
         lastPaymentDate: now,
         payments: updatedPayments,
         recentBidDelta: bidAmount,
@@ -243,7 +174,6 @@ export default function Home() {
       updatedList = [...products];
       updatedList[existingIndex] = updatedProduct;
     } else {
-      // New product entering the leaderboard
       updatedProduct = {
         id: `prod-${now}`,
         name: productName,
@@ -251,36 +181,26 @@ export default function Home() {
         url: productUrl,
         logo: logo || '🚀',
         category,
-        allTimeSpend: bidAmount, // Total paid amount
-        todaySpend: bidAmount,   // Date of payment is today
+        allTimeSpend: bidAmount,
+        todaySpend: bidAmount,
+        createdAt: now,
         lastPaymentDate: now,
         payments: [newPaymentRecord],
-        createdAt: now, // timestamp for tie-breaker rule
         recentBidDelta: bidAmount,
-        clicks: Math.floor(Math.random() * 50) + 10,
-        description: tagline,
-        verified: true,
+        clicks: 0,
+        description: tagline || 'Modern tech solution',
       };
       updatedList = [updatedProduct, ...products];
     }
 
-    // Re-sort according to financial hierarchy & tie-breaker rule
-    const sorted = sortLeaderboard(updatedList, board);
+    const reSorted = sortLeaderboard(updatedList, board);
+    setProducts(reSorted);
+    try {
+      localStorage.setItem('outbid_products', JSON.stringify(reSorted));
+    } catch (e) {
+      console.error(e);
+    }
 
-    // Compute dynamic rankDelta (+1, -1, 0) for each product
-    const finalized = sorted.map((p, newIdx) => {
-      const newRank = newIdx + 1;
-      const oldRank = oldRanks.get(p.id);
-      const rankDelta = oldRank !== undefined ? oldRank - newRank : 1;
-      return {
-        ...p,
-        rankDelta,
-      };
-    });
-
-    setProducts(finalized);
-
-    // Add to activity stream
     const newActivity: BidActivity = {
       id: `act-${now}`,
       productId: updatedProduct.id,
@@ -290,20 +210,24 @@ export default function Home() {
       timestamp: now,
       isBump,
     };
-    const updatedActs = [newActivity, ...activities.slice(0, 19)];
-    setActivities(updatedActs);
+    const updatedActivities = [newActivity, ...activities.slice(0, 19)];
+    setActivities(updatedActivities);
+    try {
+      localStorage.setItem('outbid_activities', JSON.stringify(updatedActivities));
+    } catch (e) {
+      console.error(e);
+    }
 
-    saveState(finalized, updatedActs);
-    handleAddUserStartup(productUrl);
-    triggerConfetti();
+    if (targetRank === 1) {
+      triggerConfetti();
+    }
   };
 
   const totalCapitalAllTime = products.reduce((acc, p) => acc + (p.allTimeSpend || 0), 0);
-  const totalCapitalToday = products.reduce((acc, p) => acc + calculateProductTodaySpend(p, nowTimestamp), 0);
 
   return (
-    <div className="relative min-h-screen bg-canvas text-textMain flex flex-col selection:bg-limeAccent selection:text-[#000000] font-sans">
-      {/* High-Performance 60fps Animated 3D Wave & Aurora Background */}
+    <div className="relative min-h-screen bg-canvas text-textMain flex flex-col font-sans">
+      {/* 60fps Subtle Visual Grid Background */}
       <CinematicCanvas />
 
       {/* Top Navbar */}
@@ -313,48 +237,48 @@ export default function Home() {
         totalProducts={products.length}
       />
 
-      <main className="relative z-10 flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 pt-3 pb-8 sm:pt-4 sm:pb-12 space-y-4 sm:space-y-5">
-        {/* HERO SECTION */}
-        <section className="card-craft relative w-full rounded-2xl py-5 px-5 sm:py-6 sm:px-8 overflow-hidden shadow-2xl">
-          {/* Subtle inner radial glow */}
-          <div className="pointer-events-none absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 h-[220px] w-[460px] rounded-full bg-limeAccent/[0.08] blur-[90px]" />
+      <main className="relative z-10 flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 pt-4 pb-12 space-y-6">
+        {/* HERO SECTION: Authoritative Financial Header */}
+        <section className="card-terminal p-6 sm:p-8">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+            <div className="space-y-3.5 max-w-2xl">
+              <div className="inline-flex items-center gap-2 rounded-md bg-surfaceElevated px-3 py-1.5 text-xs font-sans font-semibold text-textMuted border border-borderMuted">
+                <span className="h-2 w-2 rounded-full bg-limeAccent" />
+                <span>OPEN FINANCIAL BIDDING LEDGER</span>
+              </div>
 
-          <div className="relative z-10 mx-auto max-w-3xl text-center flex flex-col items-center gap-2.5 sm:gap-3">
-            {/* Editorial Serif Contrast Headline */}
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-heading font-extrabold tracking-tight text-textMain leading-[1.16]">
-              Stop waiting on algorithms.<br className="hidden sm:block" />
-              <span className="font-serif italic font-normal text-limeAccent"> Own your visibility.</span>
-            </h1>
+              <h1 className="text-2xl sm:text-4xl font-heading font-extrabold tracking-tight text-textMain leading-[1.15]">
+                Capital-Weighted Discovery. <br className="hidden sm:block" />
+                Guaranteed Audience Reach.
+              </h1>
 
-            {/* Cleaner, elegant sub-copy */}
-            <p className="text-xs sm:text-sm text-textMuted max-w-lg font-sans leading-relaxed">
-              No fake upvotes or shadowbans. Just guaranteed exposure. Outbid the leader to claim the top spot and climb.
-            </p>
+              <p className="text-sm sm:text-base text-textMuted leading-relaxed max-w-xl font-normal">
+                No opaque algorithms or artificial voting rings. Startups secure sovereign exposure through open financial bidding, while syndicated creators distribute short-form content with verified escrow payouts.
+              </p>
+            </div>
 
-            {/* ReleaseStack-styled interactive pill buttons */}
-            <div className="flex flex-row items-center justify-center gap-2.5 pt-0.5 w-auto">
+            {/* Quick Metrics & Direct Bidding Trigger */}
+            <div className="flex flex-col sm:flex-row items-stretch lg:items-center gap-3 shrink-0">
               <button
                 onClick={() => handleOpenBidModal(1)}
-                className="group relative flex items-center justify-center gap-2 rounded-full bg-limeAccent px-4.5 py-2 sm:px-5 sm:py-2.5 text-xs sm:text-sm font-heading font-bold text-[#070B0C] transition-all duration-200 hover:brightness-110 active:scale-[0.98] shadow-md shadow-limeAccent/20 hover:shadow-limeAccent/30"
+                className="inline-flex items-center justify-center gap-2 rounded-md bg-limeAccent px-5 py-2.5 text-xs sm:text-sm font-heading font-bold text-[#090A0C] transition hover:brightness-105 active:scale-[0.98] cursor-pointer"
               >
-                <Sparkles className="h-3.5 w-3.5 fill-[#070B0C]" />
-                <span>Claim the #1 Spot</span>
-                <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1 group-hover:-translate-y-0.5" />
+                <span>Outbid #1 Spot</span>
+                <ArrowUpRight className="h-4 w-4 stroke-[2.5]" />
               </button>
 
               <Link
                 href="/campaigns"
-                className="group flex items-center justify-center gap-2 rounded-full border border-borderMuted bg-surfaceElevated/60 px-4.5 py-2 sm:px-5 sm:py-2.5 text-xs sm:text-sm font-heading font-medium text-textMain transition-all duration-200 hover:border-emeraldAccent/40 hover:bg-surfaceElevated active:scale-[0.98] backdrop-blur-sm"
+                className="inline-flex items-center justify-center gap-2 rounded-md bg-surfaceElevated hover:bg-surface border border-borderMuted hover:border-borderStrong px-5 py-2.5 text-xs sm:text-sm font-heading font-medium text-textMain transition"
               >
-                <Megaphone className="h-3.5 w-3.5 text-emeraldAccent transition-transform group-hover:-rotate-12" />
-                <span>Earn as a Creator</span>
-                <ArrowRight className="h-3.5 w-3.5 opacity-50 transition-transform group-hover:translate-x-0.5 group-hover:opacity-100" />
+                <Megaphone className="h-3.5 w-3.5 text-iceBlue" />
+                <span>Creator Marketplace</span>
               </Link>
             </div>
           </div>
         </section>
 
-        {/* THE CORE LEADERBOARD */}
+        {/* THE FINANCIAL LEADERBOARD */}
         <section>
           <Leaderboard
             products={products}
@@ -367,94 +291,44 @@ export default function Home() {
           />
         </section>
 
-        {/* CREATOR CAMPAIGN DISCOVERY BANNER */}
-        <section className="card-craft rounded-2xl p-6 sm:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-2xl">
-          <div className="flex items-start gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-limeAccent text-[#070B0C] font-heading font-bold shadow-lg shadow-limeAccent/20 shrink-0">
-              <Megaphone className="h-6 w-6" />
-            </div>
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-limeAccent bg-limeAccent/10 px-2 py-0.5 rounded-full border border-limeAccent/20">
-                  Creator Economy
-                </span>
-              </div>
-              <h3 className="text-xl font-heading font-bold text-textMain">
-                Are you a Content Creator or Tech Influencer?
-              </h3>
-              <p className="text-xs text-textMuted max-w-xl leading-relaxed">
-                Top products on this leaderboard fund active creator campaigns. Test tools, record walkthroughs, or publish reviews on X, YouTube, and TikTok to claim cash rewards.
-              </p>
-            </div>
+        {/* CREATOR CAMPAIGN SYNDICATION CALLOUT */}
+        <section className="card-terminal p-6 sm:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          <div className="space-y-1.5 max-w-xl">
+            <span className="text-[10px] uppercase font-sans font-semibold tracking-wider text-iceBlue">
+              Short-Form Creator Syndication
+            </span>
+            <h3 className="text-lg sm:text-xl font-heading font-bold text-textMain">
+              Fund Performance Escrows or Claim Active Bounties
+            </h3>
+            <p className="text-xs text-textMuted leading-relaxed">
+              Top products fund algorithmic CPM escrow pools. Verified creators pull raw assets, produce short-form videos across TikTok, Reels, and X, and unlock automated milestone payouts.
+            </p>
           </div>
 
           <Link
             href="/campaigns"
-            className="group rounded-full bg-limeAccent hover:brightness-110 text-[#070B0C] font-heading font-bold px-6 py-3 text-xs sm:text-sm flex items-center gap-2 transition whitespace-nowrap shadow-lg shadow-limeAccent/20 active:scale-[0.98]"
+            className="inline-flex items-center gap-2 rounded-md bg-surfaceElevated hover:bg-surface border border-borderMuted hover:border-borderStrong text-textMain px-5 py-2.5 text-xs font-heading font-semibold transition shrink-0"
           >
-            <span>Browse Creator Campaigns</span>
-            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+            <span>Explore Creator Deals</span>
+            <ArrowUpRight className="h-4 w-4 text-textMuted" />
           </Link>
-        </section>
-
-        {/* PRODUCT LAUNCH & HYPE PACKAGES BANNER */}
-        <section className="relative overflow-hidden rounded-3xl border border-limeAccent/30 bg-gradient-to-r from-surface via-surfaceElevated to-surface p-6 sm:p-10 shadow-2xl backdrop-blur-xl">
-          <div className="absolute top-0 right-0 w-80 h-80 bg-limeAccent/10 rounded-full blur-3xl pointer-events-none" />
-          <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
-            <div className="space-y-2 max-w-2xl">
-              <div className="inline-flex items-center gap-2 rounded-full bg-limeAccent/15 px-3 py-1 text-xs font-mono font-bold text-limeAccent border border-limeAccent/30">
-                <Rocket className="h-3.5 w-3.5 text-limeAccent" />
-                <span>Launching a Product?</span>
-              </div>
-              <h3 className="text-2xl sm:text-3xl font-heading font-extrabold text-textMain tracking-tight">
-                Dominate Launch Day & Create <span className="text-limeAccent">Market Hype</span>
-              </h3>
-              <p className="text-xs sm:text-sm text-textMuted leading-relaxed">
-                Unlock turnkey creator syndication, guaranteed leaderboard placement, and viral video reach. Discover our launch packages engineered to turn your launch into an industry event.
-              </p>
-            </div>
-
-            <Link
-              href="/launch"
-              className="group rounded-full bg-limeAccent hover:brightness-110 text-[#070B0C] font-heading font-bold px-7 py-3.5 text-xs sm:text-sm flex items-center gap-2.5 transition whitespace-nowrap shadow-xl shadow-limeAccent/25 shrink-0 active:scale-[0.98]"
-            >
-              <span>Explore Launch Packages</span>
-              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-            </Link>
-          </div>
         </section>
       </main>
 
       {/* FOOTER */}
-      <footer className="relative z-10 border-t border-borderMuted bg-canvas/80 backdrop-blur-md py-10 px-4 text-xs text-textMuted mt-12">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
+      <footer className="relative z-10 border-t border-borderMuted bg-surface/60 py-6 px-4 text-xs text-textMuted">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <AzyraLogo size="sm" />
-            <div>
-              <p className="text-[11px] text-textMuted">Pure Financial Product Discovery & Creator Bounty Protocol</p>
-            </div>
+            <span className="text-[11px] text-textMuted">Open Financial Discovery & Escrow Protocol</span>
           </div>
 
-          <div className="flex items-center gap-6 text-textMuted">
-            <Link href="/" className="hover:text-limeAccent transition">
-              Leaderboard
-            </Link>
-            <Link href="/campaigns" className="hover:text-emeraldAccent transition">
-              Creator Campaigns
-            </Link>
-            <Link href="/launch" className="hover:text-limeAccent transition">
-              Launch Packages
-            </Link>
-            <Link href="/terms" className="hover:text-limeAccent transition">
-              Terms
-            </Link>
-            <Link href="/privacy" className="hover:text-limeAccent transition">
-              Privacy
-            </Link>
-          </div>
-
-          <div className="text-right text-[11px] text-textMuted font-mono">
-            All bids settled directly • Ties resolved by listing timestamp
+          <div className="flex items-center gap-5 text-textMuted text-[11px]">
+            <Link href="/" className="hover:text-textMain transition">Leaderboard</Link>
+            <Link href="/campaigns" className="hover:text-textMain transition">Campaigns</Link>
+            <Link href="/launch" className="hover:text-textMain transition">Launch Packages</Link>
+            <Link href="/terms" className="hover:text-textMain transition">Terms</Link>
+            <Link href="/privacy" className="hover:text-textMain transition">Privacy</Link>
           </div>
         </div>
       </footer>

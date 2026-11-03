@@ -75,25 +75,26 @@ export default function CinematicCanvas() {
       currentMouseX += (targetMouseX - currentMouseX) * 0.04;
       currentMouseY += (targetMouseY - currentMouseY) * 0.04;
 
-      // Deep rich canvas background fill
-      ctx.fillStyle = '#08090A';
+      // Theme-responsive background clear
+      const isLight = document.documentElement.classList.contains('light');
+      ctx.fillStyle = isLight ? '#F8FAFC' : '#0A0D12';
       ctx.fillRect(0, 0, width, height);
 
       // --- LAYER 1: Subtle Radial Glows ---
       const glow1X = width * 0.5 + Math.sin(time * 0.6) * 70 + currentMouseX * 40;
       const glow1Y = height * 0.18 + Math.cos(time * 0.45) * 50 + currentMouseY * 25;
       const grad1 = ctx.createRadialGradient(glow1X, glow1Y, 0, glow1X, glow1Y, Math.min(width, 680));
-      grad1.addColorStop(0, 'rgba(212, 246, 60, 0.045)'); // Refined Lime tint
-      grad1.addColorStop(0.6, 'rgba(56, 189, 248, 0.02)'); // Clean Ice Blue hint
-      grad1.addColorStop(1, 'rgba(8, 9, 10, 0)');
+      grad1.addColorStop(0, isLight ? 'rgba(212, 246, 60, 0.08)' : 'rgba(212, 246, 60, 0.045)'); // Refined Lime tint
+      grad1.addColorStop(0.6, isLight ? 'rgba(56, 189, 248, 0.04)' : 'rgba(56, 189, 248, 0.02)'); // Clean Ice Blue hint
+      grad1.addColorStop(1, isLight ? 'rgba(248, 250, 252, 0)' : 'rgba(8, 9, 10, 0)');
       ctx.fillStyle = grad1;
       ctx.fillRect(0, 0, width, height);
 
       const glow2X = width * 0.82 + Math.cos(time * 0.35) * 60;
       const glow2Y = height * 0.52 + Math.sin(time * 0.5) * 50;
       const grad2 = ctx.createRadialGradient(glow2X, glow2Y, 0, glow2X, glow2Y, 460);
-      grad2.addColorStop(0, 'rgba(52, 211, 153, 0.03)');
-      grad2.addColorStop(1, 'rgba(8, 9, 10, 0)');
+      grad2.addColorStop(0, isLight ? 'rgba(52, 211, 153, 0.05)' : 'rgba(52, 211, 153, 0.03)');
+      grad2.addColorStop(1, isLight ? 'rgba(248, 250, 252, 0)' : 'rgba(8, 9, 10, 0)');
       ctx.fillStyle = grad2;
       ctx.fillRect(0, 0, width, height);
 
@@ -134,7 +135,7 @@ export default function CinematicCanvas() {
             if (normZ < 0.32 && (c + r) % 5 === 0) {
               ctx.fillStyle = `rgba(212, 246, 60, ${alpha * 1.3})`;
             } else {
-              ctx.fillStyle = `rgba(248, 250, 252, ${alpha})`;
+              ctx.fillStyle = isLight ? `rgba(15, 23, 42, ${alpha * 0.7})` : `rgba(248, 250, 252, ${alpha})`;
             }
             ctx.fill();
           }
@@ -157,16 +158,16 @@ export default function CinematicCanvas() {
         const currentOpacity = p.opacity * (0.6 + Math.sin(p.pulse) * 0.4);
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(212, 246, 60, ${currentOpacity})`;
+        ctx.fillStyle = isLight ? `rgba(180, 200, 30, ${currentOpacity})` : `rgba(212, 246, 60, ${currentOpacity})`;
         ctx.fill();
       }
 
       // --- LAYER 4: Smooth Vignette Gradient overlay ---
       const vignette = ctx.createLinearGradient(0, 0, 0, height);
-      vignette.addColorStop(0, 'rgba(8, 9, 10, 0.25)');
-      vignette.addColorStop(0.35, 'rgba(8, 9, 10, 0)');
-      vignette.addColorStop(0.85, 'rgba(8, 9, 10, 0.45)');
-      vignette.addColorStop(1, '#08090A');
+      vignette.addColorStop(0, isLight ? 'rgba(255, 255, 255, 0.25)' : 'rgba(8, 9, 10, 0.25)');
+      vignette.addColorStop(0.35, isLight ? 'rgba(255, 255, 255, 0)' : 'rgba(8, 9, 10, 0)');
+      vignette.addColorStop(0.85, isLight ? 'rgba(248, 250, 252, 0.45)' : 'rgba(8, 9, 10, 0.45)');
+      vignette.addColorStop(1, isLight ? '#F8FAFC' : '#08090A');
       ctx.fillStyle = vignette;
       ctx.fillRect(0, 0, width, height);
 

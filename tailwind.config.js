@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+  darkMode: 'class',
   content: [
     './app/**/*.{js,ts,jsx,tsx,mdx}',
     './pages/**/*.{js,ts,jsx,tsx,mdx}',
@@ -9,20 +10,27 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        canvas: '#08090A',
-        surface: '#0E1012',
-        surfaceElevated: '#16181B',
-        borderMuted: 'rgba(255, 255, 255, 0.08)',
-        limeAccent: '#D4F63C',
-        emeraldAccent: '#34D399',
-        iceBlue: '#38BDF8',
-        textMain: '#F8FAFC',
-        textMuted: '#94A3B8',
+        canvas: 'var(--color-canvas)',
+        surface: 'var(--color-surface)',
+        surfaceElevated: 'var(--color-surfaceElevated)',
+        borderMuted: 'var(--color-borderMuted)',
+        borderStrong: 'var(--color-borderStrong)',
+        limeAccent: '#CCF32F',
+        emeraldAccent: '#10B981',
+        iceBlue: '#0EA5E9',
+        roseAlert: '#F43F5E',
+        textMain: 'var(--color-textMain)',
+        textMuted: 'var(--color-textMuted)',
       },
       fontFamily: {
         heading: ['var(--font-space-grotesk)', 'sans-serif'],
         sans: ['var(--font-plus-jakarta)', 'sans-serif'],
         mono: ['var(--font-jetbrains-mono)', 'monospace'],
+      },
+      borderRadius: {
+        sm: '6px',
+        md: '8px',
+        lg: '12px',
       },
     },
   },
